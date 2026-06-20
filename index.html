@@ -1619,6 +1619,9 @@ async function raiseTicket(){
     go('tickets');
   },800)}
 
+function generateWhatsAppLink(phone,msg){let p=phone.replace(/^\+?/,'');if(!p.startsWith('91'))p='91'+p;return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg)}
+function notifyStatusViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t)return;const a=t.att?gA(t.att):null;const attName=a?a.name:'Team';const msg=`Your issue ${t.id} (${t.issue}) is ${SL[t.status].toLowerCase()}`;const link=generateWhatsAppLink(t.by,msg);const notifDiv=document.createElement('div');notifDiv.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--c1);border:1px solid var(--bdr);padding:12px 14px;border-radius:var(--rs);z-index:300;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-width:280px';notifDiv.innerHTML='<div style="font-size:11px;font-weight:600;margin-bottom:8px">📱 Notify requester?</div><button class="btn btn-s btn-p btn-full" onclick="window.open(\''+link+'\',\'_blank\');this.parentElement.remove()" style="font-size:9px">WhatsApp</button>';document.body.appendChild(notifDiv);setTimeout(()=>{if(notifDiv.parentElement)notifDiv.remove()},6000)}
+function shareOTPViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t||!t.otp)return;const msg=`🔐 OTP to close ticket ${t.id}: ${t.otp}`;const link=generateWhatsAppLink(t.by,msg);window.open(link,'_blank')}
 function setSt(id,ns,note){
   const t=TKS.find(x=>x.id===id);if(!t)return;
   t.status=ns;
@@ -1640,6 +1643,7 @@ function setSt(id,ns,note){
   } else {
     writeHistory(id,ns,histNote,userName);
   }
+  if(role==='attender'&&ns!=='closed')setTimeout(()=>notifyStatusViaWhatsApp(id),300);
 }
 function doAccept(id){setSt(id,'accepted','Accepted by '+userName);viewT(id)}
 function doVisitChoice(id,needVisit){const t=TKS.find(x=>x.id===id);if(!t)return;t.locVisit=needVisit;if(needVisit){setSt(id,'on-the-way','📍 Visit required — on the way')}else{t.hist.push({s:t.status,t:ts(),n:'No visit needed — remote work'});setSt(id,'job-started','▶ Started (remote)')}viewT(id)}
@@ -2451,7 +2455,7 @@ let workMetaH='';if(isA&&t.status!=='closed'){const m=getMeta((t.cat||'').toLowe
     lpH+='</div>';}
 
   // OTP
-  let otpH='';if(isR&&t.otpRevealed&&t.status!=='closed'){otpH=`<div class="otp-reveal"><div style="font-size:12px;font-weight:700">🔐 Closure OTP</div><div class="otp-num">${t.otp}</div><p style="font-size:9px;color:var(--t2);margin-bottom:6px">Share with attender</p><button class="btn btn-s btn-p btn-full" onclick="shareOTPInChat('${t.id}')" style="font-size:9px">📤 Share via Chat</button></div>`}
+  let otpH='';if(isR&&t.otpRevealed&&t.status!=='closed'){otpH=`<div class="otp-reveal"><div style="font-size:12px;font-weight:700">🔐 Closure OTP</div><div class="otp-num">${t.otp}</div><p style="font-size:9px;color:var(--t2);margin-bottom:6px">Share with attender</p><div style="display:flex;gap:6px"><button class="btn btn-s btn-p btn-full" onclick="shareOTPInChat('${t.id}')" style="font-size:9px">📤 Chat</button><button class="btn btn-s btn-p btn-full" onclick="shareOTPViaWhatsApp('${t.id}')" style="font-size:9px">📱 WhatsApp</button></div></div>`}
   if(isR&&!t.otpRevealed&&t.status!=='closed'){otpH=`<div class="card" style="text-align:center;padding:14px;color:var(--t3)"><div style="font-size:18px">🔒</div><div style="font-size:9px;margin-top:4px">OTP appears when attender requests closure</div></div>`}
   let otpEH='';if(isA&&t.status==='ready-closure'){const af=t.issueRes?t.issueRes.every(r=>r.status==='fixed'):true;otpEH=`<div class="card"><div class="card-h"><h3>🔐 Enter OTP</h3></div><input id="otpSingle" type="text" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●" style="width:100%;padding:12px;background:var(--c2);border:2px solid var(--bdr);border-radius:var(--rs);color:var(--t);font-size:22px;font-family:var(--m);font-weight:700;text-align:center;letter-spacing:6px;outline:none;margin-bottom:8px" oninput="this.value=this.value.replace(/\\D/g,'')"><button class="btn-big ${af?'green':'red'}" onclick="doCloseWithOTP('${t.id}')">${af?'✓ VERIFY OTP':'⚠ Issues not all Fixed'}</button></div>`}
 
