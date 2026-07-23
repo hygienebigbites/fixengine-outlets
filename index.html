@@ -101,6 +101,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <div id="loginP" class="login"><div class="login-card">
   <div class="logo"><div class="logo-i">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M v7</span></div></div>
   <h2>🎫 Raise a Ticket</h2>
+  <div id="demoBanner" style="display:none;background:var(--wrb);border:1px solid var(--wr);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;font-size:10px;color:var(--wr);text-align:center;font-weight:600">⚠️ Demo mode — spreadsheet not connected. Categories &amp; keywords are sample data only. Open the app from its deployed (github.io) link for live data.</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="9876543210" maxlength="10"></div>
     <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Your name" maxlength="40" autocomplete="off"></div>
@@ -341,6 +342,8 @@ async function loadPriorityRulesFromSheet(){
   return true;
 }
 
+let SHEET_LIVE=false;
+function updateDemoBanner(){const b=document.getElementById('demoBanner');if(b)b.style.display=SHEET_LIVE?'none':'block';}
 // PHASE 4: load Categories + Sub-Categories from the sheet and rebuild CATS + UMAP
 async function loadCategoriesFromSheet(){
   const cats=await apiRead('Categories');
@@ -372,7 +375,7 @@ async function loadCategoriesFromSheet(){
   });
   // Only replace if we actually got categories
   if(Object.keys(freshCats).length){
-    CATS=freshCats;
+    CATS=freshCats;SHEET_LIVE=true;
     // merge sheet UMAP over the existing one (keep any not in sheet)
     Object.assign(UMAP,freshUmap);
   }
@@ -734,7 +737,7 @@ function logout(){role='';phone='';userName='';userIni='';userOutlet='';selected
   ['lPh','lNm','lOutSearch','lOut'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});
   const b=document.getElementById('raiseBack');if(b)b.style.display='none';
   document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
-async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
+async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
 function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home',tickets:'Tickets',detail:'Details'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0}
 	function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('show')}
@@ -1602,15 +1605,32 @@ function fuzzySearchSubs(query){
             if(sw.length>=3&&phoneticMatch(t,sw)){score+=4;break;}
           }
         });
-        if(score>0)scored.push({catId,catLabel:cat.label,sub,pri:UMAP[sub]||cat.pri,score});
+        if(score>0)scored.push({catId,catLabel:cat.label,sub,pri:UMAP[sub]||cat.pri,score,phonetic:true});
       });
     });
   }
 
-  return scored.sort((a,b)=>b.score-a.score).slice(0,12);
+  // Quality floor: phonetic-fallback guesses need at least two supporting hits
+  const usable=scored.filter(s=>!s.phonetic||s.score>=8);
+  return usable.sort((a,b)=>b.score-a.score).slice(0,12);
 }
 
 // ===== SMART SEARCH =====
+function renderSuggestList(matches){
+  const res=document.getElementById('subSearchResults');
+  if(!res)return;
+  const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  res.style.display='block';
+  res.innerHTML=matches.slice(0,5).map((m,i)=>{
+    const priColor={critical:'var(--er)',high:'var(--or)',medium:'var(--wr)',low:'var(--ok)'}[m.pri]||'var(--t3)';
+    const priLabel={critical:'P0',high:'P1',medium:'P2',low:'P3'}[m.pri]||m.pri;
+    return`<div onclick="selectSubFromSearch('${m.catId}','${esc(m.sub)}','${esc(m.catLabel)}','${m.pri}')" style="padding:10px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;${i===0?'background:rgba(124,106,240,.10);':''}" onmouseover="this.style.background='var(--c1)'" onmouseout="this.style.background='${i===0?'rgba(124,106,240,.10)':''}'">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:11px;font-weight:${i===0?'700':'600'};${i===0?'color:var(--ac2)':''}">${i===0?'⭐ ':''}${m.sub}</div><div style="font-size:9px;color:var(--t3);margin-top:1px">${m.catLabel}</div></div>
+        <span style="font-size:9px;font-weight:700;color:${priColor};flex-shrink:0;margin-left:8px">${priLabel}</span>
+      </div></div>`;
+  }).join('')+`<div onclick="nmBrowse()" style="padding:9px 12px;cursor:pointer;text-align:center;font-size:10px;color:var(--t3);font-weight:600">📂 None of these — Browse Categories</div>`;
+}
 let subSearchSelected={cat:'',sub:''};
 let autoSuggestPending=null;
 let autoSuggestTimer=null;
@@ -1631,13 +1651,8 @@ function onSubSearchAuto(){
       res.innerHTML=noMatchPanel();
       return;
     }
-    res.style.display='none';
-    autoSuggestPending=matches[0];
-    const priColor={critical:'var(--er)',high:'var(--or)',medium:'var(--wr)',low:'var(--ok)'}[matches[0].pri]||'var(--t3)';
-    const priLabel={critical:'🔴 P0 Critical',high:'🟠 P1 High',medium:'🟡 P2 Medium',low:'🟢 P3 Low'}[matches[0].pri]||matches[0].pri;
-    document.getElementById('suggestName').textContent=matches[0].sub;
-    document.getElementById('suggestMeta').innerHTML=matches[0].catLabel+' &nbsp;·&nbsp; <span style="color:'+priColor+';font-weight:700">'+priLabel+'</span>';
-    bar.style.display='block';
+    bar.style.display='none';
+    renderSuggestList(matches);
   },400);
 }
 
@@ -1780,13 +1795,8 @@ function voiceSearch(){
       document.getElementById('autoSuggestBar').style.display='none';
       nf('Heard','"'+txt+'"','warn');
     } else {
-      autoSuggestPending=matches[0];
-      const priColor={critical:'var(--er)',high:'var(--or)',medium:'var(--wr)',low:'var(--ok)'}[matches[0].pri]||'var(--t3)';
-      const priLabel={critical:'🔴 P0 Critical',high:'🟠 P1 High',medium:'🟡 P2 Medium',low:'🟢 P3 Low'}[matches[0].pri]||matches[0].pri;
-      document.getElementById('suggestName').textContent=matches[0].sub;
-      document.getElementById('suggestMeta').innerHTML=matches[0].catLabel+' &nbsp;·&nbsp; <span style="color:'+priColor+';font-weight:700">'+priLabel+'</span>';
-      document.getElementById('autoSuggestBar').style.display='block';
-      document.getElementById('subSearchResults').style.display='none';
+      document.getElementById('autoSuggestBar').style.display='none';
+      renderSuggestList(matches);
       nf('Heard','"'+txt+'"','ok');
     }
   };
@@ -2279,6 +2289,7 @@ function fillBootDropdowns(){
 
 toggleLoginMode();
 renderTagChips();
+setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
 let usersLoaded=true;
 (async function bootData(){
@@ -2298,6 +2309,7 @@ let usersLoaded=true;
     await loadTicketChatFromSheet();
     ensureGeneralCategory();
     fillBootDropdowns();
+    updateDemoBanner();
     syncTCnt();
     if(document.getElementById('app').style.display!=='none'){R();}
   });
