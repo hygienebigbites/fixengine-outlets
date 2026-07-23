@@ -13,8 +13,8 @@
 html,body{height:100%;font-family:var(--f);background:var(--bg);color:var(--t);overflow:hidden;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;font-size:14px}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:9px}
 input,select,textarea,button{font-family:var(--f);font-size:16px}
-.login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:radial-gradient(ellipse at 50% 0%,rgba(124,106,240,.08),transparent 60%)}
-.login-card{width:100%;max-width:380px}.login .logo{display:flex;align-items:center;gap:12px;margin-bottom:20px;justify-content:center}.login .logo-i{width:42px;height:42px;background:linear-gradient(135deg,var(--ac),var(--inf));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}.login .logo h1{font-size:19px;font-weight:700}.login .logo span{font-size:9px;color:var(--t2);display:block}
+.login{height:100dvh;display:flex;align-items:flex-start;justify-content:center;padding:20px;padding-bottom:calc(60px + var(--sb));overflow-y:auto;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 0%,rgba(124,106,240,.08),transparent 60%)}
+.login-card{width:100%;max-width:380px;margin-bottom:30px}.login .logo{display:flex;align-items:center;gap:12px;margin-bottom:20px;justify-content:center}.login .logo-i{width:42px;height:42px;background:linear-gradient(135deg,var(--ac),var(--inf));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}.login .logo h1{font-size:19px;font-weight:700}.login .logo span{font-size:9px;color:var(--t2);display:block}
 .login-card h2{font-size:15px;text-align:center;margin-bottom:12px}
 .lr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px}
 .lr-c{background:var(--c1);border:2px solid var(--bdr);border-radius:var(--r);padding:9px 4px;text-align:center;cursor:pointer}.lr-c:active,.lr-c.on{border-color:var(--ac);background:rgba(124,106,240,.08)}.lr-c .i{font-size:17px}.lr-c .n{font-size:9px;font-weight:600;margin-top:2px}
@@ -72,7 +72,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 .tcard{background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);padding:10px;margin-bottom:8px;cursor:pointer}.tcard:active{border-color:var(--ac)}
 .prog{display:flex;gap:2px;margin-top:6px}.prog .dot{flex:1;height:3px;border-radius:2px;background:var(--bdr)}.prog .dot.dn{background:var(--ok)}.prog .dot.nw{background:var(--ac)}
 .po{display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 6px;border:2px dashed var(--bdr);border-radius:var(--r);cursor:pointer;background:var(--c2)}.po:active{border-color:var(--ac);background:rgba(124,106,240,.06)}.po .po-i{font-size:24px}.po .po-l{font-size:11px;font-weight:600;color:var(--t)}.po .po-s{font-size:8px;color:var(--t3);text-align:center}
-.job-card{background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:10px}.job-card .jc-head{padding:12px;border-bottom:1px solid var(--bdr)}.job-card .jc-status{padding:10px 12px;background:var(--c2)}.job-card .jc-action{padding:12px}
+.job-card{background:linear-gradient(180deg,var(--c2),var(--c1));border:1px solid var(--bdr);border-left:3px solid var(--ac);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:0 4px 14px rgba(0,0,0,.35)}.job-card .jc-head{padding:12px;border-bottom:1px solid var(--bdr)}.job-card .jc-status{padding:10px 12px;background:var(--c2)}.job-card .jc-action{padding:12px}
 .job-card .jc-bar{display:flex;border-top:1px solid var(--bdr);flex-wrap:wrap}.job-card .jc-bar-btn{flex:1;min-width:60px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 4px;font-size:10px;font-weight:500;color:var(--t2);background:none;border:none;cursor:pointer;border-right:1px solid var(--bdr);text-decoration:none}.job-card .jc-bar-btn:last-child{border-right:none}.job-card .jc-bar-btn:active{background:var(--c2);color:var(--t)}
 .fab{position:fixed;bottom:calc(56px + var(--sb));right:12px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 14px var(--acg);z-index:90;display:flex;align-items:center;justify-content:center}
 .mn{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--c1);border-top:1px solid var(--bdr);z-index:100;padding:3px 0 var(--sb)}.mn .mni{display:flex;justify-content:space-around;overflow-x:auto}.mn .mi{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;font-size:8px;color:var(--t3);cursor:pointer;border:none;background:none;flex:1;min-width:55px}.mn .mi.on{color:var(--ac2)}.mn .mi .ic{font-size:16px}
@@ -100,29 +100,12 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <body>
 <div id="loginP" class="login"><div class="login-card">
   <div class="logo"><div class="logo-i">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M v7</span></div></div>
-  <h2>Login</h2>
-  <div class="fg" id="lPhWrap"><label>Mobile</label><input class="fc" id="lPh" type="tel" placeholder="9876543210" maxlength="10"></div>
-  <div class="fg" id="lOutWrap" style="display:none"><label>Your Outlet *</label><select class="fc" id="lOut"><option value="">Select your outlet</option></select></div>
-  <div class="fg" id="lAttWrap" style="display:none"><label>Select Attender</label><select class="fc" id="lAtt"></select></div>
-  <div class="fg" id="lPwWrap"><label>Password</label><input class="fc" id="lPw" type="password" placeholder="1234"></div>
-  <div class="fg" style="display:none"><div class="lr-grid">
-    <div class="lr-c on" data-r="requester"><div class="i">📋</div><div class="n">Requester</div></div>
-  </div></div>
-  <button class="btn btn-p btn-full" id="loginBtn" style="padding:11px;font-size:14px" onclick="doLogin()">Login →</button>
-  <div id="loginErr" style="font-size:9px;color:var(--er);text-align:center;margin-top:8px"></div>
-  <p style="font-size:9px;color:var(--t3);text-align:center;margin-top:8px">Pwd: 1234 · Numbers: 9876543210-16</p>
-</div></div>
-<div id="app" class="app" style="display:none">
-<div class="sidebar-ov" id="sov" onclick="closeSB()"></div>
-<aside class="sidebar" id="sb"><div class="sb-logo"><div class="li">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M</span></div></div><nav class="sb-nav" id="sbN"></nav><div class="sb-u"><div class="av" id="uAv">U</div><div style="flex:1"><div class="un" id="uN">User</div><div class="ur" id="uR">Role</div></div><button class="btn-s" id="refreshBtn" onclick="doRefresh()" title="Refresh all data" style="font-size:12px;padding:3px 6px;margin-right:6px">🔄</button><button class="btn-s btn-o" onclick="logout()" style="font-size:9px;padding:3px 6px">↩</button></div></aside>
-<div class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:8px"><button class="mt-btn" onclick="openSB()">☰</button><h2 id="pgT">Home</h2></div></header>
-<div class="cnt-area" id="cA">
-
-<div class="page on" id="pg-dashboard"><div class="sts fin" id="dSt"></div><div class="card fin"><div class="card-h"><h3>Recent Tickets</h3><button class="btn btn-s btn-o" onclick="go('tickets')">View All</button></div><div id="dCards"></div></div></div>
-
-<div class="page" id="pg-raise-ticket"><div class="card fin" style="max-width:540px">
-  <div class="card-h"><h3>🎫 New Ticket</h3></div>
-  <div class="fg"><label>Outlet *</label><select class="fc" id="tO"><option value="">Select</option></select></div>
+  <h2>🎫 Raise a Ticket</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="9876543210" maxlength="10"></div>
+    <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Your name" maxlength="40" autocomplete="off"></div>
+  </div>
+  <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Type to search outlet..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div></div>
   <div class="fg"><label>🔍 Describe the problem *</label>
     <div style="position:relative">
       <input class="fc" id="subSearch" placeholder="e.g. AC not working, drain blocked, gas smell..." oninput="onSubSearchAuto()" autocomplete="off" style="padding-right:70px">
@@ -156,11 +139,28 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div id="catSubDropdowns" style="display:none" class="fr"><div class="fg"><label>Category</label><select class="fc" id="tCv" onchange="onCatVisible()"><option value="">Select</option></select></div><div class="fg"><label>Sub-Category</label><select class="fc" id="tSv" onchange="onSubVisible()"><option value="">—</option></select></div></div>
   <div class="fg"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
   <div class="fg" id="probeW" style="display:none"><label>📋 Diagnostic Checklist</label><div id="probeL"></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    <div class="fg"><label>🔩 Item</label><select class="fc" id="itemSel" onchange="selItem=this.value"><option value="">—</option></select></div>
+    <div class="fg"><label>⚡ What happened *</label><select class="fc" id="whSel" onchange="selWH=this.value;updateAutoDesc()"><option value="">Select…</option></select></div>
+    <div class="fg"><label>🛠 Action to take</label><select class="fc" id="actionSel" onchange="selAction=this.value"><option value="">—</option></select></div>
+    <div class="fg"><label>📍 Where</label><select class="fc" id="whereSel" onchange="selWhere=this.value;updateAutoDesc()"><option value="">—</option></select></div>
+  </div>
   <div class="fg"><label>Description *</label><div style="position:relative"><textarea class="fc" id="tD" rows="2" placeholder="Detailed remarks..." style="padding-right:38px"></textarea><button onclick="voiceInput('tD')" type="button" id="vBtnTD" style="position:absolute;right:6px;top:6px;background:var(--c1);border:1px solid var(--bdr);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--t2);font-size:13px">🎤</button></div></div>
 
-  <div class="fg"><label>📷 Photos</label><div class="po" onclick="document.getElementById('tImg').click()"><div class="po-i">📷</div><div class="po-l" id="tImgL">Tap to upload</div><input type="file" accept="image/*" capture="environment" multiple style="display:none" id="tImg" onchange="document.getElementById('tImgL').textContent='✅ '+this.files.length+' file(s)'"></div></div>
+  <div class="fg"><label>📷 Photos</label><div class="po" onclick="document.getElementById('tImg').click()"><div class="po-i">📷</div><div class="po-l" id="tImgL">Tap to upload</div><input type="file" accept="image/*" multiple style="display:none" id="tImg" onchange="addPhotos(this)"></div>
+  <div id="tImgList" style="margin-top:6px"></div>
+  <button type="button" class="btn btn-s btn-o btn-full" id="addPhotoBtn" style="display:none;margin-top:2px" onclick="document.getElementById('tImg').click()">📷 + Add Photo</button></div>
   <button class="btn-big green" id="raiseBtn" onclick="raiseTicket()">🎫 Raise Ticket</button>
+  <button class="btn btn-s btn-o btn-full" id="raiseBack" style="display:none;margin-top:8px" onclick="hideRaiseForm()">← Back to My Tickets</button>
 </div></div>
+<div id="app" class="app" style="display:none">
+<div class="sidebar-ov" id="sov" onclick="closeSB()"></div>
+<aside class="sidebar" id="sb"><div class="sb-logo"><div class="li">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M</span></div></div><nav class="sb-nav" id="sbN"></nav><div class="sb-u"></div></aside>
+<div class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:8px"><button class="mt-btn" onclick="openSB()">☰</button><h2 id="pgT">Home</h2></div><div style="display:flex;align-items:center;gap:8px"><button class="tb" id="refreshBtn" onclick="doRefresh()" title="Refresh all data">🔄</button><div style="display:flex;align-items:center;gap:6px"><div class="av" id="uAv" style="width:26px;height:26px;font-size:9px">U</div><div style="line-height:1.15;max-width:110px;overflow:hidden"><div id="uN" style="font-size:10px;font-weight:600;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">User</div><div id="uR" style="font-size:8px;color:var(--t3);white-space:nowrap;text-overflow:ellipsis;overflow:hidden">Role</div></div></div><button class="tb" onclick="logout()" title="Switch user">↩</button></div></header>
+<div class="cnt-area" id="cA">
+
+<div class="page on" id="pg-dashboard"><div class="sts fin" id="dSt"></div><div class="card fin"><div class="card-h"><h3>Recent Tickets</h3><button class="btn btn-s btn-o" onclick="go('tickets')">View All</button></div><div id="dCards"></div></div></div>
+
 
 <div class="page" id="pg-tickets"><div class="filters fin"><select class="fc" style="width:auto" id="fSt"><option value="">All Status</option><option value="pending">⏳ Pending</option><option value="open">🟢 Open</option><option value="closed">⚫ Closed</option><option value="reopen">🔄 Re-opened</option><option value="breach">⚠ Breached</option></select><select class="fc" style="width:auto" id="fPr"><option value="">All Priority</option><option value="critical">🔴 P0 Critical</option><option value="high">🟠 P1 High</option><option value="medium">🟡 P2 Medium</option><option value="low">🟢 P3 Low</option></select><select class="fc" style="width:auto" id="fCt"><option value="">All Categories</option></select><div style="position:relative;display:inline-block">
   <button type="button" id="fOtBtn" onclick="toggleOutletPanel()" style="background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);padding:5px 10px;color:var(--t);font-size:10px;cursor:pointer;white-space:nowrap">🏪 All Outlets ▾</button>
@@ -174,119 +174,28 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 </div><button class="btn btn-s btn-p" onclick="rList()">Go</button><button class="btn btn-s btn-o" onclick="resetF()">↻</button></div><div id="tCards" class="fin"></div></div>
 
 <div class="page" id="pg-detail"></div>
-<div class="page" id="pg-att-dash"><div class="sts fin" id="aSt"></div>
-<div class="filters fin"><select class="fc" style="width:auto" id="aFPr" onchange="rAtt()"><option value="">All Priority</option><option value="critical">🔴 P0 Critical</option><option value="high">🟠 P1 High</option><option value="medium">🟡 P2 Medium</option><option value="low">🟢 P3 Low</option></select><select class="fc" style="width:auto" id="aFSt" onchange="rAtt()"><option value="">All Status</option><option value="assigned">Assigned</option><option value="accepted">Accepted</option><option value="in-progress">In Progress</option><option value="ready-closure">Ready to Close</option></select></div>
-<div id="attJobs" class="fin"></div></div>
-<div class="page" id="pg-punch"><div class="card fin" id="punchCard" style="max-width:480px;margin:0 auto"></div></div>
-<div class="page" id="pg-att-history"><div class="sts fin" id="ahSt"></div><div id="ahList" class="fin"></div></div>
-<div class="page" id="pg-approvals"><div class="sts fin"><div class="st o"><div class="sv" id="apP">0</div><div class="sl">Pending</div></div><div class="st g"><div class="sv" id="apD">0</div><div class="sl">Approved</div></div></div><div class="card fin"><div class="card-h"><h3>Cost Approvals</h3></div><div id="apList"></div></div></div>
-<div class="page" id="pg-finance"><div class="sts fin"><div class="st o"><div class="sv" id="fnP">0</div><div class="sl">To Pay</div></div><div class="st g"><div class="sv" id="fnD">0</div><div class="sl">Done</div></div></div><div class="filters fin"><select class="fc" style="width:auto" id="fnFilter" onchange="rFin()"><option value="pending">⏳ Pending</option><option value="all">All</option><option value="paid">✓ Paid</option><option value="rejected">✕ Rejected</option></select></div><div class="card fin"><div class="card-h"><h3>Payments by Order ID</h3></div><div id="fnList"></div></div></div>
-
-<div class="page" id="pg-purchaser"><div class="sts fin"><div class="st o"><div class="sv" id="puP">0</div><div class="sl">Tasks</div></div><div class="st g"><div class="sv" id="puD">0</div><div class="sl">Done</div></div></div><div class="card fin"><div class="card-h"><h3>🛍️ Purchase Tasks</h3></div><div id="puList"></div></div></div>
-<div class="page" id="pg-vendors"><div class="card fin"><div class="card-h"><h3>🤝 External Vendor Requests</h3></div><div id="venList"></div></div></div>
-<div class="page" id="pg-mgr-actions"><div class="sts fin" id="mAtSt"></div><div class="card fin"><div class="card-h"><h3>👤 Manager Actions</h3></div><div class="tabs"><div class="tab on" onclick="mgTab('reassign',this)">Re-assign</div><div class="tab" onclick="mgTab('highpri',this)">High Priority</div><div class="tab" onclick="mgTab('weekoff',this)">Weekly Off</div><div class="tab" onclick="mgTab('feedback',this)">Feedback</div></div>
-  <div id="mg-reassign"><div id="mgReassignL"></div></div>
-  <div id="mg-highpri" style="display:none"><div id="mgHighL"></div></div>
-  <div id="mg-weekoff" style="display:none"><div id="mgWeekL"></div></div>
-  <div id="mg-feedback" style="display:none"><div id="mgFbL"></div></div>
-</div></div>
-<div class="page" id="pg-config"><div class="card fin"><div class="card-h"><h3>⚙ Admin Configuration</h3></div><div class="tabs"><div class="tab on" onclick="cfTab('cat',this)">Categories</div><div class="tab" onclick="cfTab('sla',this)">SLA</div><div class="tab" onclick="cfTab('att',this)">Attenders</div><div class="tab" onclick="cfTab('out',this)">Outlets</div><div class="tab" onclick="cfTab('skill',this)">Skill Map</div><div class="tab" onclick="cfTab('users',this)">Users</div><div class="tab" onclick="cfTab('gsheet',this)">Google Sheets</div></div>
-  <div id="cf-cat"><div style="margin-bottom:8px"><button class="btn btn-s btn-p" onclick="openM('catM')">+ Add Category</button></div><div id="cfCatL"></div></div>
-  <div id="cf-sla" style="display:none"><div id="cfSlaL"></div></div>
-  <div id="cf-att" style="display:none"><div style="margin-bottom:8px"><button class="btn btn-s btn-p" onclick="openM('attM')">+ Add Attender</button></div><div id="cfAttL"></div></div>
-  <div id="cf-out" style="display:none"><div style="margin-bottom:8px"><button class="btn btn-s btn-p" onclick="openM('outM')">+ Add Outlet</button></div><div id="cfOutL"></div></div>
-  <div id="cf-skill" style="display:none"><div id="cfSkillL"></div></div>
-  <div id="cf-users" style="display:none"><div id="cfUsersL"></div></div>
-  <div id="cf-gsheet" style="display:none"><div id="cfGsL"></div></div>
-</div></div>
-<div class="page" id="pg-reports"><div class="card fin"><div class="card-h"><h3>📈 Reports</h3></div><div id="rptB"></div></div></div>
-
 </div></div>
 <button class="fab" id="fab" onclick="go('raise-ticket')">+</button>
 <nav class="mn" id="mobN"><div class="mni" id="mnI"></div></nav>
 </div>
 
 <!-- MODALS -->
-<div class="modal-bg" id="lpM"><div class="modal"><div class="modal-hd"><h3>🛒 Add Purchase</h3><button class="modal-x" onclick="closeM('lpM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Item *</label><input class="fc" id="lpI" placeholder="R22 Gas"></div>
-  <div class="fr"><div class="fg"><label>Qty *</label><input class="fc" id="lpQ" type="number" value="1" step="0.01"></div><div class="fg"><label>Unit *</label><select class="fc" id="lpU"><option>pcs</option><option>kg</option><option>g</option><option>ltr</option><option>ml</option><option>mtr</option><option>ft</option><option>dozen</option><option>pkt</option><option>box</option><option>set</option><option>roll</option><option>bag</option><option>bottle</option><option>can</option></select></div></div>
-  <div class="fr"><div class="fg"><label>₹/Unit *</label><input class="fc" id="lpA" type="number"></div><div class="fg"><label>Total</label><div style="padding:9px 11px;background:var(--c2);border-radius:var(--rs);font-family:var(--m);font-weight:700" id="lpT">₹0</div></div></div>
-  <div class="fg"><label>🏪 Shop *</label><input class="fc" id="lpSh" placeholder="Vendor name"></div>
-  <div class="fg"><label>📱 QR Code</label><div class="po" onclick="document.getElementById('lpQI').click()"><div class="po-i">📱</div><div class="po-l" id="lpQL">Tap to upload</div><input type="file" accept="image/*" capture="environment" style="display:none" id="lpQI" onchange="document.getElementById('lpQL').textContent='✅ Uploaded';document.getElementById('lpQL').style.color='var(--ok)'"></div></div>
-  <div class="fg"><label>📷 Bill</label><div class="po" onclick="document.getElementById('lpBI').click()"><div class="po-i">📷</div><div class="po-l" id="lpBL">Tap to upload</div><input type="file" accept="image/*" capture="environment" style="display:none" id="lpBI" onchange="document.getElementById('lpBL').textContent='✅ Uploaded';document.getElementById('lpBL').style.color='var(--ok)'"></div></div>
-  <div class="fg"><label>📝 Remarks</label><div style="position:relative"><textarea class="fc" id="lpRm" rows="2" style="padding-right:36px"></textarea><button onclick="voiceInput('lpRm')" type="button" id="vBtn" style="position:absolute;right:6px;top:6px;background:var(--c1);border:1px solid var(--bdr);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--t2);font-size:13px">🎤</button></div></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('lpM')">Cancel</button><button class="btn btn-p" id="addLPBtn" onclick="addLP()">Add</button></div></div></div>
 <div class="modal-bg" id="reopenM"><div class="modal"><div class="modal-hd"><h3>🔄 Re-open</h3><button class="modal-x" onclick="closeM('reopenM')">✕</button></div><div class="modal-bd"><div class="fg"><label>Reason *</label><select class="fc" id="reR"><option value="">Select</option><option>Issue not resolved</option><option>Issue recurred within 24hrs</option><option>Wrong diagnosis</option><option>Additional issue found</option><option>Parts quality issue</option><option>Work incomplete</option></select></div><div class="fg"><label>Details</label><textarea class="fc" id="reN" rows="2"></textarea></div></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('reopenM')">Cancel</button><button class="btn btn-er" onclick="doReopen()">Re-open</button></div></div></div>
-
-<div class="modal-bg" id="issueM"><div class="modal"><div class="modal-hd"><h3>🔍 Mark Issues Resolution</h3><button class="modal-x" onclick="closeM('issueM')">✕</button></div><div class="modal-bd" id="issueMBody"></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('issueM')">Cancel</button><button class="btn btn-ok" onclick="confirmIssues()">Confirm & Request OTP</button></div></div></div>
 
 <div class="modal-bg" id="purchM"><div class="modal"><div class="modal-hd"><h3>🛒 Purchases</h3><button class="modal-x" onclick="closeM('purchM')">✕</button></div><div class="modal-bd" id="purchMBody"></div></div></div>
 
 <div class="modal-bg" id="docM"><div class="modal"><div class="modal-hd"><h3>📎 Documents</h3><button class="modal-x" onclick="closeM('docM')">✕</button></div><div class="modal-bd" id="docMBody"></div></div></div>
 
-<div class="modal-bg" id="slaM"><div class="modal"><div class="modal-hd"><h3>⏱ Extend SLA</h3><button class="modal-x" onclick="closeM('slaM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Reason *</label><select class="fc" id="slaR"><option value="">Select</option><option>Parts not available</option><option>Vendor delay</option><option>Site access blocked</option><option>Additional issue</option><option>Specialist required</option></select></div>
-  <div class="fg"><label>Add Hours *</label><input class="fc" id="slaH" type="number" value="4"></div>
-  <div class="fg"><label>Notes</label><textarea class="fc" id="slaN" rows="2"></textarea></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('slaM')">Cancel</button><button class="btn btn-wr" onclick="doExtendSLA()">Extend</button></div></div></div>
-
-<div class="modal-bg" id="puM"><div class="modal"><div class="modal-hd"><h3>🛍️ Assign Internal Purchaser</h3><button class="modal-x" onclick="closeM('puM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Item Required *</label><input class="fc" id="puI"></div>
-  <div class="fr"><div class="fg"><label>Qty</label><input class="fc" id="puQ" type="number" value="1"></div><div class="fg"><label>Est. ₹</label><input class="fc" id="puA" type="number"></div></div>
-  <div class="fg"><label>Urgency</label><select class="fc" id="puU"><option>Normal</option><option>Urgent</option><option>Critical</option></select></div>
-  <div class="fg"><label>Specifications</label><textarea class="fc" id="puS" rows="2"></textarea></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('puM')">Cancel</button><button class="btn btn-p" onclick="assignPurchaser()">Assign</button></div></div></div>
-
-<div class="modal-bg" id="venM"><div class="modal"><div class="modal-hd"><h3>🤝 Request External Vendor</h3><button class="modal-x" onclick="closeM('venM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Work Description *</label><textarea class="fc" id="venD" rows="3" placeholder="Why external vendor needed..."></textarea></div>
-  <div class="fg"><label>Vendor Type *</label><select class="fc" id="venT"><option>Specialist Electrician</option><option>HVAC Engineer</option><option>Plumbing Specialist</option><option>Equipment Repair</option><option>Civil Contractor</option><option>Pest Control Service</option><option>Other</option></select></div>
-  <div class="fg"><label>Est. Cost ₹</label><input class="fc" id="venA" type="number"></div>
-  <div class="fg"><label>Urgency</label><select class="fc" id="venU"><option>Normal</option><option>Urgent</option><option>Critical</option></select></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('venM')">Cancel</button><button class="btn btn-p" onclick="requestVendor()">Request</button></div></div></div>
-
-<div class="modal-bg" id="venAssignM"><div class="modal"><div class="modal-hd"><h3>Assign Vendor</h3><button class="modal-x" onclick="closeM('venAssignM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Vendor Name *</label><input class="fc" id="vaN"></div>
-  <div class="fg"><label>Vendor Phone</label><input class="fc" id="vaP" type="tel"></div>
-  <div class="fg"><label>Notes</label><textarea class="fc" id="vaNt" rows="2"></textarea></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('venAssignM')">Cancel</button><button class="btn btn-ok" onclick="assignVendor()">Assign</button></div></div></div>
-
+<div class="modal-bg" id="fbM"><div class="modal"><div class="modal-hd"><h3>💬 Quick Feedback</h3><button class="modal-x" onclick="closeM('fbM')">✕</button></div><div class="modal-bd" id="fbBody"></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('fbM')">Skip</button><button class="btn btn-p" onclick="submitFeedback()">Submit</button></div></div></div>
 <div class="modal-bg" id="confirmM"><div class="modal"><div class="modal-hd"><h3>✅ Confirm Resolution</h3><button class="modal-x" onclick="closeM('confirmM')">✕</button></div><div class="modal-bd">
   <div style="text-align:center;padding:10px"><div style="font-size:36px;margin-bottom:8px">🔧</div><p style="font-size:13px;font-weight:600">Is your issue fully resolved?</p><p style="font-size:10px;color:var(--t2);margin-top:6px">Confirming will let you share the OTP to close the ticket</p></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn-big green" onclick="confirmResolved()">✅ Yes, Resolved</button><button class="btn-big red" onclick="confirmNotResolved()">❌ Not Resolved</button></div>
 </div></div></div>
 
-<div class="modal-bg" id="catM"><div class="modal"><div class="modal-hd"><h3>+ Add Category</h3><button class="modal-x" onclick="closeM('catM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Category Name *</label><input class="fc" id="cnNm" placeholder="e.g., Electrical"></div>
-  <div class="fg"><label>Sub-categories (comma separated) *</label><textarea class="fc" id="cnSb" rows="3" placeholder="MCB Tripping, Wiring Issue, Socket/Switch..."></textarea></div>
-  <div class="fr"><div class="fg"><label>Default Priority</label><select class="fc" id="cnPr"><option value="medium">Medium</option><option value="critical">Critical</option><option value="high">High</option><option value="low">Low</option></select></div><div class="fg"><label>SLA Hours</label><input class="fc" id="cnSl" type="number" value="12"></div></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('catM')">Cancel</button><button class="btn btn-p" onclick="addCategory()">Add</button></div></div></div>
-
-<div class="modal-bg" id="attM"><div class="modal"><div class="modal-hd"><h3>+ Add Attender</h3><button class="modal-x" onclick="closeM('attM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Name *</label><input class="fc" id="anNm"></div>
-  <div class="fr"><div class="fg"><label>Phone</label><input class="fc" id="anPh" type="tel"></div><div class="fg"><label>Max Load</label><input class="fc" id="anMx" type="number" value="5"></div></div>
-  <div class="fg"><label>Skills (comma sep) *</label><input class="fc" id="anSk" placeholder="HVAC, Electrical"></div>
-  <div class="fg"><label>Outlets (comma sep) *</label><textarea class="fc" id="anOu" rows="2" placeholder="HSR01.BLR02, KOR01.BLR12"></textarea></div>
-  <div class="fg"><label>Weekly Off</label><select class="fc" id="anWk"><option>Sunday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('attM')">Cancel</button><button class="btn btn-p" onclick="addAttender()">Add</button></div></div></div>
-
-<div class="modal-bg" id="outM"><div class="modal"><div class="modal-hd"><h3>+ Add Outlet</h3><button class="modal-x" onclick="closeM('outM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Outlet Code *</label><input class="fc" id="onCd" placeholder="HSR01.BLR02"></div>
-  <div class="fg"><label>Region</label><select class="fc" id="onRg"><option>Bangalore</option><option>Chennai</option><option>Corporate</option></select></div>
-  <div class="fg"><label>Phone</label><input class="fc" id="onPh" type="tel"></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('outM')">Cancel</button><button class="btn btn-p" onclick="addOutlet()">Add</button></div></div></div>
-
-<div class="modal-bg" id="reassignM"><div class="modal"><div class="modal-hd"><h3>↪ Re-assign Ticket</h3><button class="modal-x" onclick="closeM('reassignM')">✕</button></div><div class="modal-bd">
-  <div class="fg"><label>Re-assign to *</label><select class="fc" id="raA"></select></div>
-  <div class="fg"><label>Reason *</label><select class="fc" id="raR"><option value="">Select</option><option>Original attender unavailable</option><option>Specialist required</option><option>Workload rebalancing</option><option>Weekly off</option><option>Other</option></select></div>
-  <div class="fg"><label>Notes</label><textarea class="fc" id="raN" rows="2"></textarea></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('reassignM')">Cancel</button><button class="btn btn-p" onclick="doReassign()">Re-assign</button></div></div></div>
-<div class="modal-bg" id="payOrderM"><div class="modal"><div class="modal-hd"><h3>💳 Pay Order</h3><button class="modal-x" onclick="closeM('payOrderM')">✕</button></div><div class="modal-bd" id="payOrderBody">
-  <div class="fg"><label>📷 Payment Screenshot</label><div class="po" onclick="document.getElementById('poProof').click()"><div class="po-i">📷</div><div class="po-l" id="poProofL">Tap to upload proof</div><input type="file" accept="image/*" capture="environment" style="display:none" id="poProof" onchange="document.getElementById('poProofL').textContent='✅ Proof uploaded';document.getElementById('poProofL').style.color='var(--ok)'"></div></div>
-  <div class="fg"><label>📝 Remarks</label><textarea class="fc" id="poRemarks" rows="2" placeholder="UTR no., payment mode, etc."></textarea></div>
-</div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('payOrderM')">Cancel</button><button class="btn btn-ok" onclick="confirmPayOrder()">💳 Confirm Payment</button></div></div></div>
 <script>
 let OL=['ANR01.BLR22','BLD01.BLR25','BOM01.BLR04','BSK01.BLR19','BTM01.BLR03','CK-Corp Office','CMP01.CHN10','CRN01.BLR17','HSR01.BLR02','IND01.BLR01','KOR01.BLR12','MGP01.CHN01','SKM01.CHN03','VDP01.CHN02','WFD01.BLR06','WFD02.BLR13','YLK01.BLR15'];
 let OUTPHONES={'HSR01.BLR02':'9988776601','KOR01.BLR12':'9988776602','WFD01.BLR06':'9988776603','MGP01.CHN01':'9988776604'};
+let OUTCONTACTS={};
 let CATS={electrical:{label:'⚡ Electrical',subs:['MCB Tripping','Wiring Issue','Socket/Switch','Light Fixture','Exhaust Fan','Stabilizer','Earthing'],pri:'medium',sla:12},plumbing:{label:'🔧 Plumbing',subs:['Water Leakage','Drain Blockage','Tap/Faucet','Water Tank/Motor','Pipeline Burst'],pri:'medium',sla:12},equipment:{label:'🍳 Equipment',subs:['Chimney/Hood','Gas Burner/Stove','Refrigerator','Deep Freezer','Mixer/Grinder','Oven/OTG','Deep Fryer','Tandoor','Induction Cooktop','Dishwasher','Ice Machine','Coffee Machine','Water Boiler','Trolley/Rack','Weighing Scale'],pri:'medium',sla:12},hvac:{label:'❄️ HVAC',subs:['AC Not Cooling','AC Leaking','AC Service','Ventilation Fan'],pri:'high',sla:5},civil:{label:'🏗️ Civil',subs:['Wall Crack','Tile Repair','Door/Window','Painting','Waterproofing','Roof Leak'],pri:'low',sla:24},gas:{label:'🔥 Gas',subs:['Gas Leak Smell','Regulator Issue','Pipeline','Cylinder Change','Safety Valve'],pri:'critical',sla:2},pest:{label:'🐛 Pest',subs:['Cockroach','Rodent/Rat','Termite','Ant','General Fumigation'],pri:'low',sla:24}};
 const PROBES={'AC Not Cooling':['Outdoor unit running?','Error display?','Unusual noise?','Water leaking?','Filter clogged?','Refrigerant leak suspected?'],'Gas Leak Smell':['Strong/faint smell?','Near cylinder/pipe?','Burners off?','Area evacuated?'],'Drain Blockage':['Complete/slow?','Bad odor?','Multiple drains?','Grease trap cleaned?'],'Refrigerator':['Not cooling at all?','Strange noise?','Door seal ok?','Ice buildup?','Compressor running?'],'Water Leakage':['Continuous?','From ceiling/wall/pipe?','Pressure normal?'],'MCB Tripping':['Which MCB?','Trips immediately?','New equipment added?','Earth fault?'],'Chimney/Hood':['Not pulling smoke?','Vibration?','Filter cleaned?','Motor hot?'],'Gas Burner/Stove':['Flame color?','Ignition working?','Gas smell?'],'Tap/Faucet':['Not closing?','Reduced flow?','Dripping?'],'Wall Crack':['Length?','Width?','Water seepage?','Structural concern?'],'Cockroach':['Kitchen/storage?','Near drains?','Food contamination?']};
 // PHASE 2: rich per-subcategory metadata. Key = "category|subcategory".
@@ -311,9 +220,9 @@ const PRILABELS={critical:'🔴 Critical',high:'🟠 High',medium:'🟡 Medium',
 const PRICOLORS={critical:'c',high:'h',medium:'m',low:'l'};
 
 let ATTS=[
-  {id:'ATT-012',name:'Raj Kumar',phone:'9876543211',ini:'RK',skills:['HVAC','Electrical'],outs:['HSR01.BLR02','KOR01.BLR12','BTM01.BLR03','IND01.BLR01'],rating:4.3,jobs:142,load:1,max:5,weekOff:'Sunday',active:true,password:'1234',feedback:[]},
-  {id:'ATT-015',name:'Suresh M',phone:'9876544115',ini:'SM',skills:['Plumbing','Gas'],outs:['KOR01.BLR12','WFD01.BLR06','WFD02.BLR13'],rating:4.6,jobs:145,load:2,max:5,weekOff:'Monday',active:true,password:'1234',feedback:[]},
-  {id:'ATT-018',name:'Anil K',phone:'9876544118',ini:'AK',skills:['Equipment','Civil'],outs:['MGP01.CHN01','SKM01.CHN03','VDP01.CHN02'],rating:3.8,jobs:98,load:0,max:5,weekOff:'Tuesday',active:true,password:'1234',feedback:[]}
+  {id:'ATT-012',name:'Raj Kumar',phone:'9876543211',ini:'RK',skills:['HVAC','Electrical'],outs:['HSR01.BLR02','KOR01.BLR12','BTM01.BLR03','IND01.BLR01'],rating:4.3,jobs:142,load:1,max:5,weekOff:'Sunday',active:true,feedback:[]},
+  {id:'ATT-015',name:'Suresh M',phone:'9876544115',ini:'SM',skills:['Plumbing','Gas'],outs:['KOR01.BLR12','WFD01.BLR06','WFD02.BLR13'],rating:4.6,jobs:145,load:2,max:5,weekOff:'Monday',active:true,feedback:[]},
+  {id:'ATT-018',name:'Anil K',phone:'9876544118',ini:'AK',skills:['Equipment','Civil'],outs:['MGP01.CHN01','SKM01.CHN03','VDP01.CHN02'],rating:3.8,jobs:98,load:0,max:5,weekOff:'Tuesday',active:true,feedback:[]}
 ];
 
 const SF=['raised','assigned','accepted','on-the-way','reached-outlet','job-started','in-progress','vendor-pending','ready-closure','requester-confirm','closed'];
@@ -357,49 +266,23 @@ async function apiUpdate(tab,keyCol,keyValue,changes){
   }catch(e){return false;}
 }
 // PHASE 6: Purchase Order helpers
-let poSeq=0;
-function newPoId(){poSeq++;return 'PO-'+Date.now()+'-'+poSeq}
-async function apiUpdatePOsByTicket(ticketId,changes){
-  try{
-    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'updatePOsByTicket',ticketId,changes})});
-    const json=await res.json();return !!(json&&json.ok);
-  }catch(e){return false;}
-}
-function writePO(t,c){
-  // Write or update a purchase row in Purchase_Orders
-  if(c.poId){
-    apiUpdate('Purchase_Orders','PO_ID',c.poId,{Pay_Status:c.payStatus,Remarks:c.remarks||''});
-  } else {
-    c.poId=newPoId();
-    apiAppend('Purchase_Orders',{
-      PO_ID:c.poId,Ticket_ID:t.id,Item_Name:c.item,
-      Quantity:c.qty,Unit:c.unit||'pcs',Rate:c.rate||c.amt,
-      Amount:c.amt,Shop_Name:c.shop||'',
-      QR_Uploaded:c.qrImg?'TRUE':'FALSE',
-      Bill_Uploaded:c.billImg?'TRUE':'FALSE',
-      Remarks:c.remarks||'',Pay_Status:c.payStatus,
-      Added_By:userName,Added_At:ts()
-    });
-  }
-}
-function writeApproval(t,itemCount,total){
-  apiAppend('Manager_Approvals',{
-    Approval_ID:'APR-'+Date.now(),Ticket_ID:t.id,
-    Approved_By:userName,Approval_Level:role,
-    Items_Approved:itemCount,Total_Amount:total,
-    Status:'approved',Approved_At:ts()
-  });
-}
-function writePayment(t,status,proof,remarks){
-  apiAppend('Finance_Payments',{
-    Payment_ID:'PAY-'+Date.now(),Ticket_ID:t.id,
-    Status:status,Amount_Paid:t.costs.filter(c=>c.payStatus==='done').reduce((s,c)=>s+c.amt,0),
-    Proof_Uploaded:proof?'TRUE':'FALSE',Proof_Link:'',
-    Remarks:remarks||'',Paid_By:userName,Paid_At:ts()
+// Save one chat message to the Ticket_Chat tab (fire-and-forget)
+let chatSeq=0;
+function writeChat(ticketId,msg,isOtp){
+  chatSeq++;
+  apiAppend('Ticket_Chat',{
+    Chat_ID:'CHT-'+Date.now()+'-'+chatSeq,
+    Ticket_ID:ticketId,
+    Sender_Name:userName,
+    Sender_Role:role,
+    Message:msg,
+    Is_OTP:isOtp?'TRUE':'FALSE',
+    Timestamp:ts()
   });
 }
 // PHASE 5B: write one history event to the Ticket_History tab (fire-and-forget)
 let histSeq=0;
+
 function writeHistory(ticketId,status,note,actionBy){
   histSeq++;
   const row={
@@ -416,24 +299,12 @@ function writeHistory(ticketId,status,note,actionBy){
 
 
 // At startup, load Users from the sheet and rebuild the USERS object (keyed by mobile).
-async function loadUsersFromSheet(){
-  const rows=await apiRead('Users');
-  if(!rows)return false;
-  const fresh={};
-  rows.forEach(u=>{
-    const mob=String(u.Mobile).trim();
-    if(!mob)return;
-    fresh[mob]={id:u.User_ID,role:u.Role_ID,name:u.Name,ini:u.Initials,password:String(u.Password),active:(u.Is_Active===true||String(u.Is_Active).toUpperCase()==='TRUE'),mobile:mob,attId:u.Attender_ID||''};
-  });
-  USERS=fresh;
-  return true;
-}
 
 // PHASE 4: load Outlets from the sheet and rebuild OL + OUTPHONES
 async function loadOutletsFromSheet(){
   const rows=await apiRead('Outlets');
   if(!rows)return false;
-  const codes=[];const phones={};
+  const codes=[];const phones={};const contacts={};
   rows.forEach(o=>{
     const code=String(o.Outlet_Code).trim();
     if(!code)return;
@@ -441,8 +312,9 @@ async function loadOutletsFromSheet(){
     if(!active)return;                       // skip disabled outlets
     codes.push(code);
     if(o.Phone)phones[code]=String(o.Phone).trim();
+    contacts[code]={shift:String(o.Shift_Manager_Phone||'').trim(),cluster:String(o.Cluster_Manager_Phone||'').trim(),ops:String(o.Ops_Head_Phone||'').trim()};
   });
-  if(codes.length){OL=codes;OUTPHONES=phones;}
+  if(codes.length){OL=codes;OUTPHONES=phones;OUTCONTACTS=contacts;}
   return true;
 }
 
@@ -585,7 +457,6 @@ async function loadAttendersFromSheet(){
       max:parseInt(a.Max_Load)||5,
       weekOff:a.Weekly_Off||'Sunday',
       active,
-      password:String(a.Password||'1234'),
       feedback:[]
     });
   });
@@ -617,6 +488,10 @@ function ticketToSheetRow(t){
     Is_Reopened:t.reopened?'TRUE':'FALSE',
     Confirm_Status:t.confirmStatus||'',
     Photo_URLs:(t.photoUrls||[]).join(','),
+    Item:t.item||'',
+    What_Happened:t.whatHappened||'',
+    Action:t.action||'',
+    Where:t.where||'',
     Created_At:ts(),
     Updated_At:ts()
   };
@@ -663,6 +538,10 @@ function sheetRowToTicket(r){
     confirmStatus:String(r.Confirm_Status||'').trim()||null,
     reopened:tf(r.Is_Reopened),
     photoUrls:String(r.Photo_URLs||'').trim().split(',').filter(Boolean),
+    item:String(r.Item||'').trim(),
+    whatHappened:String(r.What_Happened||'').trim(),
+    action:String(r.Action||'').trim(),
+    where:String(r.Where||'').trim(),
     payment:String(r.Payment_Proof_URL||'').trim()?{
       status:'paid',
       proofUrl:String(r.Payment_Proof_URL||'').trim(),
@@ -716,6 +595,26 @@ async function loadPurchaseOrdersFromSheet(){
   return true;
 }
 
+// Chat reassembly: load Ticket_Chat and attach to tickets
+async function loadTicketChatFromSheet(){
+  const rows=await apiRead('Ticket_Chat');
+  if(!rows)return false;
+  TKS.forEach(t=>t.chat=[]);
+  rows.forEach(r=>{
+    const tid=String(r.Ticket_ID||'').trim();
+    if(!tid)return;
+    const t=TKS.find(x=>x.id===tid);
+    if(!t)return;
+    t.chat.push({
+      by:String(r.Sender_Name||'').trim(),
+      role:String(r.Sender_Role||'').trim(),
+      msg:String(r.Message||'').trim(),
+      time:String(r.Timestamp||'').trim(),
+      isOtp:(r.Is_OTP===true||String(r.Is_OTP).toUpperCase()==='TRUE')
+    });
+  });
+  return true;
+}
 // History reassembly: load Ticket_History and attach to tickets
 async function loadTicketHistoryFromSheet(){
   const rows=await apiRead('Ticket_History');
@@ -748,7 +647,7 @@ async function loadTicketHistoryFromSheet(){
   return true;
 }
 
-let USERS={'9876543210':{id:'USR-001',role:'requester',name:'Priya Menon',ini:'PM',password:'1234',active:true,mobile:'9876543210'},'9876543211':{id:'USR-002',role:'attender',name:'Raj Kumar',ini:'RK',attId:'ATT-012',password:'1234',active:true,mobile:'9876543211'},'9876543212':{id:'USR-003',role:'manager',name:'Arjun Singh',ini:'AS',password:'1234',active:true,mobile:'9876543212'},'9876543213':{id:'USR-004',role:'rmhead',name:'Vikram Patel',ini:'VP',password:'1234',active:true,mobile:'9876543213'},'9876543214':{id:'USR-005',role:'finance',name:'Deepa Nair',ini:'DN',password:'1234',active:true,mobile:'9876543214'},'8971326915':{id:'USR-006',role:'admin',name:'Admin',ini:'SA',password:'1234',active:true,mobile:'9876543215'},'9876543216':{id:'USR-007',role:'purchaser',name:'Karthik R',ini:'KR',password:'1234',active:true,mobile:'9876543216'}};
+let USERS={};
 function ts(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})+' · '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
 
 let TKS=[
@@ -761,87 +660,83 @@ let TKS=[
 let role='',phone='',userName='',userIni='',attId='',userOutlet='',curTkt='',selRV='requester',tCnt=455,logOpen={};
 function syncTCnt(){
   TKS.forEach(t=>{
-    const n=parseInt((t.id||'').replace('RMT-0',''));
+    const m=(t.id||'').match(/-0?(\d+)$/);
+    const n=m?parseInt(m[1]):NaN;
     if(!isNaN(n)&&n>tCnt)tCnt=n;
   });
 }
 let GSHEET={connected:false,url:'',lastSync:null,categories:false,users:false,tickets:false};
 
-// PHASE 4: attendance records + per-session punch state
-let ATTENDANCE=[];
-let punchedIn=false, currentPunch=null;
 
 const NAV={
-  requester:[{id:'dashboard',ic:'📊',l:'Home'},{id:'raise-ticket',ic:'➕',l:'New'},{id:'tickets',ic:'🎫',l:'Tickets'}],
-  attender:[{id:'punch',ic:'📍',l:'Punch'},{id:'att-dash',ic:'🔧',l:'Jobs'},{id:'att-history',ic:'🗂',l:'History'},{id:'tickets',ic:'🎫',l:'All'}],
-  manager:[{id:'dashboard',ic:'📊',l:'Home'},{id:'tickets',ic:'🎫',l:'Tickets'},{id:'approvals',ic:'✅',l:'Approve'},{id:'vendors',ic:'🤝',l:'Vendors'},{id:'mgr-actions',ic:'👤',l:'Actions'},{id:'reports',ic:'📈',l:'Reports'}],
-  rmhead:[{id:'dashboard',ic:'📊',l:'Home'},{id:'tickets',ic:'🎫',l:'Tickets'},{id:'approvals',ic:'✅',l:'Approve'},{id:'vendors',ic:'🤝',l:'Vendors'},{id:'reports',ic:'📈',l:'Reports'}],
-  finance:[{id:'finance',ic:'💰',l:'Pay'},{id:'dashboard',ic:'📊',l:'Home'}],
-  purchaser:[{id:'purchaser',ic:'🛍️',l:'Tasks'},{id:'tickets',ic:'🎫',l:'Tickets'}],
-  admin:[{id:'dashboard',ic:'📊',l:'Home'},{id:'tickets',ic:'🎫',l:'Tickets'},{id:'config',ic:'⚙',l:'Config'},{id:'reports',ic:'📈',l:'Reports'}]
+  requester:[{id:'dashboard',ic:'📊',l:'Home'},{id:'raise-ticket',ic:'➕',l:'New'},{id:'tickets',ic:'🎫',l:'Tickets'}]
 };
 
-function selR(e){document.querySelectorAll('.lr-c').forEach(x=>x.classList.remove('on'));e.classList.add('on');selRV=e.dataset.r;toggleLoginMode()}
-function toggleLoginMode(){
-  const isAtt=selRV==='attender';
-  const isReq=selRV==='requester';
-  document.getElementById('lPhWrap').style.display=isAtt?'none':'block';
-  document.getElementById('lAttWrap').style.display=isAtt?'block':'none';
-  const outWrap=document.getElementById('lOutWrap');
-  if(outWrap)outWrap.style.display=isReq?'block':'none';
-  const pwWrap=document.getElementById('lPwWrap');
-  if(pwWrap)pwWrap.style.display=isReq?'none':'block';
+function toggleLoginMode(){}
 
-  if(isReq){
-    const sel=document.getElementById('lOut');
-    if(sel){sel.innerHTML='<option value="">Select your outlet</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');}
-  }
-  if(isAtt){const sel=document.getElementById('lAtt');sel.innerHTML=ATTS.filter(a=>a.active).map(a=>`<option value="${a.id}">${a.name} (${a.id})</option>`).join('')||'<option value="">No active attenders</option>';}
-}
-function doLogin(){
-  if(!usersLoaded){nf('Please wait','Still loading users from the sheet (or it failed to load)','warn');return}
-  const pw=document.getElementById('lPw').value;
-  if(selRV==='attender'){
-    // Attender logs in via dropdown
-    const aid=document.getElementById('lAtt').value;
-    if(!aid){nf('Select attender','Pick your name','warn');return}
-    const a=ATTS.find(x=>x.id===aid);
-    if(!a){nf('Not found','Attender missing','warn');return}
-    if(!a.active){nf('Account disabled','Contact admin','warn');return}
-    if((a.password||'1234')!==pw){nf('Wrong password','Check with admin','warn');return}
-    role='attender';attId=a.id;userName=a.name;userIni=a.ini;phone=a.phone||'';
-  } else {
-    // All other roles log in via mobile number, validated against User Master
-    const ph=document.getElementById('lPh').value.replace(/\D/g,'').slice(-10);
-    if(ph.length<10){nf('Enter mobile','10 digits','warn');return}
-    if(selRV==='requester'){
-      // Requester — no user validation needed
-      const lo=document.getElementById('lOut');
-      const outlet=lo?lo.value:'';
-      if(!outlet){nf('Select outlet','Please select your outlet','warn');return}
-      role='requester';phone=ph;
-      userName='Staff ('+ph.slice(-4)+')';
-      userIni=ph.slice(-2);
-      userOutlet=outlet;
-      selectedOutlets=[outlet];
-    } else {
-      const u=USERS[ph];
-      if(!u){nf('User not found','No such mobile','warn');return}
-      if(u.role!==selRV){nf('Role mismatch','This mobile is registered as '+u.role,'warn');return}
-      if(!u.active){nf('Account disabled','Contact admin','warn');return}
-      if((u.password||'1234')!==pw){nf('Wrong password','Check credentials','warn');return}
-      role=u.role;phone=ph;userName=u.name;userIni=u.ini;if(u.attId)attId=u.attId;
-      if(role==='requester'){const lo=document.getElementById('lOut');userOutlet=lo?lo.value:'';if(userOutlet)selectedOutlets=[userOutlet];}
+function filterOutlets() {
+    const input = document.getElementById('lOutSearch');
+    const results = document.getElementById('lOutResults');
+
+    const search = input.value.trim().toLowerCase();
+    document.getElementById('lOut').value = '';
+    if (!search) {
+        results.innerHTML = '';
+        results.style.display = 'none';
+        return;
     }
-  }
-  document.getElementById('loginP').style.display='none';document.getElementById('app').style.display='flex';
-  document.getElementById('uN').textContent=userName;document.getElementById('uR').textContent=role+' · '+(phone||attId);document.getElementById('uAv').textContent=userIni;
-  buildNav();R();go(NAV[role][0].id);document.getElementById('fab').style.display=role==='requester'?'flex':'none'}
 
-function logout(){punchedIn=false;currentPunch=null;document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
-async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadUsersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet()]);R();btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
+    // Best matches (starts with)
+    const startsWith = OL.filter(o =>
+        o.toLowerCase().startsWith(search)
+    );
+
+    // Other matches (contains)
+    const contains = OL.filter(o =>
+        o.toLowerCase().includes(search) &&
+        !o.toLowerCase().startsWith(search)
+    );
+
+    const matches = [...startsWith, ...contains];
+
+    results.innerHTML = matches.length ? matches.map(outlet => `
+        <div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--bdr);font-size:12px"
+             onclick="selectOutlet('${outlet}')">
+            ${outlet}
+        </div>
+    `).join('') : '<div style="padding:10px;font-size:10px;color:var(--t3);text-align:center">No outlet found</div>';
+    results.style.display = 'block';
+}
+
+function selectOutlet(outlet) {
+    document.getElementById('lOutSearch').value = outlet;
+    document.getElementById('lOut').value = outlet;
+    document.getElementById('lOutResults').style.display = 'none';
+}
+
+function showRaiseForm(){
+  clearSubSelection();
+  const tD=document.getElementById('tD');if(tD)tD.value='';
+  const ti=document.getElementById('tImg');if(ti)ti.value='';
+  tImgFiles=[];renderPhotoList();
+  selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
+  refreshCatDropdown();
+  const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginP').style.display='flex';
+}
+function hideRaiseForm(){
+  document.getElementById('loginP').style.display='none';
+  document.getElementById('app').style.display='flex';
+}
+
+function logout(){role='';phone='';userName='';userIni='';userOutlet='';selectedOutlets=[];
+  ['lPh','lNm','lOutSearch','lOut'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});
+  const b=document.getElementById('raiseBack');if(b)b.style.display='none';
+  document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
+async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
-function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home','raise-ticket':'New Ticket',tickets:'Tickets',detail:'Details','att-dash':'My Jobs','att-history':'Ticket History',approvals:'Approvals',finance:'Payments',purchaser:'Purchase Tasks',vendors:'Vendors','mgr-actions':'Mgr Actions',config:'Configuration',reports:'Reports'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0;if(p==='raise-ticket'){refreshCatDropdown();clearSubSelection();setTimeout(refreshOutletDropdown,50);}}
+function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home',tickets:'Tickets',detail:'Details'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0}
 	function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('show')}
 function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('show')}
 
@@ -855,47 +750,7 @@ function autoA(t){
 function gA(id){return ATTS.find(a=>a.id===id)}
 
 // ===== PHASE 4: Punch In/Out =====
-function rAttHistory(){const el=document.getElementById('ahList');if(!el||role!=='attender')return;
-  if(!punchedIn){const s0=document.getElementById('ahSt');if(s0)s0.innerHTML='';el.innerHTML='<div style="text-align:center;color:var(--t3);padding:30px;font-size:12px">🔒 Punch In to see your history.<br><button class="btn btn-s btn-p" onclick="go(\'punch\')" style="margin-top:10px">📍 Go to Punch</button></div>';return}
-  const my=attId||'ATT-012';const closed=TKS.filter(t=>t.att===my&&t.status==='closed');
-  const s=document.getElementById('ahSt');if(s)s.innerHTML=`<div class="st g"><div class="sv">${closed.length}</div><div class="sl">Completed</div></div><div class="st b"><div class="sv">${gA(my)?.rating||0}</div><div class="sl">Rating</div></div>`;
-  if(!closed.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:30px;font-size:12px">No completed tickets yet</div>';return}
-  el.innerHTML=closed.map(t=>renderTcard(t)).join('')}
 
-function renderPunch(){const el=document.getElementById('punchCard');if(!el||role!=='attender')return;
-  const a=gA(attId);const myRecs=ATTENDANCE.filter(r=>r.attId===attId);
-  let h=`<div class="card-h"><h3>📍 Attendance</h3>${punchedIn?'<span class="pay-st done">● Punched In</span>':'<span class="pay-st pend">○ Not Punched In</span>'}</div>`;
-  if(!punchedIn){h+=`<div style="text-align:center;padding:14px 0"><div style="font-size:40px">📍</div><p style="font-size:11px;color:var(--t2);margin:8px 0">You must Punch In to see and work on tickets.</p></div><button class="btn-big green" onclick="doPunchIn()">📍 PUNCH IN</button>`}
-  else{const cp=currentPunch;h+=`<div style="background:var(--c2);border-radius:var(--rs);padding:10px;margin-bottom:10px"><div style="font-size:9px;color:var(--t3)">Punched in at</div><div style="font-size:13px;font-weight:700">${cp?cp.inTime:'—'}</div><div style="font-size:9px;color:var(--t3);margin-top:3px">📍 ${cp?cp.inLoc:'—'}</div></div><button class="btn-big red" onclick="doPunchOut()">🔚 PUNCH OUT</button>`}
-  if(myRecs.length){h+=`<div style="margin-top:14px"><div style="font-size:10px;font-weight:700;margin-bottom:6px">History</div>`;myRecs.slice().reverse().forEach(r=>{h+=`<div class="lp"><div style="font-size:10px;font-weight:600">IN: ${r.inTime}</div><div style="font-size:8px;color:var(--t3)">📍 ${r.inLoc}</div>${r.outTime?`<div style="font-size:10px;font-weight:600;margin-top:3px">OUT: ${r.outTime}</div><div style="font-size:8px;color:var(--t3)">📍 ${r.outLoc}</div>`:'<div style="font-size:9px;color:var(--wr);margin-top:3px">Still active</div>'}</div>`});h+=`</div>`}
-  el.innerHTML=h}
-function getGeo(cb){if(!navigator.geolocation||location.protocol==='file:'){cb(null);return}navigator.geolocation.getCurrentPosition(p=>cb({lat:p.coords.latitude.toFixed(5),lng:p.coords.longitude.toFixed(5)}),()=>cb(null),{timeout:6000})}
-function doPunchIn(){getGeo(g=>{const loc=g?`${g.lat}, ${g.lng}`:'Location unavailable (needs HTTPS)';const rec={attId,inTime:ts(),inLat:g?.lat||null,inLng:g?.lng||null,inLoc:loc,outTime:null,outLat:null,outLng:null,outLoc:null};ATTENDANCE.push(rec);currentPunch=rec;punchedIn=true;
-  // Save to sheet
-  rec.sheetId='ATT-'+Date.now();
-  apiAppend('Attendance',{
-    Attendance_ID:rec.sheetId,
-    Attender_ID:attId,
-    Attender_Name:userName,
-    Punch_In_Time:rec.inTime,
-    Punch_In_Lat:rec.inLat||'',
-    Punch_In_Lng:rec.inLng||'',
-    Punch_Out_Time:'',
-    Punch_Out_Lat:'',
-    Punch_Out_Lng:'',
-    Date:new Date().toLocaleDateString('en-IN')
-  });
-  R();renderPunch();nf('✅ Punched In',loc,'ok')})}
-function doPunchOut(){const my=TKS.filter(t=>t.att===attId&&t.status!=='closed');if(my.length){if(!confirm('You still have '+my.length+' open job(s). Punch out anyway?'))return}
-  getGeo(g=>{const loc=g?`${g.lat}, ${g.lng}`:'Location unavailable (needs HTTPS)';if(currentPunch){currentPunch.outTime=ts();currentPunch.outLat=g?.lat||null;currentPunch.outLng=g?.lng||null;currentPunch.outLoc=loc}// Update sheet row with punch out details
-  if(currentPunch?.sheetId){
-    apiUpdate('Attendance','Attendance_ID',currentPunch.sheetId,{
-      Punch_Out_Time:ts(),
-      Punch_Out_Lat:g?.lat||'',
-      Punch_Out_Lng:g?.lng||''
-    });
-  }
-  punchedIn=false;currentPunch=null;R();renderPunch();nf('🔚 Punched Out',loc,'ok')})}
 
 
 // ===== VOICE ALIASES =====
@@ -1290,6 +1145,354 @@ const VOICE_ALIASES={
   'dg running':'dg not working','diesel':'dg not working'
 };
 
+// ===== WHAT HAPPENED / WHERE CHIPS (options come from the Tag_Options sheet tab) =====
+let WH_OPTIONS=['Not Working','Broken / Damaged','Blocked','Leakage','Burnt','Needs Cleaning','Not Heating','Not Cooling','Tripping','New Requirement'];
+let WHERE_OPTIONS=['Kitchen','Washing Area','Toilet / Bathroom','Staff Room','Store','Billing / Packing Area','Outside / Entrance','Terrace / Roof'];
+let selWH='',selWhere='',selAction='';
+let ACTION_OPTIONS=['New Requirement','Replacement','Need Repair','Need Cleaning','Need Service','Not Sure'];
+let autoDesc='',typedProblem='';
+function isKnownSubName(txt){
+  const q=String(txt||'').trim().toLowerCase();
+  if(!q)return true;
+  for(const c of Object.values(CATS)){if((c.subs||[]).some(s=>s.toLowerCase()===q))return true;}
+  return false;
+}
+function updateAutoDesc(){
+  const tD=document.getElementById('tD');if(!tD)return;
+  const tS=document.getElementById('tS');
+  const s=tS?tS.value:'';
+  if(!s)return;
+  let fresh;
+  if(typedProblem){fresh=typedProblem;}
+  else{let parts=[s];if(selWH)parts.push(selWH);if(selWhere)parts.push(selWhere);fresh=parts.join(' - ');}
+  if(tD.value.trim()===''||tD.value===autoDesc){tD.value=fresh;autoDesc=fresh;}
+  else if(autoDesc&&tD.value.indexOf(autoDesc)===0){
+    tD.value=fresh+tD.value.slice(autoDesc.length);autoDesc=fresh;
+  }
+}
+function renderTagChips(){
+  const is=document.getElementById('itemSel');
+  const ws=document.getElementById('whSel');
+  const ls=document.getElementById('whereSel');
+  if(is){
+    const opts=[...ITEM_OPTIONS];
+    if(selItem&&opts.indexOf(selItem)<0)opts.unshift(selItem);
+    is.innerHTML='<option value="">—</option>'+opts.map(o=>`<option${o===selItem?' selected':''}>${o}</option>`).join('');
+    is.value=selItem||'';
+  }
+  if(ws){
+    const wh=[...WH_OPTIONS];if(wh.indexOf('Other')<0)wh.push('Other');
+    ws.innerHTML='<option value="">Select…</option>'+wh.map(o=>`<option${o===selWH?' selected':''}>${o}</option>`).join('');
+    ws.value=selWH||'';
+  }
+  const as=document.getElementById('actionSel');
+  if(as){
+    const ao=[...ACTION_OPTIONS];if(ao.indexOf('Not Sure')<0)ao.push('Not Sure');
+    as.innerHTML='<option value="">—</option>'+ao.map(o=>`<option${o===selAction?' selected':''}>${o}</option>`).join('');
+    as.value=selAction||'';
+  }
+  if(ls){
+    ls.innerHTML='<option value="">—</option>'+WHERE_OPTIONS.map(o=>`<option${o===selWhere?' selected':''}>${o}</option>`).join('');
+    ls.value=selWhere||'';
+  }
+}
+// ===== ITEM DETECTION — ported from the 13k-ticket classifier =====
+let KW_ITEM={}; // optional per-keyword Item override from the Keywords tab
+const ITEM_DETECT=[
+ [/bain|ban ?mer|banmar|van meri|bain ?mar/,'Bain Marie'],
+ [/cold ?room/,'Cold Room'],
+ [/visi ?cool|chill?e?r|freez|4 ?door|fridge|refrigerat/,'Chiller / Freezer'],
+ [/(oil|deep|veg)[ -]?(fry|fri)|\bfr[iy]e?r\b/,'Deep Fryer'],
+ [/micro|mirco|celfrost/,'Microwave Oven'],
+ [/exhaust|exhust|exaust|chimney|hood(?!i)/,'Exhaust Fan'],
+ [/(ceiling|cieling|cilling|celing) ?fan|\bfans?\b/,'Ceiling Fan / Fan'],
+ [/gas.{0,15}(leak|lick|smell)|cylinder|regulator|gas pipe|gas lighter/,'Gas / Cylinder'],
+ [/burner|stove|chulha|barnur|tawa|\brange\b/,'Burner / Stove'],
+ [/weigh|wight machine|weight machine/,'Weighing Scale'],
+ [/\bro\b|rosa water/,'RO Plant / Water'],
+ [/drain|naali|sewer|gutter/,'Drainage'],
+ [/(switch|swich|swith|swicth) ?(board|box|bord)|panel ?bo/,'Switch Board'],
+ [/socket|plug ?(point|top)|3 ?pin/,'Socket / Plug Point'],
+ [/\bmcb\b|\bmcp\b|\bmccb\b|\btrip/,'MCB'],
+ [/short ?circuit|wire|wiring|earthing/,'Wiring'],
+ [/\bups\b/,'UPS'],
+ [/\bdg\b|generator|diesel/,'DG / Generator'],
+ [/strip curtain|pvc curtain/,'Strip Curtain'],
+ [/sink|wash ?bas+in|hand ?wash/,'Sink / Wash Basin'],
+ [/cello ?tap|\btape\b|marker/,'Stationery'],
+ [/water tap|\btap\b|faucet|\bnal\b/,'Water Tap'],
+ [/water (hose )?pipe|pipe ?line/,'Water Pipe'],
+ [/(water|sump|bore) ?mot[oa]r|pump/,'Water Motor'],
+ [/sump/,'Sump Tank'],
+ [/water tank/,'Water Tank'],
+ [/geyser|gyser|gijar|water heater|hot water/,'Geyser / Water Heater'],
+ [/jet ?spray|spray ?gun|water ?spray|water ?gun/,'Jet Spray / Water Gun'],
+ [/washroom.{0,20}door|toilet.{0,15}door/,'Door'],
+ [/toilet|commode|flush|urinal/,'Toilet / Commode'],
+ [/door ?lock|latch/,'Door Lock'],
+ [/\bdoor|shutter|window/,'Door'],
+ [/tile/,'Tiles'],
+ [/paint|\bwall\b/,'Wall / Paint'],
+ [/ceiling|\bpop\b|roof leak|seepage|water ?proof/,'Ceiling / POP'],
+ [/tube ?light|bulb|led light|light (is )?not|light fix/,'Light / Tube Light'],
+ [/cctv|camera|dvr/,'CCTV / Camera'],
+ [/printer|\bkot\b/,'Printer'],
+ [/computer|laptop|desktop|keyboard|monitor|mouse|\bcpu\b|system (slow|hang|not)/,'Computer / Laptop'],
+ [/wifi|internet|router|network|lan cable|\bnet\b/,'WiFi / Internet'],
+ [/landline|telephone/,'Landline'],
+ [/biometric/,'Biometric'],
+ [/knife|knaif|chaku|sharp/,'Knife'],
+ [/mixer|grinder|mixie|blender/,'Mixer / Grinder'],
+ [/rice cooker|electric cooker/,'Rice Cooker'],
+ [/steamer|idli|momo/,'Steamer'],
+ [/deck oven|\botg\b|\boven\b/,'Deck Oven'],
+ [/induction/,'Induction'],
+ [/kettle/,'Kettle'],
+ [/(packing|sealing|seal) ?machine/,'Packing / Sealing Machine'],
+ [/trolle?y|rack|shelf/,'Trolley / Rack'],
+ [/ss (working )?table|steel table/,'SS Table'],
+ [/cockroach|roach/,'Cockroach'],
+ [/\brats?\b|rodent|chuha/,'Rodent / Rat'],
+ [/bed ?bug/,'Bed Bugs'],
+ [/fly ?catch/,'Fly Catcher'],
+ [/pest|fumigat|termite|\bants?\b|mosquito/,'Pest Control'],
+ [/\blift\b/,'Lift'],
+ [/washing machine/,'Washing Machine'],
+ [/\bac\b|air ?condition/,'AC'],
+ [/spoon|scissor|sizzer|tong|whisk|spatula|ladle|vessel|\bmug\b|glass|plate|bucket|drum|container|\bjar\b|\blid\b|bowl|tray|apron|gloves|utensil|thermometer|chair|basket|crate/,'Utensils / Supplies']
+];
+let ITEM_OPTIONS=[...new Set(ITEM_DETECT.map(p=>p[1]))].sort();
+function detectItem(text){
+  const d=' '+String(text||'').toLowerCase()+' ';
+  // Keywords-tab override wins (longest matching keyword)
+  let best='',bestLen=0;
+  for(const kw in KW_ITEM){if(kw.length>bestLen&&d.indexOf(kw)>=0){best=KW_ITEM[kw];bestLen=kw.length;}}
+  if(best)return best;
+  for(const pair of ITEM_DETECT){if(pair[0].test(d))return pair[1];}
+  return '';
+}
+let selItem='';
+function showItemField(){renderTagChips();}
+
+// ===== AUTO-TAG DETECTION — ported from the 13k-ticket classifier =====
+const WH_DETECT=[
+ [/block|clog|\bjam\b|chok/,'Blocked'],
+ [/leak|lick|likage|lekage|dripp?ing|overflow|seepage|spill/,'Leakage'],
+ [/burn|short ?circuit|spark/,'Burnt'],
+ [/\btrip/,'Tripping'],
+ [/not heat|no heat|not hot/,'Not Heating'],
+ [/not cool|no cool|not cold|not getting cold|cooling (issue|problem|not)|thanda nahi/,'Not Cooling'],
+ [/broke|brocken|damag|crack|\btoot\b/,'Broken / Damaged'],
+ [/not work|no working|not runn|stopp?ed|\bdead\b|\bband\b|kharab|not funct|not oper|wroking|workin\b/,'Not Working'],
+ [/clean|dirty|dust|oily|hygien|smell|odou?r|stink/,'Needs Cleaning'],
+ [/water not (com|pass|flow)|no water/,'Water Not Coming'],
+ [/paint/,'Needs Painting'],
+ [/rust/,'Rusted'],
+ [/service|servicing/,'Needs Servicing'],
+ [/\bnew\b|require|want|please send|pls send|we need|\bneed\b.{0,20}(pcs|piece|qty|nos|send)/,'New Requirement'],
+ [/repair|\bfix\b|rectif|replace|change/,'Needs Repair / Replace']
+];
+const ACTION_DETECT=[
+ [/\bnew\b|require|want|please send|pls send|we need|\bneed\b.{0,20}(pcs|piece|qty|nos|send)/,'New Requirement'],
+ [/replace|replacement|change kar|change the|needs? chang/,'Replacement'],
+ [/clean|dirty|oily|hygien|fumigat|pest spray/,'Need Cleaning'],
+ [/service|servicing|maintain/,'Need Service'],
+ [/repair|\bfix\b|rectif|not work|kharab|\bband\b|broke|damag|leak|block|burn|\btrip/,'Need Repair']
+];
+const WHERE_DETECT=[
+ [/toilet|washroom|bath ?room|urinal|commode/,'Toilet / Bathroom'],
+ [/staff ?room/,'Staff Room'],
+ [/washing|pot ?wash|3 ?sink|dish ?wash/,'Washing Area'],
+ [/billing|counter|reception|packing|sorting/,'Billing / Packing Area'],
+ [/store|storage/,'Store'],
+ [/outside|out side|entrance|exterior/,'Outside / Entrance'],
+ [/\blift\b/,'Lift Area'],
+ [/terrace|roof/,'Terrace / Roof'],
+ [/office/,'Office'],
+ [/kitchen/,'Kitchen']
+];
+function normTag(s){return String(s).toLowerCase().replace(/[^a-z]/g,'')}
+function matchOption(label,options){
+  const nl=normTag(label);
+  for(const o of options)if(normTag(o)===nl)return o;
+  for(const o of options){const no=normTag(o);if(no.indexOf(nl.slice(0,5))>=0||nl.indexOf(no.slice(0,5))>=0)return o;}
+  return null;
+}
+// Auto-select chips from what the user typed or said. Never overrides a manual pick.
+function applyAutoTags(text){
+  const d=' '+String(text||'').toLowerCase()+' ';
+  if(!selWH){
+    for(const pair of WH_DETECT){
+      if(pair[0].test(d)){const o=matchOption(pair[1],WH_OPTIONS);if(o){selWH=o;break;}}
+    }
+  }
+  if(!selAction){
+    for(const pair of ACTION_DETECT){
+      if(pair[0].test(d)){const o=matchOption(pair[1],ACTION_OPTIONS);if(o){selAction=o;break;}}
+    }
+  }
+  if(!selWhere){
+    for(const pair of WHERE_DETECT){
+      if(pair[0].test(d)){const o=matchOption(pair[1],WHERE_OPTIONS);if(o){selWhere=o;break;}}
+    }
+  }
+  renderTagChips();
+}
+
+// Loads Tag_Options tab (Type | Option | Sort_Order | Is_Active).
+// Type: what_happened or where. Falls back to built-in lists if the tab is missing.
+async function loadTagOptionsFromSheet(){
+  const rows=await apiRead('Tag_Options');
+  if(!rows||!rows.length){renderTagChips();return false;}
+  const wh=[],whr=[],its=[],acts=[];
+  rows.slice().sort((a,b)=>(parseInt(a.Sort_Order)||0)-(parseInt(b.Sort_Order)||0)).forEach(r=>{
+    const type=String(r.Type||'').trim().toLowerCase();
+    const opt=String(r.Option||'').trim();
+    const off=(r.Is_Active===false||String(r.Is_Active).toUpperCase()==='FALSE');
+    if(!opt||off)return;
+    if(type.indexOf('what')===0)wh.push(opt);
+    else if(type.indexOf('where')===0)whr.push(opt);
+    else if(type.indexOf('item')===0)its.push(opt);
+    else if(type.indexOf('action')===0)acts.push(opt);
+  });
+  if(wh.length)WH_OPTIONS=wh;
+  if(whr.length)WHERE_OPTIONS=whr;
+  if(its.length)ITEM_OPTIONS=its;
+  if(acts.length)ACTION_OPTIONS=acts;
+  renderTagChips();
+  return true;
+}
+
+// ===== APP FEEDBACK (questions come from the Feedback_Questions sheet tab) =====
+let FB_QUESTIONS=[
+  {q:'How easy was it to raise this ticket?',type:'rating',opts:[]},
+  {q:'Did the app understand your problem correctly?',type:'choice',opts:['Yes, first try','After some tries','No, I used Browse']},
+  {q:'Any suggestion to improve?',type:'text',opts:[]}
+];
+let fbShown=false,fbLastTicket='';
+async function loadFeedbackQuestionsFromSheet(){
+  const rows=await apiRead('Feedback_Questions');
+  if(!rows||!rows.length)return false;
+  const fresh=[];
+  rows.slice().sort((a,b)=>(parseInt(a.Sort_Order)||0)-(parseInt(b.Sort_Order)||0)).forEach(r=>{
+    const q=String(r.Question||'').trim();
+    const type=String(r.Type||'text').trim().toLowerCase();
+    const off=(r.Is_Active===false||String(r.Is_Active).toUpperCase()==='FALSE');
+    if(!q||off)return;
+    const opts=String(r.Options||'').split('|').map(s=>s.trim()).filter(Boolean);
+    fresh.push({q,type:(type==='rating'||type==='choice')?type:'text',opts});
+  });
+  if(fresh.length)FB_QUESTIONS=fresh;
+  return true;
+}
+function showFeedbackModal(ticketId){
+  fbLastTicket=ticketId||'';
+  const body=document.getElementById('fbBody');
+  if(!body)return;
+  body.innerHTML=FB_QUESTIONS.map((f,i)=>{
+    let inner='';
+    if(f.type==='rating'){
+      inner='<div style="display:flex;gap:6px;justify-content:center">'+[1,2,3,4,5].map(n=>`<button type="button" class="fbStar" data-q="${i}" data-v="${n}" onclick="fbRate(${i},${n})" style="font-size:24px;background:none;border:none;cursor:pointer;color:var(--bdr)">★</button>`).join('')+`</div><input type="hidden" id="fbAns${i}">`;
+    } else if(f.type==='choice'){
+      inner='<div style="display:flex;flex-wrap:wrap;gap:5px">'+f.opts.map(o=>`<button type="button" class="fbChoice" data-q="${i}" onclick="fbChoose(${i},this)" data-v="${o.replace(/"/g,'&quot;')}" style="padding:6px 10px;border-radius:14px;font-size:11px;cursor:pointer;border:1px solid var(--bdr);background:var(--c2);color:var(--t2)">${o}</button>`).join('')+`</div><input type="hidden" id="fbAns${i}">`;
+    } else {
+      inner=`<textarea class="fc" id="fbAns${i}" rows="2" placeholder="Type here (optional)..."></textarea>`;
+    }
+    return `<div class="fg"><label>${f.q}</label>${inner}</div>`;
+  }).join('');
+  openM('fbM');
+}
+function fbRate(qi,n){
+  document.querySelectorAll('.fbStar[data-q="'+qi+'"]').forEach(s=>{s.style.color=(parseInt(s.dataset.v)<=n)?'var(--wr)':'var(--bdr)'});
+  const h=document.getElementById('fbAns'+qi);if(h)h.value=n;
+}
+function fbChoose(qi,btn){
+  document.querySelectorAll('.fbChoice[data-q="'+qi+'"]').forEach(b=>{b.style.background='var(--c2)';b.style.color='var(--t2)';b.style.borderColor='var(--bdr)'});
+  btn.style.background='rgba(124,106,240,.15)';btn.style.color='var(--ac2)';btn.style.borderColor='var(--ac)';
+  const h=document.getElementById('fbAns'+qi);if(h)h.value=btn.dataset.v;
+}
+function submitFeedback(){
+  let sent=0;
+  FB_QUESTIONS.forEach((f,i)=>{
+    const el=document.getElementById('fbAns'+i);
+    const ans=el?String(el.value||'').trim():'';
+    if(!ans)return;
+    sent++;
+    apiAppend('App_Feedback',{
+      Question:f.q,
+      Answer:ans,
+      Ticket_ID:fbLastTicket,
+      Mobile:phone||'',
+      Outlet:userOutlet||'',
+      Logged_At:ts()
+    });
+  });
+  closeM('fbM');
+  if(sent)nf('🙏 Thank you','Your feedback helps us improve','ok');
+}
+// ===== KEYWORDS FROM SHEET =====
+// Loads the Keywords tab (Keyword | Category_ID | SubCat_Name | Is_Active) and merges
+// each row into VOICE_ALIASES so the smart search learns from the spreadsheet.
+async function loadKeywordsFromSheet(){
+  const rows=await apiRead('Keywords');
+  if(!rows||!rows.length)return false;
+  let n=0;
+  rows.forEach(r=>{
+    const kw=String(r.Keyword||'').trim().toLowerCase();
+    const sub=String(r.SubCat_Name||'').trim();
+    const off=(r.Is_Active===false||String(r.Is_Active).toUpperCase()==='FALSE');
+    if(!kw||!sub||off)return;
+    VOICE_ALIASES[kw]=sub.toLowerCase();n++;
+    const it=String(r.Item||'').trim();if(it)KW_ITEM[kw]=it;
+  });
+  return n>0;
+}
+
+// Guarantee a fallback category exists so an unmatched problem can still be raised.
+function ensureGeneralCategory(){
+  if(!CATS.other)CATS.other={label:'📌 Other',subs:['General Issue'],pri:'medium',sla:12};
+  else if(!CATS.other.subs.includes('General Issue'))CATS.other.subs.push('General Issue');
+}
+
+// Log a phrase the system could not map, so the Keywords tab can be grown over time.
+function logUnmatched(q,action){
+  if(!q)return;
+  const lo=document.getElementById('lOut');
+  apiAppend('Unmatched_Keywords',{
+    Phrase:q,
+    Outlet:lo?lo.value:'',
+    Mobile:(document.getElementById('lPh')?.value||'').replace(/\D/g,'').slice(-10),
+    Action:action,
+    Logged_At:ts()
+  });
+}
+
+function noMatchPanel(){
+  return `<div style="padding:12px;text-align:center">
+    <div style="font-size:11px;font-weight:600;margin-bottom:2px">😕 Couldn't identify this problem</div>
+    <div style="font-size:9px;color:var(--t3);margin-bottom:8px">Pick the category yourself, or raise it as a general issue — the team will classify it</div>
+    <div style="display:flex;gap:6px">
+      <button type="button" onclick="nmBrowse()" style="flex:1;background:var(--c1);color:var(--t);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-size:11px;font-weight:600;cursor:pointer">📂 Browse Categories</button>
+      <button type="button" onclick="nmGeneral()" style="flex:1;background:var(--ok);color:#000;border:none;border-radius:var(--rs);padding:8px;font-size:11px;font-weight:700;cursor:pointer">✅ Raise as General</button>
+    </div>
+  </div>`;
+}
+function nmBrowse(){
+  logUnmatched(document.getElementById('subSearch').value.trim(),'browsed');
+  document.getElementById('subSearchResults').style.display='none';
+  const d=document.getElementById('catSubDropdowns');
+  if(d&&d.style.display==='none')toggleCatDropdowns();
+  const tCv=document.getElementById('tCv');if(tCv)tCv.focus();
+}
+function nmGeneral(){
+  const q=document.getElementById('subSearch').value.trim();
+  logUnmatched(q,'general');
+  ensureGeneralCategory();
+  selectSubFromSearch('other','General Issue',CATS.other.label,CATS.other.pri||'medium');
+  const tD=document.getElementById('tD');
+  if(tD&&!tD.value.trim()&&q)tD.value=q;
+}
+
 // ===== FUZZY SEARCH =====
 
 
@@ -1301,18 +1504,21 @@ function soundCode(word){
     d:'3',t:'3',m:'4',n:'4',s:'5',z:'5',x:'5',l:'6',r:'6',
     w:'',h:'',y:'',a:'',e:'',i:'',o:'',u:''};
   let enc='';
-  for(const ch of w)enc+=(repl[ch]!==undefined?repl[ch]:'7');
-  if(!enc)return '';
-  let out=enc[0];
-  for(let i=1;i<enc.length;i++)if(enc[i]!==out[out.length-1])out+=enc[i];
-  return out;
+  for(let i=1;i<w.length;i++){const ch=w[i];enc+=(repl[ch]!==undefined?repl[ch]:'7');}
+  let out='';
+  for(let i=0;i<enc.length;i++)if(enc[i]!==out[out.length-1])out+=enc[i];
+  // Soundex-style: keep the first letter literal so b-words never collide with p-words etc.
+  return w[0]+out;
 }
 function phoneticMatch(a,b){
   const ca=soundCode(a),cb=soundCode(b);
   if(!ca||!cb||ca.length<3||cb.length<3)return false;
   if(ca===cb)return true;
-  if(ca.includes(cb)||cb.includes(ca))return true;
-  if(ca.slice(-3)===cb.slice(-3))return true;
+  // containment/suffix only when both codes are substantial — short codes inside long ones create junk matches
+  if(ca.length>=4&&cb.length>=4){
+    if(ca.includes(cb)||cb.includes(ca))return true;
+    if(ca.slice(-3)===cb.slice(-3))return true;
+  }
   return false;
 }
 
@@ -1336,6 +1542,18 @@ function fuzzySearchSubs(query){
     }
   }
 
+  // Step 1B: phonetic alias rescue — catches spellings not in the keyword list (e.g. "bainmary")
+  if(!bestAliasLen){
+    const qTokens=q.split(/\s+/).filter(w=>w.length>=5&&!STOPWORDS.has(w));
+    let phBest='',phLen=0;
+    for(const[alias,mapped]of Object.entries(VOICE_ALIASES)){
+      if(!alias||alias.length<5||!mapped)continue;
+      for(const tok of qTokens){
+        if(alias.length>phLen&&phoneticMatch(tok,alias)){phBest=mapped;phLen=alias.length;}
+      }
+    }
+    if(phBest){searchTerm=phBest;bestAliasLen=phLen;}
+  }
   // Step 2: tokens — filter stopwords
   const origTokens=q.split(/\s+/).filter(w=>w.length>=3&&!STOPWORDS.has(w));
   const searchTokens=searchTerm.split(/\s+/).filter(w=>w.length>=3&&!STOPWORDS.has(w));
@@ -1410,7 +1628,7 @@ function onSubSearchAuto(){
     if(!matches.length){
       bar.style.display='none';
       res.style.display='block';
-      res.innerHTML='<div style="padding:12px;font-size:10px;color:var(--t3);text-align:center">No match — try different words or use 📂 Browse</div>';
+      res.innerHTML=noMatchPanel();
       return;
     }
     res.style.display='none';
@@ -1450,6 +1668,8 @@ function showSuggestAlts(){
 }
 
 function selectSubFromSearch(catId,sub,catLabel,pri){
+  const typedQ=document.getElementById('subSearch')?document.getElementById('subSearch').value:'';
+  typedProblem=isKnownSubName(typedQ)?'':typedQ.trim();
   subSearchSelected={cat:catId,sub};
   const tC=document.getElementById('tC');
   const tS=document.getElementById('tS');
@@ -1474,9 +1694,13 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
   document.getElementById('subSelectedName').textContent=sub;
   document.getElementById('subSelectedCat').textContent=catLabel;
   onSub();
+  selItem=detectItem(typedQ)||sub;showItemField();
+  applyAutoTags(typedQ+' '+sub);
+  updateAutoDesc();
 }
 
 function clearSubSelection(){
+  const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
   document.getElementById('subSearch').value='';
@@ -1513,6 +1737,8 @@ function onCatVisible(){
 }
 
 function onSubVisible(){
+  const boxTxt=document.getElementById('subSearch')?document.getElementById('subSearch').value:'';
+  typedProblem=isKnownSubName(boxTxt)?'':boxTxt.trim();
   const c=document.getElementById('tCv').value;
   const s=document.getElementById('tSv').value;
   if(!c||!s)return;
@@ -1528,6 +1754,9 @@ function onSubVisible(){
   document.getElementById('subSelectedName').textContent=s;
   document.getElementById('subSelectedCat').textContent=CATS[c]?.label||c;
   onSub();
+  selItem=detectItem(typedProblem||'')||s;showItemField();
+  applyAutoTags(s);
+  updateAutoDesc();
 }
 
 // ===== VOICE SEARCH =====
@@ -1546,7 +1775,10 @@ function voiceSearch(){
     if(inp){inp.value=txt;}
     const matches=fuzzySearchSubs(txt);
     if(!matches.length){
-      nf('Heard','"'+txt+'" — no match found, try again','warn');
+      const res=document.getElementById('subSearchResults');
+      if(res){res.style.display='block';res.innerHTML=noMatchPanel();}
+      document.getElementById('autoSuggestBar').style.display='none';
+      nf('Heard','"'+txt+'"','warn');
     } else {
       autoSuggestPending=matches[0];
       const priColor={critical:'var(--er)',high:'var(--or)',medium:'var(--wr)',low:'var(--ok)'}[matches[0].pri]||'var(--t3)';
@@ -1574,249 +1806,7 @@ function onSub(){uPri();const c=document.getElementById('tC').value,s=document.g
 function uPri(){const s=document.getElementById('tS').value,c=document.getElementById('tC').value;let u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');const sla=SLAH[u]||CATS[c]?.sla||24;
   const pe=document.getElementById('tP'),se=document.getElementById('tSL');if(u&&c){pe.textContent=PRILABELS[u]||u;pe.className='pri '+(PRICOLORS[u]||'m');se.textContent='⏱ '+sla+'h';se.className='sla '+(u==='critical'?'breach':u==='high'?'warn':'safe');se.style.display='inline-flex'}else{pe.textContent='—';se.style.display='none'}}
 
-async function raiseTicket(){
-  const btn=document.getElementById('raiseBtn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Raising Ticket...';}
-  const o=document.getElementById('tO').value,c=document.getElementById('tC').value,s=document.getElementById('tS').value,d=document.getElementById('tD').value;
-  if(!o||!c||!s||!d){
-    nf('Missing','All fields required','warn');
-    if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
-    return;
-  }
-  tCnt++;const id='RMT-0'+tCnt;const u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');const sla=SLAH[u]||CATS[c]?.sla||24;
-  const probes=[];document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
-  const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
-  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false};
-  const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
-  // Upload ticket photos to Google Drive
-  const imgInput=document.getElementById('tImg');
-  const imgUrls=[];
-  if(imgInput&&imgInput.files.length){
-    nf('Uploading…','Saving photos to Drive','ok');
-    for(const f of imgInput.files){
-      const url=await uploadToGDrive(f,'ticket_'+id);
-      if(url)imgUrls.push(url);
-    }
-  }
-  t.photoUrls=imgUrls;
-  TKS.unshift(t);['tO','tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';document.getElementById('tImgL').textContent='Tap to upload';
-  R();
-  // PHASE 5: write-through — save the new ticket to the sheet, then log its history
-  nf('Saving…','Sending ticket to the sheet','ok');
-  apiAppend('Tickets',ticketToSheetRow(t)).then(ok=>{
-    if(ok){
-      t.synced=true;nf('✅ Saved',id+' stored in sheet','ok');
-      // log the events that happened at raise time
-      writeHistory(id,'raised','Raised by '+userName,userName);
-      if(t.att){const an=gA(t.att);writeHistory(id,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
-    } else {
-      t.synced=false;nf('⚠ Not saved',id+' is local only — sheet write failed','warn');
-    }
-  });
-  setTimeout(()=>{
-    const btn=document.getElementById('raiseBtn');
-    if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
-    go('tickets');
-  },800)}
-
-function generateWhatsAppLink(phone,msg){let p=phone.replace(/^\+?/,'');if(!p.startsWith('91'))p='91'+p;return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg)}
-function notifyStatusViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t)return;const a=t.att?gA(t.att):null;const attName=a?a.name:'Team';const msg=`Your issue ${t.id} (${t.issue}) is ${SL[t.status].toLowerCase()}`;const link=generateWhatsAppLink(t.by,msg);const notifDiv=document.createElement('div');notifDiv.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--c1);border:1px solid var(--bdr);padding:12px 14px;border-radius:var(--rs);z-index:300;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-width:280px';notifDiv.innerHTML='<div style="font-size:11px;font-weight:600;margin-bottom:8px">📱 Notify requester?</div><button class="btn btn-s btn-p btn-full" onclick="window.open(\''+link+'\',\'_blank\');this.parentElement.remove()" style="font-size:9px">WhatsApp</button>';document.body.appendChild(notifDiv);setTimeout(()=>{if(notifDiv.parentElement)notifDiv.remove()},6000)}
-function shareOTPViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t||!t.otp)return;const msg=`🔐 OTP to close ticket ${t.id}: ${t.otp}`;const link=generateWhatsAppLink(t.by,msg);window.open(link,'_blank')}
-function setSt(id,ns,note){
-  const t=TKS.find(x=>x.id===id);if(!t)return;
-  t.status=ns;
-  t.hist.push({s:ns,t:ts(),n:note||SL[ns]});
-  if(ns==='closed'){const a=gA(t.att);if(a)a.load=Math.max(0,a.load-1)}
-  R();
-  apiUpdate('Tickets','Ticket_ID',id,{Status:ns,Assigned_To:t.att||'',Updated_At:ts()});
-  // Geo-capture — silent, never blocks status update
-  const histNote=note||SL[ns];
-  if(role==='attender'&&navigator.geolocation&&location.protocol!=='file:'){
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        const geo=`📍 ${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`;
-        writeHistory(id,ns,histNote+' · '+geo,userName);
-      },
-      ()=>writeHistory(id,ns,histNote,userName),
-      {timeout:5000,maximumAge:30000}
-    );
-  } else {
-    writeHistory(id,ns,histNote,userName);
-  }
-  if(role==='attender'&&ns!=='closed')setTimeout(()=>notifyStatusViaWhatsApp(id),300);
-}
-function doAccept(id){setSt(id,'accepted','Accepted by '+userName);viewT(id)}
-function doVisitChoice(id,needVisit){const t=TKS.find(x=>x.id===id);if(!t)return;t.locVisit=needVisit;if(needVisit){setSt(id,'on-the-way','📍 Visit required — on the way')}else{t.hist.push({s:t.status,t:ts(),n:'No visit needed — remote work'});setSt(id,'job-started','▶ Started (remote)')}viewT(id)}
-function doReached(id){setSt(id,'reached-outlet','📍 Reached outlet');viewT(id)}
-function doStart(id){setSt(id,'job-started','Job started');viewT(id)}
-function doProgress(id){setSt(id,'in-progress','In progress');viewT(id)}
-function doMarkFixed(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(!t.issueRes){const iss=PROBES[t.sub]||[t.sub+' — Main Issue'];t.issueRes=iss.map(q=>({text:q,status:'fixed'}))}curTkt=id;renderIssueModal(t);openM('issueM')}
-function confirmIssues(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;closeM('issueM');t.otpRevealed=false;setSt(curTkt,'awaiting-resolution','📤 OTP requested — asking requester if resolved');viewT(curTkt);nf('Sent to requester','Requester must confirm resolution','ok')}
-function doCloseWithOTP(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(t.issueRes&&!t.issueRes.every(r=>r.status==='fixed')){nf('Cannot','All issues must be Fixed','warn');return}
-  const inp=document.getElementById('otpSingle');if(!inp)return;const entered=inp.value.trim();if(entered.length!==6){nf('Invalid','6 digits required','warn');return}
-  if(parseInt(entered)!==t.otp){nf('Wrong OTP','Ask requester','warn');inp.style.borderColor='var(--er)';return}
-  // PHASE 6: requester already confirmed before OTP was issued → close directly
-  t.confirmStatus='resolved';setSt(id,'closed','✅ OTP verified — ticket closed');viewT(id);nf('✅ Closed','Ticket closed successfully','ok')}
-// Requester confirms resolution after attender enters OTP
-function confirmResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.confirmStatus='resolved';closeM('confirmM');
-  // PHASE 6: Yes → generate OTP, auto-post to chat, move to ready-closure
-  if(!t.otp)t.otp=Math.floor(100000+Math.random()*900000);
-  t.otpRevealed=true;
-  if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:'🔐 OTP: '+t.otp,time:ts(),isOtp:true});
-  setSt(curTkt,'ready-closure','✅ Requester confirmed. OTP auto-generated & posted to chat.');
-  setTimeout(()=>viewT(curTkt),300);nf('OTP shared','Check the chat — give it to the attender','ok')}
-function confirmNotResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.confirmStatus='not-resolved';closeM('confirmM');
-  // PHASE 6: No → no OTP, ticket returns to In Progress
-  t.otpRevealed=false;
-  setSt(curTkt,'in-progress','❌ Requester says NOT resolved — back to In Progress');
-  setTimeout(()=>viewT(curTkt),300);nf('Not resolved','Ticket returned to In Progress','warn')}
-function doReopen(){const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(t){t.status='raised';t.otpRevealed=false;t.issueRes=null;t.confirmStatus=null;t.reopened=true;t.hist.push({s:'raised',t:ts(),n:'🔄 Re-opened: '+r});const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'Re-assigned → '+a.name})}}closeM('reopenM');R();viewT(curTkt)}
-
-function renderIssueModal(t){document.getElementById('issueMBody').innerHTML=`<p style="font-size:10px;color:var(--t2);margin-bottom:8px">Mark resolution status for each ${t.cat}→${t.sub} issue:</p>`+t.issueRes.map((r,i)=>{const bg={fixed:'var(--okb)',partial:'var(--wrb)',notfixed:'var(--erb)'}[r.status];return`<div class="ires" style="background:${bg}"><span style="flex:1">${r.text}</span><select onchange="setIssueRes('${t.id}',${i},this.value)"><option value="fixed" ${r.status==='fixed'?'selected':''}>✅ Fixed</option><option value="partial" ${r.status==='partial'?'selected':''}>⚠️ Partial</option><option value="notfixed" ${r.status==='notfixed'?'selected':''}>❌ Not Fixed</option></select></div>`}).join('')}
-function setIssueRes(id,i,v){const t=TKS.find(x=>x.id===id);if(t&&t.issueRes){t.issueRes[i].status=v;renderIssueModal(t)}}
-
-async function addLP(){
-  const btn=document.getElementById('addLPBtn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Adding...';}
-  // Safety net — re-enable after 30 seconds no matter what
-  const safetyTimer=setTimeout(()=>{
-    if(btn){btn.disabled=false;btn.textContent='Add';}	
-    nf('Upload slow','If photo not saved, try without image first','warn');
-  },30000);
-  const t=TKS.find(x=>x.id===curTkt);if(!t){
-    clearTimeout(safetyTimer);
-    if(btn){btn.disabled=false;btn.textContent='Add';}return;
-  }
-  const item=document.getElementById('lpI').value,
-        qty=parseFloat(document.getElementById('lpQ').value)||1,
-        amt=parseFloat(document.getElementById('lpA').value)||0,
-        unit=document.getElementById('lpU').value,
-        shop=document.getElementById('lpSh').value,
-        rem=document.getElementById('lpRm').value;
-  if(!item||!amt||!shop){nf('Required','Item, amount, shop','warn');return}
-
-  const qrFile=document.getElementById('lpQI').files[0];
-  const billFile=document.getElementById('lpBI').files[0];
-
-  let qrUrl=null,billUrl=null;
-  if(qrFile||billFile){
-    nf('Uploading…','Saving docs to Drive','ok');
-    if(qrFile)qrUrl=await uploadToGDrive(qrFile,'qr_'+curTkt);
-    if(billFile)billUrl=await uploadToGDrive(billFile,'bill_'+curTkt);
-  }
-
-  const newCost={
-    item,qty,unit,amt:Math.round(amt*qty),rate:amt,shop,remarks:rem,
-    v:qrUrl?'qr':'mn',
-    qrImg:!!qrUrl,billImg:!!billUrl,
-    qrUrl:qrUrl||'',billUrl:billUrl||'',
-    payStatus:'mgr-pending',addedAt:ts()
-  };
-  t.costs.push(newCost);
-  writePO(t,newCost);
-  ['lpI','lpA','lpSh','lpRm'].forEach(x=>document.getElementById(x).value='');
-  document.getElementById('lpQ').value='1';
-  document.getElementById('lpU').value='pcs';
-  document.getElementById('lpQL').textContent='Tap to upload';
-  document.getElementById('lpQL').style.color='';
-  document.getElementById('lpBL').textContent='Tap to upload';
-  document.getElementById('lpBL').style.color='';
-  document.getElementById('lpQI').value='';
-  document.getElementById('lpBI').value='';
-  document.getElementById('lpT').textContent='₹0';
-  const btn2=document.getElementById('addLPBtn');
-  if(btn2){btn2.disabled=false;btn2.textContent='Add';}
-  closeM('lpM');R();nf('✅ Added',item,'ok');showPurch(curTkt)
-}
-
-document.addEventListener('input',e=>{if(e.target.id==='lpQ'||e.target.id==='lpA'){const q=parseFloat(document.getElementById('lpQ')?.value)||0,a=parseFloat(document.getElementById('lpA')?.value)||0;const el=document.getElementById('lpT');if(el)el.textContent='₹'+(q*a).toLocaleString('en-IN')}});
-function delLP(i,id){const t=TKS.find(x=>x.id===id);if(t&&confirm('Delete this item?')){t.costs.splice(i,1);R();showPurch(id)}}
-function editLP(i,id){const t=TKS.find(x=>x.id===id);if(!t)return;const c=t.costs[i],nv=prompt('New amount:',c.amt);if(nv!==null){c.amt=parseInt(nv)||c.amt;R();showPurch(id)}}
-
-function reqPayment(tid,i){const t=TKS.find(x=>x.id===tid);if(!t)return;const c=t.costs[i];c.payStatus='mgr-pending';t.hist.push({s:t.status,t:ts(),n:'💰 Pay request: '+c.item+' ₹'+c.amt});R();nf('Sent','Manager will approve','ok');showPurch(tid)}
-function mgrApprovePay(tid,i){const t=TKS.find(x=>x.id===tid);if(!t)return;const c=t.costs[i];const can=role==='manager'&&c.amt<=2000||role==='rmhead';if(!can){nf('Cannot',c.amt>2000?'>₹2K needs R&M Head':'','warn');return}
-  c.payStatus='approved';c.approver=userName;
-  t.hist.push({s:t.status,t:ts(),n:'✅ '+(role==='manager'?'Mgr':'R&M')+' approved: '+c.item});
-  // PHASE 6: write-through
-  if(c.poId)apiUpdate('Purchase_Orders','PO_ID',c.poId,{Pay_Status:'approved',Approver:userName});
-  writeApproval(t,1,c.amt);
-  R();nf('Approved','To Finance','ok');showPurch(tid)}function finPay(tid,i,st){const t=TKS.find(x=>x.id===tid);if(!t)return;const c=t.costs[i];c.payStatus=st;const lbl={done:'💳 Paid',hold:'⏸ Hold',rej:'✕ Rejected'}[st];t.hist.push({s:t.status,t:ts(),n:lbl+': '+c.item});R();nf(lbl,c.item,'ok');showPurch(tid)}
-
-function viewDocs(tid,i){const t=TKS.find(x=>x.id===tid);if(!t)return;const c=t.costs[i];
-  const qrBtn=c.qrUrl?`<a href="${c.qrUrl}" target="_blank" class="btn btn-s btn-o btn-full" style="margin-top:4px;font-size:9px">🔗 View QR</a>`:'';
-  const billBtn=c.billUrl?`<a href="${c.billUrl}" target="_blank" class="btn btn-s btn-o btn-full" style="margin-top:4px;font-size:9px">🔗 View Bill</a>`:'';
-  const h=`<div style="margin-bottom:12px"><h4 style="font-size:12px;font-weight:700">${c.item}</h4><div style="font-size:10px;color:var(--t2)">${c.qty} ${c.unit||'pcs'} @ ₹${(c.rate||c.amt).toLocaleString('en-IN')} = ₹${c.amt.toLocaleString('en-IN')}</div><div style="font-size:9px;color:var(--t3);margin-top:3px">🏪 ${c.shop||'—'} · Added ${c.addedAt||'—'}</div>${c.remarks?`<div style="font-size:9px;font-style:italic;color:var(--t2);margin-top:4px">📝 ${c.remarks}</div>`:''}</div>
-  <div class="doc-grid">
-    <div class="doc-item">${c.qrImg?`<div class="di-icon">📱</div><div class="di-label">QR Code</div><div class="di-status" style="color:var(--ok)">✅ Uploaded</div>${qrBtn}`:'<div class="di-icon" style="opacity:.3">📱</div><div class="di-label">QR</div><div class="di-status">Not uploaded</div>'}</div>
-    <div class="doc-item">${c.billImg?`<div class="di-icon">📷</div><div class="di-label">Bill</div><div class="di-status" style="color:var(--ok)">✅ Uploaded</div>${billBtn}`:'<div class="di-icon" style="opacity:.3">📷</div><div class="di-label">Bill</div><div class="di-status">Not uploaded</div>'}</div>
-  </div>`;
-  document.getElementById('docMBody').innerHTML=h;openM('docM')}
-function showPurch(id){curTkt=id;const t=TKS.find(x=>x.id===id);if(!t)return;
-  const isAtt=role==='attender',isMg=role==='manager',isRM=role==='rmhead',isFn=role==='finance';
-  const canAdd=isAtt&&t.status!=='closed';const tot=t.costs.reduce((s,c)=>s+c.amt,0);
-  let h='';
-  if(canAdd)h+=`<button class="btn-big purple" onclick="closeM('purchM');openM('lpM')" style="margin-bottom:12px;padding:10px;font-size:13px">+ Add Item</button>`;
-  if(t.costs.length){
-    t.costs.forEach((c,i)=>{
-      const psM={'pend':'<span class="pay-st pend">⏳ Not Requested</span>','mgr-pending':'<span class="pay-st mgr">⏳ Mgr Pending</span>','approved':'<span class="pay-st appr">📋 To Finance</span>','done':'<span class="pay-st done">✓ Paid</span>','hold':'<span class="pay-st hold">⏸ Hold</span>','rej':'<span class="pay-st rej">✕ Rej</span>'};
-      const ps=psM[c.payStatus]||psM['pend'];
-      h+=`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${c.item}</div><div style="font-size:9px;color:var(--t3)">🏪 ${c.shop||'—'}</div></div><div style="font-family:var(--m);font-weight:700;font-size:13px;color:var(--ac2)">₹${c.amt.toLocaleString('en-IN')}</div>${isAtt&&c.payStatus==='pend'?`<div class="dot-menu" style="margin-left:6px"><button class="dot-btn" onclick="event.stopPropagation();toggleD(this)">⋮</button><div class="dot-drop"><button class="dd-i" onclick="closeM('purchM');editLP(${i},'${t.id}')">✏️ Update</button><button class="dd-i dng" onclick="closeM('purchM');delLP(${i},'${t.id}')">🗑 Delete</button></div></div>`:''}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px"><span class="mt-tag">${c.qty} ${c.unit||'pcs'}</span><span class="mt-tag">@₹${(c.rate||c.amt).toLocaleString('en-IN')}</span>${c.qrImg?'<span class="mt-tag">📱</span>':''}${c.billImg?'<span class="mt-tag">📷</span>':''}</div>
-      ${c.remarks?`<div style="font-size:9px;color:var(--t3);background:var(--c1);padding:4px 6px;border-radius:4px;margin-bottom:5px;font-style:italic">📝 ${c.remarks}</div>`:''}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:5px;border-top:1px solid var(--bdr);gap:4px;flex-wrap:wrap"><div>${ps}${c.approver?`<div style="font-size:7px;color:var(--t3)">by ${c.approver}</div>`:''}</div><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="btn btn-s btn-o" onclick="viewDocs('${t.id}',${i})" style="font-size:9px">📎</button>${(isMg||isRM)&&c.payStatus==='mgr-pending'?(c.amt<=2000||isRM?`<button class="btn btn-s btn-ok" onclick="mgrApprovePay('${t.id}',${i})" style="font-size:9px">✅</button>`:'<span style="font-size:8px;color:var(--wr)">R&M</span>'):''}${isFn&&c.payStatus==='approved'?`<button class="btn btn-s btn-ok" onclick="finPay('${t.id}',${i},'done')" style="font-size:9px">💳</button><button class="btn btn-s btn-o" onclick="finPay('${t.id}',${i},'hold')" style="font-size:9px">⏸</button><button class="btn btn-s btn-er" onclick="finPay('${t.id}',${i},'rej')" style="font-size:9px">✕</button>`:''}</div></div></div>`;
-    });
-    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,rgba(124,106,240,.12),rgba(66,201,190,.06));border:1px solid var(--ac);border-radius:var(--r);margin-top:8px"><div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Total</div></div><div style="font-family:var(--m);font-weight:700;font-size:20px;color:var(--ac2)">₹${tot.toLocaleString('en-IN')}</div></div>`;
-  } else h+='<div style="text-align:center;color:var(--t3);padding:24px;font-size:11px">No purchases</div>';
-  document.getElementById('purchMBody').innerHTML=h;openM('purchM')}
-
-function toggleD(b){const d=b.nextElementSibling;document.querySelectorAll('.dot-drop.show').forEach(x=>x.classList.remove('show'));d.classList.toggle('show')}
-document.addEventListener('click',e=>{if(!e.target.closest('.dot-menu'))document.querySelectorAll('.dot-drop.show').forEach(x=>x.classList.remove('show'))});
-
-function openSLAExtend(id){curTkt=id;openM('slaM')}
-function doExtendSLA(){const r=document.getElementById('slaR').value,h=parseInt(document.getElementById('slaH').value)||0,n=document.getElementById('slaN').value;if(!r||!h){nf('Required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(!t)return;
-  if(!t.slaExt)t.slaExt=[];t.slaExt.push({reason:r,hours:h,notes:n,by:userName,when:ts()});
-  t.sla=String(h).padStart(2,'0')+':00';t.hist.push({s:t.status,t:ts(),n:'⏱ SLA +'+h+'h ('+r+')'});
-  closeM('slaM');['slaR','slaN'].forEach(x=>document.getElementById(x).value='');document.getElementById('slaH').value='4';
-  R();viewT(curTkt);nf('Extended','+'+h+'h','ok')}
-
-function openAssignPurchaser(id){curTkt=id;openM('puM')}
-function assignPurchaser(){const item=document.getElementById('puI').value,qty=parseInt(document.getElementById('puQ').value)||1,amt=parseInt(document.getElementById('puA').value)||0,urg=document.getElementById('puU').value,spec=document.getElementById('puS').value;
-  if(!item){nf('Required','Item name','warn');return}const t=TKS.find(x=>x.id===curTkt);if(!t)return;
-  t.puTask={item,qty,estAmt:amt,urgency:urg,specs:spec,status:'assigned',assignedBy:userName,assignedAt:ts(),purchaser:'9876543216'};
-  t.hist.push({s:t.status,t:ts(),n:'🛍️ Purchaser assigned: '+item});closeM('puM');['puI','puA','puS'].forEach(x=>document.getElementById(x).value='');document.getElementById('puQ').value='1';
-  R();viewT(curTkt);nf('Assigned','To Purchaser','ok')}
-function purchaserSeekApproval(id){const t=TKS.find(x=>x.id===id);if(!t||!t.puTask)return;t.puTask.status='rm-pending';t.hist.push({s:t.status,t:ts(),n:'Sent to R&M Head'});R();viewT(id)}
-function rmApprovePurchase(id){const t=TKS.find(x=>x.id===id);if(!t||!t.puTask)return;t.puTask.status='approved';t.puTask.approvedBy=userName;t.hist.push({s:t.status,t:ts(),n:'✅ R&M approved purchase'});R();viewT(id)}
-function rmRejectPurchase(id){const t=TKS.find(x=>x.id===id);if(!t||!t.puTask)return;t.puTask.status='rejected';t.hist.push({s:t.status,t:ts(),n:'❌ R&M rejected purchase'});R();viewT(id)}
-function purchaserComplete(id){const t=TKS.find(x=>x.id===id);if(!t||!t.puTask)return;t.costs.push({item:t.puTask.item,qty:t.puTask.qty,unit:'pcs',amt:t.puTask.estAmt,rate:Math.round(t.puTask.estAmt/t.puTask.qty),shop:'Purchaser ('+(USERS[t.puTask.purchaser]?.name||'')+')',v:'mn',qrImg:false,billImg:true,payStatus:'mgr-pending',addedAt:ts(),viaPurchaser:true});
-  t.puTask.status='done';t.hist.push({s:t.status,t:ts(),n:'✅ Purchaser delivered'});R();viewT(id)}
-
-// EXTERNAL VENDOR FLOW
-function openVendorReq(id){curTkt=id;openM('venM')}
-function requestVendor(){const d=document.getElementById('venD').value,vT=document.getElementById('venT').value,vA=parseInt(document.getElementById('venA').value)||0,u=document.getElementById('venU').value;
-  if(!d){nf('Required','Description','warn');return}const t=TKS.find(x=>x.id===curTkt);if(!t)return;
-  t.vendor={type:vT,desc:d,estAmt:vA,urgency:u,status:'requested',requestedBy:userName,requestedAt:ts(),vendorName:null,vendorPhone:null,completedAt:null};
-  t.hist.push({s:t.status,t:ts(),n:'🤝 External vendor requested: '+vT});
-  closeM('venM');['venD','venA'].forEach(x=>document.getElementById(x).value='');
-  R();viewT(curTkt);nf('Sent','Manager will assign vendor','ok')}
-function openAssignVendor(id){curTkt=id;openM('venAssignM')}
-function assignVendor(){const n=document.getElementById('vaN').value,p=document.getElementById('vaP').value,nt=document.getElementById('vaNt').value;
-  if(!n){nf('Required','Vendor name','warn');return}const t=TKS.find(x=>x.id===curTkt);if(!t||!t.vendor)return;
-  t.vendor.vendorName=n;t.vendor.vendorPhone=p;t.vendor.assignNotes=nt;t.vendor.status='assigned';t.vendor.assignedBy=userName;t.vendor.assignedAt=ts();
-  t.hist.push({s:t.status,t:ts(),n:'🤝 Vendor assigned: '+n});setSt(curTkt,'vendor-pending','Vendor working on site');
-  closeM('venAssignM');['vaN','vaP','vaNt'].forEach(x=>document.getElementById(x).value='');viewT(curTkt)}
-function vendorComplete(id){const t=TKS.find(x=>x.id===id);if(!t||!t.vendor)return;t.vendor.status='completed';t.vendor.completedAt=ts();t.hist.push({s:t.status,t:ts(),n:'✅ Vendor completed work'});setSt(id,'in-progress','Vendor done — attender resumes');R();viewT(id)}
-
-// RE-ASSIGNMENT (Manager)
-function openReassign(id){curTkt=id;const sel=document.getElementById('raA');sel.innerHTML='<option value="">Select attender</option>';ATTS.filter(a=>a.active).forEach(a=>{sel.innerHTML+=`<option value="${a.id}">${a.name} (${a.skills.join(', ')}) · Load ${a.load}/${a.max}</option>`});openM('reassignM')}
-function doReassign(){const newAtt=document.getElementById('raA').value,r=document.getElementById('raR').value,n=document.getElementById('raN').value;if(!newAtt||!r){nf('Required','Attender and reason','warn');return}const t=TKS.find(x=>x.id===curTkt);if(!t)return;
-  const oldA=gA(t.att);if(oldA)oldA.load=Math.max(0,oldA.load-1);
-  const newA=gA(newAtt);if(newA)newA.load++;t.att=newAtt;
-  t.hist.push({s:t.status,t:ts(),n:'↪ Re-assigned to '+newA.name+' ('+r+')'+(n?': '+n:'')});
-  closeM('reassignM');['raA','raR','raN'].forEach(x=>document.getElementById(x).value='');R();viewT(curTkt);nf('Re-assigned','→ '+newA.name,'ok')}
-// ===== GOOGLE DRIVE IMAGE UPLOAD =====
-const GDRIVE_FOLDER_ID='1Mgh8dJgxYO3jmEhNGtmmpOvkGM-iUqi6';
-
+// ===== GOOGLE DRIVE PHOTO UPLOAD (restored from main file) =====
 async function uploadToGDrive(file, prefix){
   return new Promise((resolve)=>{
     if(!file){resolve(null);return;}
@@ -1857,8 +1847,140 @@ async function uploadToGDrive(file, prefix){
     reader.readAsDataURL(file);
   });
 }
+// ===== PHOTO ACCUMULATOR — picks add up instead of replacing =====
+let tImgFiles=[];
+function addPhotos(inp){
+  if(inp.files&&inp.files.length){for(const f of inp.files)tImgFiles.push(f);}
+  inp.value='';
+  renderPhotoList();
+}
+function removePhoto(i){tImgFiles.splice(i,1);renderPhotoList();}
+function renderPhotoList(){
+  const l=document.getElementById('tImgL');
+  const list=document.getElementById('tImgList');
+  const btn=document.getElementById('addPhotoBtn');
+  if(l)l.textContent=tImgFiles.length?('✅ '+tImgFiles.length+' photo(s) selected'):'Tap to upload';
+  if(btn)btn.style.display=tImgFiles.length?'block':'none';
+  if(list)list.innerHTML=tImgFiles.map((f,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--c2);border-radius:var(--rs);margin-bottom:4px;font-size:10px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📷 ${f.name||('Photo '+(i+1))}</span><button type="button" onclick="removePhoto(${i})" style="background:none;border:none;color:var(--er);font-size:13px;cursor:pointer;padding:0 0 0 8px">✕</button></div>`).join('');
+}
+async function raiseTicket(){
+  const btn=document.getElementById('raiseBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Raising Ticket...';}
+  const fail=(a,b)=>{nf(a,b,'warn');if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}};
+  const ph=document.getElementById('lPh').value.replace(/\D/g,'').slice(-10);
+  const nm=document.getElementById('lNm').value.trim();
+  const lo=document.getElementById('lOut');
+  const o=lo?lo.value:'';
+  const c=document.getElementById('tC').value,s=document.getElementById('tS').value,d=document.getElementById('tD').value;
+  if(ph.length<10){fail('Enter mobile','10 digits required');return}
+  if(!nm){fail('Enter your name','Please type your name');return}
+  if(!o){fail('Select outlet','Search and select your outlet');return}
+  if(!c||!s){fail('Select the problem','Search or browse the problem type');return}
+  if(!d){fail('Missing description','Please describe the issue');return}
+  const iiR=document.getElementById('itemSel');if(iiR&&iiR.value)selItem=iiR.value;
+  const acR=document.getElementById('actionSel');if(acR&&acR.value)selAction=acR.value;
+  if(!selWH){fail('What happened?','Select an option under ⚡ What');return}
+  // Set identity from the form
+  role='requester';phone=ph;userName=nm;
+  userIni=(nm.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||ph.slice(-2);
+  userOutlet=o;selectedOutlets=[o];
+  document.getElementById('uN').textContent=userName;document.getElementById('uR').textContent='requester · '+phone;document.getElementById('uAv').textContent=userIni;
+  tCnt++;const id=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'-0'+tCnt;const u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');const sla=SLAH[u]||CATS[c]?.sla||24;
+  const probes=[];document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
+  const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
+  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction};
+  const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
+  // Upload ticket photos to Google Drive
+  const imgUrls=[];
+  if(tImgFiles.length){
+    nf('Uploading…','Saving photos to Drive','ok');
+    for(const f of tImgFiles){
+      const url=await uploadToGDrive(f,'ticket_'+id);
+      if(url)imgUrls.push(url);
+    }
+  }
+  t.photoUrls=imgUrls;
+  TKS.unshift(t);['tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';tImgFiles=[];renderPhotoList();clearSubSelection();selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
+  buildNav();R();
+  // PHASE 5: write-through — save the new ticket to the sheet, then log its history
+  nf('Saving…','Sending ticket to the sheet','ok');
+  apiAppend('Tickets',ticketToSheetRow(t)).then(ok=>{
+    if(ok){
+      t.synced=true;nf('✅ Saved',id+' stored in sheet','ok');
+      // log the events that happened at raise time
+      writeHistory(id,'raised','Raised by '+userName,userName);
+      if(t.att){const an=gA(t.att);writeHistory(id,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
+    } else {
+      t.synced=false;nf('⚠ Not saved',id+' is local only — sheet write failed','warn');
+    }
+  });
+  setTimeout(()=>{
+    const btn=document.getElementById('raiseBtn');
+    if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
+    hideRaiseForm();
+    go('tickets');
+    if(!fbShown){fbShown=true;setTimeout(()=>showFeedbackModal(id),1200);}
+  },800)}
 
-// VOICE
+function generateWhatsAppLink(phone,msg){let p=phone.replace(/^\+?/,'');if(!p.startsWith('91'))p='91'+p;return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg)}
+function shareOTPViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t||!t.otp)return;const msg=`🔐 OTP to close ticket ${t.id}: ${t.otp}`;const link=generateWhatsAppLink(t.by,msg);window.open(link,'_blank')}
+function setSt(id,ns,note){
+  const t=TKS.find(x=>x.id===id);if(!t)return;
+  t.status=ns;
+  t.hist.push({s:ns,t:ts(),n:note||SL[ns]});
+  if(ns==='closed'){const a=gA(t.att);if(a)a.load=Math.max(0,a.load-1)}
+  R();
+  apiUpdate('Tickets','Ticket_ID',id,{Status:ns,Assigned_To:t.att||'',Updated_At:ts()});
+  writeHistory(id,ns,note||SL[ns],userName);
+}
+
+function confirmResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.confirmStatus='resolved';closeM('confirmM');
+  // PHASE 6: Yes → generate OTP, auto-post to chat, move to ready-closure
+  if(!t.otp)t.otp=Math.floor(100000+Math.random()*900000);
+  t.otpRevealed=true;
+  if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:'🔐 OTP: '+t.otp,time:ts(),isOtp:true});
+  writeChat(curTkt,'🔐 OTP: '+t.otp,true);
+  apiUpdate('Tickets','Ticket_ID',curTkt,{OTP:t.otp,OTP_Revealed:'TRUE',Confirm_Status:'resolved'});
+  setSt(curTkt,'ready-closure','✅ Requester confirmed. OTP auto-generated & posted to chat.');
+  setTimeout(()=>viewT(curTkt),300);nf('OTP shared','Check the chat — give it to the attender','ok')}
+
+function confirmNotResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.confirmStatus='not-resolved';closeM('confirmM');
+  // PHASE 6: No → no OTP, ticket returns to In Progress
+  t.otpRevealed=false;
+  setSt(curTkt,'in-progress','❌ Requester says NOT resolved — back to In Progress');
+  setTimeout(()=>viewT(curTkt),300);nf('Not resolved','Ticket returned to In Progress','warn')}
+function doReopen(){const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(t){t.status='raised';t.otpRevealed=false;t.issueRes=null;t.confirmStatus=null;t.reopened=true;t.hist.push({s:'raised',t:ts(),n:'🔄 Re-opened: '+r});const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'Re-assigned → '+a.name})}}closeM('reopenM');R();viewT(curTkt)}
+
+
+
+
+
+
+function viewDocs(tid,i){const t=TKS.find(x=>x.id===tid);if(!t)return;const c=t.costs[i];
+  const qrBtn=c.qrUrl?`<a href="${c.qrUrl}" target="_blank" class="btn btn-s btn-o btn-full" style="margin-top:4px;font-size:9px">🔗 View QR</a>`:'';
+  const billBtn=c.billUrl?`<a href="${c.billUrl}" target="_blank" class="btn btn-s btn-o btn-full" style="margin-top:4px;font-size:9px">🔗 View Bill</a>`:'';
+  const h=`<div style="margin-bottom:12px"><h4 style="font-size:12px;font-weight:700">${c.item}</h4><div style="font-size:10px;color:var(--t2)">${c.qty} ${c.unit||'pcs'} @ ₹${(c.rate||c.amt).toLocaleString('en-IN')} = ₹${c.amt.toLocaleString('en-IN')}</div><div style="font-size:9px;color:var(--t3);margin-top:3px">🏪 ${c.shop||'—'} · Added ${c.addedAt||'—'}</div>${c.remarks?`<div style="font-size:9px;font-style:italic;color:var(--t2);margin-top:4px">📝 ${c.remarks}</div>`:''}</div>
+  <div class="doc-grid">
+    <div class="doc-item">${c.qrImg?`<div class="di-icon">📱</div><div class="di-label">QR Code</div><div class="di-status" style="color:var(--ok)">✅ Uploaded</div>${qrBtn}`:'<div class="di-icon" style="opacity:.3">📱</div><div class="di-label">QR</div><div class="di-status">Not uploaded</div>'}</div>
+    <div class="doc-item">${c.billImg?`<div class="di-icon">📷</div><div class="di-label">Bill</div><div class="di-status" style="color:var(--ok)">✅ Uploaded</div>${billBtn}`:'<div class="di-icon" style="opacity:.3">📷</div><div class="di-label">Bill</div><div class="di-status">Not uploaded</div>'}</div>
+  </div>`;
+  document.getElementById('docMBody').innerHTML=h;openM('docM')}
+function showPurch(id){curTkt=id;const t=TKS.find(x=>x.id===id);if(!t)return;
+  const tot=t.costs.reduce((s,c)=>s+c.amt,0);
+  let h='';
+  if(t.costs.length){
+    t.costs.forEach((c,i)=>{
+      const psM={'pend':'<span class="pay-st pend">⏳ Not Requested</span>','mgr-pending':'<span class="pay-st mgr">⏳ Approval Pending</span>','approved':'<span class="pay-st appr">📋 To Finance</span>','done':'<span class="pay-st done">✓ Paid</span>','hold':'<span class="pay-st hold">⏸ Hold</span>','rej':'<span class="pay-st rej">✕ Rej</span>'};
+      const ps=psM[c.payStatus]||psM['pend'];
+      h+=`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${c.item}</div><div style="font-size:9px;color:var(--t3)">🏪 ${c.shop||'—'}</div></div><div style="font-family:var(--m);font-weight:700;font-size:13px;color:var(--ac2)">₹${c.amt.toLocaleString('en-IN')}</div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px"><span class="mt-tag">${c.qty} ${c.unit||'pcs'}</span><span class="mt-tag">@₹${(c.rate||c.amt).toLocaleString('en-IN')}</span>${c.qrImg?'<span class="mt-tag">📱</span>':''}${c.billImg?'<span class="mt-tag">📷</span>':''}</div>
+      ${c.remarks?`<div style="font-size:9px;color:var(--t3);background:var(--c1);padding:4px 6px;border-radius:4px;margin-bottom:5px;font-style:italic">📝 ${c.remarks}</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:5px;border-top:1px solid var(--bdr);gap:4px;flex-wrap:wrap"><div>${ps}</div><button class="btn btn-s btn-o" onclick="viewDocs('${t.id}',${i})" style="font-size:9px">📎</button></div></div>`;
+    });
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,rgba(124,106,240,.12),rgba(66,201,190,.06));border:1px solid var(--ac);border-radius:var(--r);margin-top:8px"><div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Total</div></div><div style="font-family:var(--m);font-weight:700;font-size:20px;color:var(--ac2)">₹${tot.toLocaleString('en-IN')}</div></div>`;
+  } else h+='<div style="text-align:center;color:var(--t3);padding:24px;font-size:11px">No purchases</div>';
+  document.getElementById('purchMBody').innerHTML=h;openM('purchM')}
+
 function voiceInput(targetId,btnEl){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){nf('Not supported','Use Chrome on Android/desktop','warn');return}
@@ -1918,10 +2040,10 @@ function voiceInput(targetId,btnEl){
 }
 
 // REFRESH
-function R(){rDash();rList();rAtt();rAppr();rFin();rPurchaser();rVendors();rRpt();rConfig();rMgrActions();renderPunch();rAttHistory()}
+function R(){rDash();rList()}
 
 function rDash(){const op=TKS.filter(t=>t.status!=='closed').length,cl=TKS.filter(t=>t.status==='closed').length,br=TKS.filter(t=>t.sla?.startsWith('-')).length;
-  const sm={requester:[{v:TKS.length,l:'Total',c:'p'},{v:op,l:'Open',c:'o'},{v:cl,l:'Closed',c:'g'},{v:br,l:'Breached',c:'rd'}],manager:[{v:TKS.length,l:'Total',c:'p'},{v:op,l:'Open',c:'o'},{v:br,l:'Breached',c:'rd'},{v:cl,l:'Closed',c:'g'}],rmhead:[{v:TKS.length,l:'Total',c:'p'},{v:op,l:'Open',c:'o'},{v:br,l:'Breach',c:'rd'},{v:cl,l:'Closed',c:'g'}],admin:[{v:TKS.length,l:'Tickets',c:'p'},{v:OL.length,l:'Outlets',c:'g'},{v:ATTS.length,l:'Attenders',c:'b'},{v:Object.keys(CATS).length,l:'Categories',c:'o'}],finance:[{v:TKS.reduce((s,t)=>s+t.costs.filter(c=>c.payStatus==='approved').length,0),l:'To Pay',c:'o'},{v:TKS.reduce((s,t)=>s+t.costs.filter(c=>c.payStatus==='done').length,0),l:'Done',c:'g'}]};
+  const sm={requester:[{v:TKS.length,l:'Total',c:'p'},{v:op,l:'Open',c:'o'},{v:cl,l:'Closed',c:'g'},{v:br,l:'Breached',c:'rd'}]};
   const el=document.getElementById('dSt');if(el)el.innerHTML=(sm[role]||sm.requester).map(x=>`<div class="st ${x.c}"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
   const dc=document.getElementById('dCards');if(dc){const r=TKS.slice(0,5);dc.innerHTML=r.length?r.map(t=>renderTcard(t)).join(''):'<div style="text-align:center;color:var(--t3);padding:16px;font-size:10px">No tickets</div>'}}
 
@@ -1936,337 +2058,24 @@ function rList(){const el=document.getElementById('tCards');if(!el)return;let f=
   // Multi-outlet filter
   if(selectedOutlets.length>0)f=f.filter(t=>selectedOutlets.includes(t.out));
   else if(role==='requester'&&userOutlet)f=f.filter(t=>t.out===userOutlet);
-  if(role==='attender'){if(!punchedIn){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">🔒 Punch In to see tickets.<br><button class="btn btn-s btn-p" onclick="go(\'punch\')" style="margin-top:10px">📍 Go to Punch</button></div>';return}const my=attId||'ATT-012';f=f.filter(t=>t.att===my)}
 
   el.innerHTML=f.length?f.map(t=>renderTcard(t)).join(''):'<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No tickets match</div>'}
 function resetF(){['fSt','fPr','fCt','fOt'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});selectedOutlets=role==='requester'&&userOutlet?[userOutlet]:[];updateOutletBtn();rList()}
 function escalate(id){const t=TKS.find(x=>x.id===id);if(t){t.hist.push({s:t.status,t:ts(),n:'⚠ ESCALATED by '+userName});R();nf('Escalated','R&M notified','warn')}}
 
 // ATTENDER DASHBOARD
-function rAtt(){const el=document.getElementById('attJobs');if(!el||role!=='attender')return;
-  if(!punchedIn){const ast0=document.getElementById('aSt');if(ast0)ast0.innerHTML='';el.innerHTML='<div style="text-align:center;color:var(--t3);padding:30px;font-size:12px">🔒 Punch In to see your jobs.<br><button class="btn btn-s btn-p" onclick="go(\'punch\')" style="margin-top:10px">📍 Go to Punch</button></div>';return}
-  const my=attId||'ATT-012';
-  const aFPr=document.getElementById('aFPr')?.value;
-  const aFSt=document.getElementById('aFSt')?.value;
-  let mine=TKS.filter(t=>t.att===my&&t.status!=='closed');
-  if(aFPr)mine=mine.filter(t=>t.pri===aFPr);
-  if(aFSt)mine=mine.filter(t=>t.status===aFSt);
-const done=TKS.filter(t=>t.att===my&&t.status==='closed').length;
 
-  const ast=document.getElementById('aSt');if(ast)ast.innerHTML=[{v:mine.length,l:'Active',c:'p'},{v:done,l:'Done',c:'g'},{v:gA(my)?.rating||0,l:'Rating',c:'b'}].map(x=>`<div class="st ${x.c}"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
-  if(!mine.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:30px;font-size:12px">✅ No active jobs</div>';return}
-  el.innerHTML=mine.map(t=>{const sc=t.sla?.startsWith('-')?'breach':parseFloat(t.sla)<=2?'warn':'safe';const isBr=t.sla?.startsWith('-');const reqPhone=t.by;const outPhone=OUTPHONES[t.out]||reqPhone;
-    // Big action button per status
-    const btnMap={'assigned':{text:'✓ ACCEPT',cls:'green',fn:`doAccept('${t.id}')`},'accepted':null,'on-the-way':{text:'📍 REACHED OUTLET',cls:'orange',fn:`doReached('${t.id}')`},'reached-outlet':{text:'▶ START JOB',cls:'green',fn:`doStart('${t.id}')`},'job-started':{text:'🔧 IN PROGRESS',cls:'purple',fn:`doProgress('${t.id}')`},'in-progress':{text:'✅ MARK AS FIXED',cls:'green',fn:`doMarkFixed('${t.id}')`},'vendor-pending':{text:'✓ VENDOR DONE',cls:'green',fn:`vendorComplete('${t.id}')`},'ready-closure':{text:'🔐 ENTER OTP',cls:'orange',fn:`viewT('${t.id}')`}};
-    let actionHtml='';
-    if(t.status==='accepted'){actionHtml=`<div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:6px">Does this job need site visit?</div><div style="display:flex;gap:6px"><button class="btn-big blue" onclick="doVisitChoice('${t.id}',true)">🚗 YES — On Way</button><button class="btn-big purple" onclick="doVisitChoice('${t.id}',false)">💻 NO — Remote</button></div>`}
-    else{const btn=btnMap[t.status];if(btn)actionHtml=`<button class="btn-big ${btn.cls}" onclick="${btn.fn}">${btn.text}</button>`;else actionHtml=`<div style="text-align:center;padding:8px;color:var(--t3);font-size:11px">${SL[t.status]}</div>`}
-    const purchCnt=t.costs.length;const tot=t.costs.reduce((s,c)=>s+c.amt,0);
-    return`<div class="job-card"><div class="jc-head"><div style="display:flex;justify-content:space-between;align-items:center"><span class="tid" style="font-size:11px">${t.id}</span><span class="sla ${sc}">⏱ ${t.sla||'—'}</span></div><div style="font-size:14px;font-weight:700;margin:4px 0">${t.issue}</div><div style="font-size:10px;color:var(--t2)">🏪 ${t.out} · ${t.cat}</div>${tot>0?`<div style="font-size:10px;color:var(--ac2);font-weight:600;margin-top:3px">💰 ₹${tot.toLocaleString('en-IN')}</div>`:''}${isBr?`<div style="margin-top:6px"><button class="btn btn-s btn-wr" onclick="openSLAExtend('${t.id}')" style="font-size:9px">⏱ Extend SLA</button></div>`:''}</div>
-      <div class="jc-status"><div style="font-size:10px;color:var(--t3)">Status</div><div style="font-size:13px;font-weight:600">${SL[t.status]}</div></div>
-      <div class="jc-action">${actionHtml}</div>
-      <div class="jc-bar"><button class="jc-bar-btn" onclick="showPurch('${t.id}')" style="${purchCnt?'color:var(--ac2);font-weight:700':''}">🛒${purchCnt?'<span style="background:var(--ac);color:#fff;padding:1px 5px;border-radius:8px;font-size:9px;margin-left:3px">'+purchCnt+'</span>':''}</button><a class="jc-bar-btn" href="tel:+91${reqPhone}">📞</a><a class="jc-bar-btn" href="tel:+91${outPhone}">🏪</a><button class="jc-bar-btn" onclick="openAssignPurchaser('${t.id}')">🛍️</button><button class="jc-bar-btn" onclick="openVendorReq('${t.id}')">🤝</button><button class="jc-bar-btn" onclick="viewT('${t.id}')">📋</button></div></div>`}).join('')}
 
-function rAppr(){const el=document.getElementById('apList');if(!el)return;
-  // PHASE 8: group pending items by ticket for ticket-wise approval
-  const byTicket={};TKS.forEach(t=>t.costs.forEach((c,i)=>{if(c.payStatus==='mgr-pending'){if(!byTicket[t.id])byTicket[t.id]={t,items:[]};byTicket[t.id].items.push({c,i})}}));
-  const groups=Object.values(byTicket);const totalItems=groups.reduce((s,g)=>s+g.items.length,0);
-  document.getElementById('apP').textContent=totalItems;document.getElementById('apD').textContent=TKS.reduce((s,t)=>s+t.costs.filter(c=>['approved','done','hold','rej'].includes(c.payStatus)).length,0);
-  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No pending approvals</div>';return}
-  el.innerHTML=groups.map(({t,items})=>{
-    const tktTotal=items.reduce((s,x)=>s+x.c.amt,0);const highCount=items.filter(x=>x.c.amt>2000).length;
-    let h=`<div class="card" style="margin-bottom:10px"><div class="card-h"><h3>${t.id} · ${t.issue}</h3><span class="tid">₹${tktTotal.toLocaleString('en-IN')}</span></div><div style="font-size:9px;color:var(--t2);margin-bottom:8px">🏪 ${t.out} · ${items.length} item(s) pending</div>`;
-    items.forEach(({c,i})=>{const can=role==='rmhead'||(role==='manager'&&c.amt<=2000);
-      h+=`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:700;font-size:11px">${c.item}</div><div style="font-size:9px;color:var(--t2)">🏪 ${c.shop||'—'} · ${c.qty} ${c.unit||''}</div></div><div style="font-family:var(--m);font-weight:700;font-size:12px">₹${c.amt.toLocaleString('en-IN')}${c.amt>2000?'<div style="font-size:7px;color:var(--or)">over ₹2K</div>':''}</div></div><div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap"><button class="btn btn-s btn-o" onclick="viewDocs('${t.id}',${i})">📎</button>${can?`<button class="btn btn-s btn-ok" onclick="mgrApprovePay('${t.id}',${i})">✅ Approve item</button>`:'<span style="font-size:9px;color:var(--wr);align-self:center">R&M only</span>'}</div></div>`;
-    });
-    const noteHigh=highCount&&role==='manager'?` · includes ${highCount} over ₹2K`:'';
-    h+=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-full" onclick="approveTicket('${t.id}')" style="font-weight:700">✅ Approve Ticket (${items.length} items · ₹${tktTotal.toLocaleString('en-IN')}${noteHigh})</button></div><div style="margin-top:6px"><button class="btn btn-s btn-o btn-full" onclick="openMgrFeedbackFor('${t.att||''}')">📣 Send Feedback to Attender</button><button class="btn btn-s btn-o btn-full" onclick="viewT('${t.id}')" style="margin-top:4px">↗ Open Ticket</button></div></div>`;
-    return h;
-  }).join('')}
-function approveTicket(tid){const t=TKS.find(x=>x.id===tid);if(!t)return;let n=0;let total=0;
-  t.costs.forEach(c=>{if(c.payStatus==='mgr-pending'){c.payStatus='approved';c.approver=userName;n++;total+=c.amt;}});
-  t.hist.push({s:t.status,t:ts(),n:'✅ Ticket approved ('+n+' items) by '+userName});
-  // PHASE 6: write-through
-  apiUpdatePOsByTicket(tid,{Pay_Status:'approved',Approver:userName});
-  writeApproval(t,n,total);
-  writeHistory(tid,t.status,'✅ Ticket approved ('+n+' items) by '+userName,userName);
-  R();nf('✅ Ticket Approved',n+' item(s) → Finance','ok')}
-function openMgrFeedbackFor(aid){if(!aid){nf('No attender','This ticket has no attender','warn');return}const a=gA(aid);if(!a)return;const msg=prompt('Feedback for '+a.name+':');if(msg&&msg.trim()){if(!a.feedback)a.feedback=[];a.feedback.push({msg:msg.trim(),by:userName,when:ts()});R();nf('📣 Feedback sent','To '+a.name,'ok')}}
 
-function rFin(){const el=document.getElementById('fnList');if(!el)return;
-  const filter=document.getElementById('fnFilter')?.value||'pending';
-  // PHASE 9: group by Order ID (ticket). A ticket is "to pay" if it has approved items.
-  document.getElementById('fnP').textContent=TKS.reduce((s,t)=>s+t.costs.filter(c=>c.payStatus==='approved').length,0);
-  document.getElementById('fnD').textContent=TKS.reduce((s,t)=>s+t.costs.filter(c=>c.payStatus==='done').length,0);
-  const groups=[];TKS.forEach(t=>{
-    const approved=t.costs.filter(c=>c.payStatus==='approved');
-    const paid=t.costs.filter(c=>c.payStatus==='done');
-    const rej=t.costs.filter(c=>c.payStatus==='rej');
-    let show=false;
-    if(filter==='pending'&&approved.length)show=true;
-    else if(filter==='paid'&&paid.length)show=true;
-    else if(filter==='rejected'&&rej.length)show=true;
-    else if(filter==='all'&&(approved.length||paid.length||rej.length))show=true;
-    if(show)groups.push({t,approved,paid,rej});
-  });
-  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No orders in this view</div>';return}
-  el.innerHTML=groups.map(({t,approved,paid,rej})=>{
-    const approvedTotal=approved.reduce((s,c)=>s+c.amt,0);
-    let h=`<div class="card" style="margin-bottom:10px"><div class="card-h"><h3>Order ${t.id}</h3>${t.payment?.status==='paid'?'<span class="pay-st done">✓ Paid</span>':approved.length?'<span class="pay-st appr">To Pay</span>':''}</div><div style="font-size:9px;color:var(--t2);margin-bottom:8px">🏪 ${t.out} · ${t.issue}</div>`;
-    // List all items with their state
-    t.costs.forEach((c,i)=>{if(!['approved','done','rej'].includes(c.payStatus))return;const stM={approved:'<span class="pay-st appr">To Pay</span>',done:'<span class="pay-st done">✓ Paid</span>',rej:'<span class="pay-st rej">✕ Rej</span>'}[c.payStatus];
-      h+=`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:600;font-size:11px">${c.item} <span style="font-size:8px;color:var(--t3)">${c.qty} ${c.unit||''}</span></div><div style="font-size:8px;color:var(--t3)">Approved by ${c.approver||'—'}</div></div><div style="text-align:right"><div style="font-family:var(--m);font-weight:700;font-size:11px">₹${c.amt.toLocaleString('en-IN')}</div>${stM}</div></div><div style="margin-top:4px"><button class="btn btn-s btn-o" onclick="viewDocs('${t.id}',${i})" style="font-size:9px">📎 Docs</button></div></div>`;
-    });
-    if(t.payment?.status==='paid'){h+=`<div style="background:var(--okb);border-radius:var(--rs);padding:8px;margin-top:6px;font-size:9px;color:var(--ok)">✓ Paid by ${t.payment.by} · ${t.payment.when}${t.payment.proofUploaded?' · 📷 Proof attached':''}${t.payment.remarks?`<div style="color:var(--t2);margin-top:2px">📝 ${t.payment.remarks}</div>`:''}</div>`;}
-    if(approved.length){h+=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-ok btn-full" onclick="openPayOrder('${t.id}')" style="font-weight:700">💳 Pay Order (₹${approvedTotal.toLocaleString('en-IN')})</button></div><div style="display:flex;gap:4px;margin-top:4px"><button class="btn btn-s btn-er btn-full" onclick="rejectOrder('${t.id}')">✕ Reject Order</button></div>`;}
-    h+=`<div style="margin-top:6px"><button class="btn btn-s btn-o btn-full" onclick="viewT('${t.id}')">↗ Open Ticket</button></div></div>`;
-    return h;
-  }).join('')}
-let payOrderTkt='';
-function openPayOrder(tid){payOrderTkt=tid;document.getElementById('poProofL').textContent='Tap to upload proof';document.getElementById('poProofL').style.color='';document.getElementById('poProof').value='';document.getElementById('poRemarks').value='';openM('payOrderM')}
-async function confirmPayOrder(){
-  const t=TKS.find(x=>x.id===payOrderTkt);if(!t)return;
-  const proofFile=document.getElementById('poProof').files[0];
-  const remarks=document.getElementById('poRemarks').value;
 
-  let proofUrl=null;
-  if(proofFile){
-    nf('Uploading…','Saving payment proof to Drive','ok');
-    proofUrl=await uploadToGDrive(proofFile,'payment_'+payOrderTkt);
-  }
 
-  let n=0;
-  t.costs.forEach(c=>{if(c.payStatus==='approved'){c.payStatus='done';n++;}});
-  t.payment={
-    status:'paid',
-    proofUploaded:!!proofUrl,
-    proofUrl:proofUrl||'',
-    remarks,
-    by:userName,
-    when:ts()
-  };
-  t.hist.push({s:t.status,t:ts(),n:'💳 Order paid ('+n+' items) by '+userName+(proofUrl?' · 📷 proof saved':'')});
-
-  t.costs.forEach(c=>{
-    if(c.poId&&c.payStatus==='done')
-      apiUpdate('Purchase_Orders','PO_ID',c.poId,{Pay_Status:'done',Proof_Link:proofUrl||''});
-  });
-  writePayment(t,'paid',!!proofUrl,remarks);
-apiUpdate('Tickets','Ticket_ID',payOrderTkt,{Payment_Proof_URL:proofUrl||'',Payment_By:userName,Payment_When:ts()});
-  writeHistory(payOrderTkt,t.status,'💳 Order paid by '+userName,userName);
-
-  document.getElementById('poProof').value='';
-  document.getElementById('poProofL').textContent='Tap to upload proof';
-  document.getElementById('poProofL').style.color='';
-  document.getElementById('poRemarks').value='';
-  closeM('payOrderM');R();nf('💳 Order Paid',n+' item(s) settled','ok')
-}
-function rejectOrder(tid){const t=TKS.find(x=>x.id===tid);if(!t)return;if(!confirm('Reject all approved items in this order?'))return;let n=0;
-  t.costs.forEach(c=>{if(c.payStatus==='approved'){c.payStatus='rej';n++;}});
-  t.payment={status:'rejected',by:userName,when:ts()};
-  t.hist.push({s:t.status,t:ts(),n:'✕ Order rejected by '+userName});
-  // PHASE 6: write-through
-  t.costs.forEach(c=>{if(c.poId&&c.payStatus==='rej')apiUpdate('Purchase_Orders','PO_ID',c.poId,{Pay_Status:'rej'})});
-  writePayment(t,'rejected',false,'');
-  R();nf('Order Rejected',n+' item(s)','warn')}
-
-function rPurchaser(){const el=document.getElementById('puList');if(!el)return;const tasks=TKS.filter(t=>t.puTask&&['assigned','rm-pending','approved'].includes(t.puTask.status));
-  document.getElementById('puP').textContent=tasks.length;document.getElementById('puD').textContent=TKS.filter(t=>t.puTask&&t.puTask.status==='done').length;
-  if(role!=='purchaser'){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">Login as Purchaser</div>';return}
-  if(!tasks.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No tasks</div>';return}
-  el.innerHTML=tasks.map(t=>{const p=t.puTask;const stMap={'assigned':'<span class="pay-st mgr">📋 New</span>','rm-pending':'<span class="pay-st pend">⏳ R&M Approval</span>','approved':'<span class="pay-st appr">✅ Execute</span>'};
-    return`<div class="lp"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><div style="flex:1"><div style="font-weight:700;font-size:12px">${p.item} x${p.qty} <span class="tid">${t.id}</span></div><div style="font-size:9px;color:var(--t2)">${p.urgency} · Est ₹${p.estAmt}</div>${p.specs?`<div style="font-size:9px;color:var(--t3);font-style:italic">📝 ${p.specs}</div>`:''}</div><div>${stMap[p.status]}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--bdr)">${p.status==='assigned'?`<button class="btn btn-s btn-p" onclick="purchaserSeekApproval('${t.id}')">📤 To R&M</button>`:''}${p.status==='approved'?`<button class="btn btn-s btn-ok" onclick="purchaserComplete('${t.id}')">✅ Mark Purchased</button>`:''}<button class="btn btn-s btn-o" onclick="viewT('${t.id}')">↗ Ticket</button></div></div>`}).join('')}
-
-function rVendors(){const el=document.getElementById('venList');if(!el)return;const vens=TKS.filter(t=>t.vendor);
-  if(!vens.length){el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No vendor requests</div>';return}
-  const isMg=role==='manager'||role==='rmhead';
-  el.innerHTML=vens.map(t=>{const v=t.vendor;const stM={'requested':'<span class="pay-st mgr">📋 Pending Assignment</span>','assigned':'<span class="pay-st appr">🤝 Vendor Working</span>','completed':'<span class="pay-st done">✓ Done</span>'};
-    return`<div class="lp"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><div style="flex:1"><div style="font-weight:700;font-size:12px">${v.type} <span class="tid">${t.id}</span></div><div style="font-size:9px;color:var(--t2)">${t.issue} · ${t.out}</div><div style="font-size:9px;color:var(--t3);font-style:italic;margin-top:3px">📝 ${v.desc}</div>${v.vendorName?`<div style="font-size:10px;color:var(--ac2);margin-top:3px">🤝 ${v.vendorName} ${v.vendorPhone?'· '+v.vendorPhone:''}</div>`:''}</div><div style="text-align:right"><div>${stM[v.status]}</div><div style="font-family:var(--m);font-size:10px;margin-top:3px">Est ₹${v.estAmt||0}</div></div></div><div style="display:flex;gap:4px;padding-top:6px;border-top:1px solid var(--bdr)">${isMg&&v.status==='requested'?`<button class="btn btn-s btn-p" onclick="openAssignVendor('${t.id}')">🤝 Assign Vendor</button>`:''}<button class="btn btn-s btn-o" onclick="viewT('${t.id}')">↗ Ticket</button></div></div>`}).join('')}
-
-function rRpt(){const el=document.getElementById('rptB');if(!el)return;
-
-  // ── SECTION 1: TICKET SUMMARY ──
-  const total=TKS.length;
-  const open=TKS.filter(t=>t.status!=='closed').length;
-  const closed=TKS.filter(t=>t.status==='closed').length;
-  const breached=TKS.filter(t=>t.sla&&t.sla.startsWith('-')).length;
-  const critical=TKS.filter(t=>t.pri==='critical'&&t.status!=='closed').length;
-
-  // Tickets by outlet
-  const byOutlet={};TKS.forEach(t=>{if(!byOutlet[t.out])byOutlet[t.out]={total:0,open:0,closed:0};byOutlet[t.out].total++;if(t.status==='closed')byOutlet[t.out].closed++;else byOutlet[t.out].open++});
-  const outRows=Object.entries(byOutlet).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
-  const outMax=Math.max(...outRows.map(x=>x[1].total),1);
-
-  // Tickets by category
-  const byCat={};TKS.forEach(t=>{const c=(t.cat||'other').toLowerCase();byCat[c]=(byCat[c]||0)+1});
-  const catRows=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  const catMax=Math.max(...catRows.map(x=>x[1]),1);
-
-  // ── SECTION 2: FINANCIAL SUMMARY ──
-  const allCosts=TKS.flatMap(t=>t.costs||[]);
-  const totalSpend=allCosts.reduce((s,c)=>s+c.amt,0);
-  const pendingApproval=allCosts.filter(c=>c.payStatus==='mgr-pending').reduce((s,c)=>s+c.amt,0);
-  const approved=allCosts.filter(c=>c.payStatus==='approved').reduce((s,c)=>s+c.amt,0);
-  const paid=allCosts.filter(c=>c.payStatus==='done').reduce((s,c)=>s+c.amt,0);
-
-  // Spend by outlet
-  const spendByOutlet={};TKS.forEach(t=>(t.costs||[]).forEach(c=>{spendByOutlet[t.out]=(spendByOutlet[t.out]||0)+c.amt}));
-  const spendRows=Object.entries(spendByOutlet).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const spendMax=Math.max(...spendRows.map(x=>x[1]),1);
-
-  // ── SECTION 3: ATTENDER PERFORMANCE ──
-  const attRows=ATTS.filter(a=>a.active).map(a=>{
-    const mine=TKS.filter(t=>t.att===a.id);
-    const myOpen=mine.filter(t=>t.status!=='closed').length;
-    const myDone=mine.filter(t=>t.status==='closed').length;
-    return{...a,myOpen,myDone};
-  }).sort((a,b)=>b.rating-a.rating);
-
-  el.innerHTML=`
-  <!-- SECTION 1: TICKET SUMMARY -->
-  <div class="card" style="margin-bottom:10px">
-    <div class="card-h"><h3>🎫 Ticket Summary</h3><span style="font-size:9px;color:var(--t3)">${total} total</span></div>
-    <div class="sts" style="grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
-      <div class="st p"><div class="sv" style="font-size:16px">${total}</div><div class="sl">Total</div></div>
-      <div class="st o"><div class="sv" style="font-size:16px">${open}</div><div class="sl">Open</div></div>
-      <div class="st g"><div class="sv" style="font-size:16px">${closed}</div><div class="sl">Closed</div></div>
-      <div class="st rd"><div class="sv" style="font-size:16px">${breached}</div><div class="sl">Breached</div></div>
-    </div>
-    ${critical?`<div style="background:var(--erb);border-radius:var(--rs);padding:6px 10px;font-size:10px;color:var(--er);margin-bottom:10px">⚠ ${critical} critical ticket(s) still open</div>`:''}
-    <div style="font-size:10px;font-weight:700;margin-bottom:6px;color:var(--t2)">BY OUTLET</div>
-    ${outRows.map(([o,v])=>`<div style="margin-bottom:5px">
-      <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px">
-        <span>${o}</span>
-        <span style="font-family:var(--m);color:var(--t2)">${v.open} open · ${v.closed} closed</span>
-      </div>
-      <div class="pbar"><div class="fill" style="width:${v.total/outMax*100}%;background:var(--ac)"></div></div>
-    </div>`).join('')}
-    <div style="font-size:10px;font-weight:700;margin:10px 0 6px;color:var(--t2)">BY CATEGORY</div>
-    ${catRows.map(([c,v])=>`<div style="margin-bottom:5px">
-      <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px">
-        <span>${CATS[c]?CATS[c].label:c}</span>
-        <span style="font-family:var(--m)">${v}</span>
-      </div>
-      <div class="pbar"><div class="fill" style="width:${v/catMax*100}%;background:var(--inf)"></div></div>
-    </div>`).join('')}
-  </div>
-
-  <!-- SECTION 2: FINANCIAL SUMMARY -->
-  <div class="card" style="margin-bottom:10px">
-    <div class="card-h"><h3>💰 Financial Summary</h3></div>
-    <div class="sts" style="grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px">
-      <div class="st p"><div class="sv" style="font-size:14px">₹${totalSpend.toLocaleString('en-IN')}</div><div class="sl">Total Spend</div></div>
-      <div class="st g"><div class="sv" style="font-size:14px">₹${paid.toLocaleString('en-IN')}</div><div class="sl">Paid</div></div>
-      <div class="st o"><div class="sv" style="font-size:14px">₹${approved.toLocaleString('en-IN')}</div><div class="sl">To Pay</div></div>
-      <div class="st rd"><div class="sv" style="font-size:14px">₹${pendingApproval.toLocaleString('en-IN')}</div><div class="sl">Pending Approval</div></div>
-    </div>
-    ${spendRows.length?`<div style="font-size:10px;font-weight:700;margin-bottom:6px;color:var(--t2)">SPEND BY OUTLET</div>
-    ${spendRows.map(([o,v])=>`<div style="margin-bottom:5px">
-      <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px">
-        <span>${o}</span><span style="font-family:var(--m);color:var(--ac2)">₹${v.toLocaleString('en-IN')}</span>
-      </div>
-      <div class="pbar"><div class="fill" style="width:${v/spendMax*100}%;background:var(--wr)"></div></div>
-    </div>`).join('')}`:'<div style="text-align:center;color:var(--t3);font-size:10px;padding:8px">No purchase data yet</div>'}
-  </div>
-
-  <!-- SECTION 3: ATTENDER PERFORMANCE -->
-  <div class="card">
-    <div class="card-h"><h3>🔧 Attender Performance</h3></div>
-    ${attRows.map(a=>`<div class="lp" style="margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div class="av" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${a.ini}</div>
-          <div>
-            <div style="font-weight:600;font-size:11px">${a.name}</div>
-            <div style="font-size:8px;color:var(--t3)">${a.skills.join(', ')}</div>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;font-weight:700;color:var(--wr)">⭐ ${a.rating}</div>
-          <div style="font-size:8px;color:var(--t3)">${a.jobs} lifetime jobs</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:6px">
-        <div style="flex:1;background:var(--c2);border-radius:var(--rs);padding:5px 8px;text-align:center">
-          <div style="font-size:13px;font-weight:700;color:var(--ac2)">${a.myOpen}</div>
-          <div style="font-size:8px;color:var(--t3)">Active</div>
-        </div>
-        <div style="flex:1;background:var(--c2);border-radius:var(--rs);padding:5px 8px;text-align:center">
-          <div style="font-size:13px;font-weight:700;color:var(--ok)">${a.myDone}</div>
-          <div style="font-size:8px;color:var(--t3)">Closed</div>
-        </div>
-        <div style="flex:1;background:var(--c2);border-radius:var(--rs);padding:5px 8px;text-align:center">
-          <div style="font-size:13px;font-weight:700;color:var(--er)">${a.load}</div>
-          <div style="font-size:8px;color:var(--t3)">Load</div>
-        </div>
-      </div>
-      <div style="margin-top:5px"><div class="pbar"><div class="fill" style="width:${a.rating/5*100}%;background:var(--ok)"></div></div></div>
-    </div>`).join('')}
-  </div>`;
-}
 // MANAGER ACTIONS PAGE
-function rMgrActions(){if(role!=='manager')return;
-  // Re-assign list
-  const ra=document.getElementById('mgReassignL');if(ra){const open=TKS.filter(t=>!['closed'].includes(t.status));ra.innerHTML=open.map(t=>{const a=gA(t.att);return`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:600;font-size:11px">${t.id} · ${t.issue}</div><div style="font-size:9px;color:var(--t2)">🏪 ${t.out} · Currently: ${a?a.name:'Unassigned'}</div></div><button class="btn btn-s btn-p" onclick="openReassign('${t.id}')">↪ Re-assign</button></div></div>`}).join('')||'<div style="text-align:center;color:var(--t3);padding:14px;font-size:10px">No open tickets</div>'}
-  // High priority
-  const hp=document.getElementById('mgHighL');if(hp){const high=TKS.filter(t=>['critical','high'].includes(t.pri)&&t.status!=='closed');hp.innerHTML=high.map(t=>{const a=gA(t.att);const sc=t.sla?.startsWith('-')?'breach':'warn';return`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:600;font-size:11px"><span class="pri ${PRICOLORS[t.pri]||'m'}">●</span> ${t.id} · ${t.issue}</div><div style="font-size:9px;color:var(--t2)">🏪 ${t.out} · ${a?a.name:'-'} · ${SL[t.status]}</div></div><span class="sla ${sc}">⏱${t.sla}</span></div></div>`}).join('')||'<div style="text-align:center;color:var(--t3);padding:14px;font-size:10px">No high priority</div>'}
-  // Weekly off
-  const wk=document.getElementById('mgWeekL');if(wk)wk.innerHTML=ATTS.map(a=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:11px">${a.name}</div><div style="font-size:9px;color:var(--t2)">${a.skills.join(', ')}</div></div><select class="fc" style="width:auto;font-size:11px;padding:4px 8px" onchange="ATTS.find(x=>x.id==='${a.id}').weekOff=this.value;nf('Updated','${a.name} weekly off','ok')"><option ${a.weekOff==='Sunday'?'selected':''}>Sunday</option><option ${a.weekOff==='Monday'?'selected':''}>Monday</option><option ${a.weekOff==='Tuesday'?'selected':''}>Tuesday</option><option ${a.weekOff==='Wednesday'?'selected':''}>Wednesday</option><option ${a.weekOff==='Thursday'?'selected':''}>Thursday</option><option ${a.weekOff==='Friday'?'selected':''}>Friday</option><option ${a.weekOff==='Saturday'?'selected':''}>Saturday</option></select></div></div>`).join('');
-  // Feedback
-  const fb=document.getElementById('mgFbL');if(fb)fb.innerHTML=ATTS.map(a=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="font-weight:600;font-size:11px">${a.name}</div><div style="font-size:9px;color:var(--t2)">⭐${a.rating} · ${a.jobs} jobs · ${a.feedback?.length||0} feedbacks</div></div></div><div style="display:flex;gap:4px"><input class="fc" id="fb-${a.id}" placeholder="Add feedback..." style="font-size:11px;padding:5px 8px"><button class="btn btn-s btn-p" onclick="addAttFeedback('${a.id}')">Save</button></div>${a.feedback?.length?`<div style="margin-top:6px">${a.feedback.slice(-3).map(f=>`<div style="font-size:9px;color:var(--t3);padding:3px 0">${f.when} — ${f.by}: ${f.msg}</div>`).join('')}</div>`:''}</div>`).join('');
-  const mas=document.getElementById('mAtSt');if(mas)mas.innerHTML=[{v:TKS.filter(t=>t.status!=='closed').length,l:'Open',c:'p'},{v:TKS.filter(t=>['critical','high'].includes(t.pri)&&t.status!=='closed').length,l:'High Pri',c:'rd'},{v:ATTS.filter(a=>a.active).length,l:'Active Att',c:'g'},{v:TKS.filter(t=>t.sla?.startsWith('-')).length,l:'Breached',c:'rd'}].map(x=>`<div class="st ${x.c}"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('')}
 
-function addAttFeedback(aid){const i=document.getElementById('fb-'+aid);if(!i||!i.value.trim())return;const a=gA(aid);if(!a)return;if(!a.feedback)a.feedback=[];a.feedback.push({msg:i.value,by:userName,when:ts()});i.value='';R();nf('Saved','Feedback added','ok')}
-function mgTab(t,el){document.querySelectorAll('#pg-mgr-actions .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');['reassign','highpri','weekoff','feedback'].forEach(x=>{const e=document.getElementById('mg-'+x);if(e)e.style.display=x===t?'block':'none'})}
 
 // ADMIN CONFIG
-function rConfig(){if(role!=='admin')return;
-  // Categories
-  const ec=document.getElementById('cfCatL');if(ec)ec.innerHTML=Object.entries(CATS).map(([k,c])=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-weight:600;font-size:11px">${c.label}</div><div style="font-size:9px;color:var(--t2);margin-top:2px">${c.subs.length} sub-categories · ${c.pri} priority · ${c.sla}h SLA</div><div style="font-size:8px;color:var(--t3);margin-top:3px">${c.subs.slice(0,5).join(', ')}${c.subs.length>5?'...':''}</div></div><div style="display:flex;flex-direction:column;gap:3px"><button class="btn btn-s btn-p" onclick="openSubMeta('${k}')" style="font-size:9px">⚙ Details</button><button class="btn btn-s btn-o" onclick="toggleCatDisabled('${k}')" style="font-size:9px">${c.disabled?'▶ Enable':'⏸ Disable'}</button><button class="btn btn-s btn-er" onclick="delCategory('${k}')" style="font-size:9px">🗑</button></div></div></div>`).join('');
-  // SLA
-  const es=document.getElementById('cfSlaL');if(es)es.innerHTML=Object.entries(SLAH).map(([p,h])=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:11px"><span class="pri ${{critical:'c',high:'h',medium:'m',low:'l'}[p]}">●</span> ${p.charAt(0).toUpperCase()+p.slice(1)}</div></div><div style="display:flex;align-items:center;gap:6px"><input class="fc" type="number" value="${h}" style="width:60px;font-size:11px;padding:4px 8px" onchange="SLAH['${p}']=parseInt(this.value);nf('Updated','SLA saved','ok')"><span style="font-size:10px;color:var(--t2)">hours</span></div></div></div>`).join('');
-  // Attenders
-  const ea=document.getElementById('cfAttL');if(ea)ea.innerHTML=ATTS.map(a=>`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:600;font-size:11px">${a.name} <span style="font-size:8px;color:var(--t3)">${a.id}</span></div><div style="font-size:9px;color:var(--t2)">${a.phone} · ⭐${a.rating} · Load ${a.load}/${a.max}</div><div style="font-size:9px;color:var(--t3)">Skills: ${a.skills.join(', ')}</div><div style="font-size:8px;color:var(--t3)">Outlets: ${a.outs.slice(0,3).join(', ')}${a.outs.length>3?'+'+(a.outs.length-3)+' more':''}</div><div style="font-size:8px;color:var(--t3)">Weekly Off: ${a.weekOff}</div></div><div style="display:flex;flex-direction:column;gap:4px"><label class="tog"><input type="checkbox" ${a.active?'checked':''} onchange="ATTS.find(x=>x.id==='${a.id}').active=this.checked;R();nf('Updated','${a.name} '+(this.checked?'enabled':'disabled'),'ok')"><span class="s"></span></label><button class="btn btn-s btn-er" onclick="delAttender('${a.id}')">🗑</button></div></div></div>`).join('');
-  // Outlets
-  const eo=document.getElementById('cfOutL');if(eo)eo.innerHTML=OL.map(o=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:11px">${o}</div><div style="font-size:9px;color:var(--t2)">${OUTPHONES[o]||'No phone'}</div></div><button class="btn btn-s btn-er" onclick="delOutlet('${o}')">🗑</button></div></div>`).join('');
-  // Skill Map
-  const sk=document.getElementById('cfSkillL');if(sk){const allSk=[...new Set(ATTS.flatMap(a=>a.skills))];sk.innerHTML=allSk.map(s=>{const atts=ATTS.filter(a=>a.skills.includes(s));return`<div class="lp"><div style="font-weight:600;font-size:11px">${s}</div><div style="font-size:9px;color:var(--t2);margin-top:2px">${atts.length} attender(s): ${atts.map(a=>a.name).join(', ')}</div></div>`}).join('')}
-  // Users
-  const us=document.getElementById('cfUsersL');if(us)us.innerHTML=Object.entries(USERS).map(([ph,u])=>`<div class="lp"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-weight:600;font-size:11px">${u.name} <span style="font-size:8px;color:var(--t3)">${u.id||''}</span></div><div style="font-size:9px;color:var(--t2)">${u.mobile||ph} · ${u.role}</div><div style="display:flex;gap:4px;margin-top:4px;align-items:center"><span style="font-size:8px;color:var(--t3)">Pwd:</span><input class="fc" value="${u.password||'1234'}" style="width:90px;font-size:10px;padding:3px 6px" onchange="USERS['${ph}'].password=this.value;nf('Updated','Password saved','ok')"></div></div><label class="tog" style="margin-left:6px"><input type="checkbox" ${u.active!==false?'checked':''} onchange="USERS['${ph}'].active=this.checked;nf('Updated',USERS['${ph}'].name+(this.checked?' enabled':' disabled'),'ok')"><span class="s"></span></label></div></div>`).join('');
-  // Google Sheets
-  const gs=document.getElementById('cfGsL');if(gs)gs.innerHTML=`<div class="lp"><div style="margin-bottom:8px"><div style="font-weight:600;font-size:12px">📊 Google Sheets Integration</div><div style="font-size:9px;color:var(--t2);margin-top:3px">Sync categories, users, tickets to/from Google Sheets</div></div>
-    <div class="fg"><label>Sheet URL</label><input class="fc" id="gsUrl" placeholder="https://docs.google.com/spreadsheets/..." value="${GSHEET.url||''}" onchange="GSHEET.url=this.value"></div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-s ${GSHEET.connected?'btn-ok':'btn-p'}" onclick="GSHEET.connected=!GSHEET.connected;R();nf(GSHEET.connected?'Connected':'Disconnected','','ok')">${GSHEET.connected?'✅ Connected':'🔗 Connect'}</button>${GSHEET.connected?`<button class="btn btn-s btn-o" onclick="GSHEET.lastSync=ts();R();nf('Synced','All data synced','ok')">🔄 Sync Now</button>`:''}</div>
-    <div style="font-size:9px;color:var(--t3)">Status: ${GSHEET.connected?'Connected':'Not connected'}${GSHEET.lastSync?' · Last sync: '+GSHEET.lastSync:''}</div>
-    <div style="margin-top:10px"><div style="font-size:10px;font-weight:600;margin-bottom:4px">Sync Options:</div><label class="chk"><input type="checkbox" ${GSHEET.categories?'checked':''} onchange="GSHEET.categories=this.checked"> Push categories & sub-categories</label><label class="chk"><input type="checkbox" ${GSHEET.users?'checked':''} onchange="GSHEET.users=this.checked"> Push users & access</label><label class="chk"><input type="checkbox" ${GSHEET.tickets?'checked':''} onchange="GSHEET.tickets=this.checked"> Push tickets log</label></div></div>`}
 
-function cfTab(t,el){document.querySelectorAll('#pg-config .tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');['cat','sla','att','out','skill','users','gsheet'].forEach(x=>{const e=document.getElementById('cf-'+x);if(e)e.style.display=x===t?'block':'none'})}
 
 // ===== PHASE 2: Sub-Category Details Editor =====
-let smCat='',smSub='';
-function openSubMeta(k){smCat=k;smSub=(CATS[k].subs&&CATS[k].subs[0])||'';renderSubMeta()}
-function renderSubMeta(){const c=CATS[smCat];if(!c)return;document.getElementById('smTitle').textContent='⚙ '+c.label;
-  const subOpts=c.subs.map(s=>`<option value="${s}" ${s===smSub?'selected':''}>${s}</option>`).join('');
-  const m=getMeta(smCat,smSub);if(!SUBMETA[metaKey(smCat,smSub)])SUBMETA[metaKey(smCat,smSub)]={checklist:m.checklist.slice(),probes:m.probes.slice(),solutions:m.solutions.slice()};
-  const meta=SUBMETA[metaKey(smCat,smSub)];
-  let h=`<div class="fg"><label>Sub-Category</label><select class="fc" onchange="smSub=this.value;renderSubMeta()">${subOpts}</select></div>
-  <div style="display:flex;gap:4px;margin-bottom:10px"><input class="fc" id="smNewSub" placeholder="Add new sub-category"><button class="btn btn-s btn-p" onclick="addSubCat()">+ Add</button></div>`;
-  // Checklist
-  h+=`<div style="font-size:10px;font-weight:700;margin:8px 0 4px">📋 Diagnostic Checklist</div>`;
-  meta.checklist.forEach((item,i)=>{h+=`<div class="ires"><input class="fc" value="${item}" style="flex:1;font-size:11px;padding:4px 6px" onchange="SUBMETA['${metaKey(smCat,smSub)}'].checklist[${i}]=this.value"><button class="btn btn-s btn-er" onclick="smDel('checklist',${i})">✕</button></div>`});
-  h+=`<button class="btn btn-s btn-o btn-full" onclick="smAdd('checklist')" style="margin-top:4px">+ Add checklist item</button>`;
-  // Probing Q&A
-  h+=`<div style="font-size:10px;font-weight:700;margin:12px 0 4px">❓ Probing Questions & Answers</div>`;
-  meta.probes.forEach((p,i)=>{h+=`<div class="lp"><input class="fc" value="${p.q}" style="font-size:11px;padding:4px 6px;margin-bottom:3px" onchange="SUBMETA['${metaKey(smCat,smSub)}'].probes[${i}].q=this.value" placeholder="Question"><div style="display:flex;gap:4px"><input class="fc" value="${(p.opts||[]).join(', ')}" style="font-size:10px;padding:4px 6px" onchange="SUBMETA['${metaKey(smCat,smSub)}'].probes[${i}].opts=this.value.split(',').map(x=>x.trim()).filter(Boolean)" placeholder="Answers: Yes, No"><button class="btn btn-s btn-er" onclick="smDel('probes',${i})">✕</button></div></div>`});
-  h+=`<button class="btn btn-s btn-o btn-full" onclick="smAdd('probes')" style="margin-top:4px">+ Add probing question</button>`;
-  // Solutions
-  h+=`<div style="font-size:10px;font-weight:700;margin:12px 0 4px">🛠 Solution List & Answers</div>`;
-  meta.solutions.forEach((s,i)=>{h+=`<div class="lp"><input class="fc" value="${s.s}" style="font-size:11px;padding:4px 6px;margin-bottom:3px" onchange="SUBMETA['${metaKey(smCat,smSub)}'].solutions[${i}].s=this.value" placeholder="Solution step"><div style="display:flex;gap:4px"><input class="fc" value="${(s.opts||[]).join(', ')}" style="font-size:10px;padding:4px 6px" onchange="SUBMETA['${metaKey(smCat,smSub)}'].solutions[${i}].opts=this.value.split(',').map(x=>x.trim()).filter(Boolean)" placeholder="Yes, No, N/A"><button class="btn btn-s btn-er" onclick="smDel('solutions',${i})">✕</button></div></div>`});
-  h+=`<button class="btn btn-s btn-o btn-full" onclick="smAdd('solutions')" style="margin-top:4px">+ Add solution step</button>`;
-  document.getElementById('subMetaBody').innerHTML=h;openM('subMetaM')}
-function smAdd(type){const k=metaKey(smCat,smSub);if(!SUBMETA[k])SUBMETA[k]={checklist:[],probes:[],solutions:[]};if(type==='checklist')SUBMETA[k].checklist.push('New item');else if(type==='probes')SUBMETA[k].probes.push({q:'New question',opts:['Yes','No']});else SUBMETA[k].solutions.push({s:'New solution',opts:['Yes','No']});renderSubMeta()}
-function smDel(type,i){const k=metaKey(smCat,smSub);if(SUBMETA[k]&&SUBMETA[k][type]){SUBMETA[k][type].splice(i,1);renderSubMeta()}}
-function addSubCat(){const v=document.getElementById('smNewSub').value.trim();if(!v){nf('Required','Enter name','warn');return}if(!CATS[smCat].subs.includes(v)){CATS[smCat].subs.push(v)}smSub=v;SUBMETA[metaKey(smCat,smSub)]={checklist:[],probes:[],solutions:[]};renderSubMeta();nf('Added',v,'ok')}
 
 // ===== MULTI-SELECT OUTLET FILTER =====
 let selectedOutlets=[];
@@ -2327,67 +2136,24 @@ document.addEventListener('click',function(e){
   }
 });
 
-function refreshOutletDropdown(){
-  const tO=document.getElementById('tO');
-  if(!tO)return;
-  if(role==='requester'&&userOutlet){
-    tO.innerHTML=`<option value="${userOutlet}">${userOutlet}</option>`;
-    tO.value=userOutlet;
-    tO.disabled=true;
-    tO.style.opacity='0.7';
-  } else {
-    tO.disabled=false;
-    tO.style.opacity='1';
-    tO.innerHTML='<option value="">Select</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');
-  }
-}
-
 function refreshCatDropdown(){const tcs=document.getElementById('tC');if(!tcs)return;const cur=tcs.value;tcs.innerHTML='<option value="">Select</option>';Object.entries(CATS).forEach(([k,c])=>{if(!c.disabled)tcs.innerHTML+=`<option value="${k}">${c.label}</option>`});if(cur&&CATS[cur]&&!CATS[cur].disabled)tcs.value=cur}
 
-function addCategory(){const nm=document.getElementById('cnNm').value.toLowerCase(),sb=document.getElementById('cnSb').value.split(',').map(s=>s.trim()).filter(Boolean),pr=document.getElementById('cnPr').value,sl=parseInt(document.getElementById('cnSl').value)||12;
-  if(!nm||!sb.length){nf('Required','Name and sub-categories','warn');return}
-  CATS[nm]={label:nm.charAt(0).toUpperCase()+nm.slice(1),subs:sb,pri:pr,sla:sl};
-  closeM('catM');['cnNm','cnSb'].forEach(x=>document.getElementById(x).value='');R();refreshCatDropdown();nf('✅ Added','Category created','ok')}
-function delCategory(k){if(confirm('Delete category '+k+'?')){delete CATS[k];R();nf('Deleted',k,'ok')}}
-function toggleCatDisabled(k){if(CATS[k]){CATS[k].disabled=!CATS[k].disabled;R();nf('Updated',k+(CATS[k].disabled?' disabled':' enabled'),'ok')}}
 
-function addAttender(){const nm=document.getElementById('anNm').value,ph=document.getElementById('anPh').value,mx=parseInt(document.getElementById('anMx').value)||5,sk=document.getElementById('anSk').value.split(',').map(s=>s.trim()).filter(Boolean),ou=document.getElementById('anOu').value.split(',').map(s=>s.trim()).filter(Boolean),wk=document.getElementById('anWk').value;
-  if(!nm||!sk.length||!ou.length){nf('Required','Name, skills, outlets','warn');return}
-  const newId='ATT-0'+(20+ATTS.length);ATTS.push({id:newId,name:nm,phone:ph,ini:nm.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2),skills:sk,outs:ou,rating:0,jobs:0,load:0,max:mx,weekOff:wk,active:true,feedback:[]});
-  closeM('attM');['anNm','anPh','anSk','anOu'].forEach(x=>document.getElementById(x).value='');R();nf('✅ Added',nm+' added','ok')}
-function delAttender(id){if(confirm('Delete this attender?')){ATTS=ATTS.filter(a=>a.id!==id);R();nf('Deleted','','ok')}}
 
-function addOutlet(){const cd=document.getElementById('onCd').value,ph=document.getElementById('onPh').value;
-  if(!cd){nf('Required','Outlet code','warn');return}
-  OL.push(cd);if(ph)OUTPHONES[cd]=ph;
-  closeM('outM');['onCd','onPh'].forEach(x=>document.getElementById(x).value='');
-  // Refresh outlet dropdowns
-  const s=document.getElementById('tO'),f=document.getElementById('fOt');if(s)s.innerHTML='<option value="">Select</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');if(f)f.innerHTML='<option value="">All Outlets</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');
-  R();nf('✅ Added',cd,'ok')}
-function delOutlet(o){if(confirm('Delete '+o+'?')){OL=OL.filter(x=>x!==o);delete OUTPHONES[o];R()}}
 
 // VIEW TICKET DETAIL
 function viewT(id){curTkt=id;const t=TKS.find(x=>x.id===id);if(!t)return;const pg=document.getElementById('pg-detail');selectedStars=0;
   const pc={critical:'c',high:'h',medium:'m',low:'l'}[t.pri]||'';const sc=t.sla?.startsWith('-')?'breach':parseFloat(t.sla)<=2?'warn':'safe';
   const a=t.att?gA(t.att):null;const ct=t.hist[0]?.t||'';const lH=t.hist[t.hist.length-1];
-  const isR=role==='requester',isA=role==='attender',isRM=role==='rmhead',isMg=role==='manager',isFn=role==='finance',isP=role==='purchaser';
+  const isR=role==='requester';
   const si=SF.indexOf(t.status);const cn=USERS[t.by]?.name||t.by||'';const tot=t.costs.reduce((s,c)=>s+c.amt,0);
   const reqPhone=t.by;const outPhone=OUTPHONES[t.out]||reqPhone;
 
   // Status card
   let stH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Current Status</div><div style="font-size:14px;font-weight:700">${SL[t.status]}</div><div style="font-size:8px;color:var(--t3)">${lH?.t||''} ${lH?.n?'· '+lH.n:''}</div></div>${a?`<div style="display:flex;align-items:center;gap:4px"><div class="av" style="width:24px;height:24px;font-size:8px">${a.ini}</div><div style="line-height:1"><div style="font-size:9px;font-weight:600">${a.name}</div><div style="font-size:7px;color:var(--t3)">⭐${a.rating}</div></div><a href="tel:+91${a.phone}" style="font-size:13px;text-decoration:none">📞</a></div>`:''}</div>`;
   
-  // Attender actions
-  if(isA){
-    if(t.status==='accepted'){stH+=`<div style="margin-top:8px"><div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-align:center">Does this need site visit?</div><div style="display:flex;gap:6px"><button class="btn-big blue" onclick="doVisitChoice('${t.id}',true)">🚗 YES — On Way</button><button class="btn-big purple" onclick="doVisitChoice('${t.id}',false)">💻 NO — Remote</button></div></div>`}
-    else{const bm={'assigned':{t:'✓ ACCEPT',c:'green',f:`doAccept('${t.id}')`},'on-the-way':{t:'📍 REACHED OUTLET',c:'orange',f:`doReached('${t.id}')`},'reached-outlet':{t:'▶ START JOB',c:'green',f:`doStart('${t.id}')`},'job-started':{t:'🔧 IN PROGRESS',c:'purple',f:`doProgress('${t.id}')`},'in-progress':{t:'✅ MARK AS FIXED',c:'green',f:`doMarkFixed('${t.id}')`},'vendor-pending':{t:'✓ VENDOR DONE',c:'green',f:`vendorComplete('${t.id}')`}};const b=bm[t.status];if(b)stH+=`<div style="margin-top:8px"><button class="btn-big ${b.c}" onclick="${b.f}">${b.t}</button></div>`}
-  }
   // Requester confirms
   if(isR&&(t.status==='awaiting-resolution'||t.status==='requester-confirm')){stH+=`<div style="margin-top:8px"><div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:4px">The attender has requested closure.</div><button class="btn-big green" onclick="curTkt='${t.id}';openM('confirmM')">❓ HAS THE ISSUE BEEN RESOLVED?</button></div>`}
-  // Manager re-assign
-  if((isMg||isRM)&&!['closed'].includes(t.status)){stH+=`<div style="margin-top:6px"><button class="btn btn-s btn-o btn-full" onclick="openReassign('${t.id}')">↪ Re-assign Ticket</button></div>`}
-  // SLA Extend
-  if((isMg||isA)&&t.status!=='closed'&&t.sla?.startsWith('-')){stH+=`<div style="margin-top:6px"><button class="btn btn-s btn-wr btn-full" onclick="openSLAExtend('${t.id}')">⏱ Extend SLA</button></div>`}
   // Log toggle
   stH+=`<div style="margin-top:6px"><button class="btn btn-s btn-o btn-full" onclick="toggleLog('${t.id}')" style="font-size:9px">📜 ${logOpen[t.id]?'Hide':'View'} Log (${t.hist.length})</button></div>`;
   if(logOpen[t.id]){stH+='<div class="tl" style="margin-top:8px">';t.hist.forEach((h,i)=>{stH+=`<div class="tli ${i===t.hist.length-1?'nw':'dn'}"><div class="tl-d"></div><div class="tlc"><div class="tt">${h.t}</div><div class="th">${SL[h.s]||h.s}</div>${h.n?`<div class="td">${h.n}</div>`:''}</div></div>`});stH+='</div>'}
@@ -2406,10 +2172,10 @@ function viewT(id){curTkt=id;const t=TKS.find(x=>x.id===id);if(!t)return;const p
   // Probes (visible to all if checked at raise)
   let probesH='';if(t.probes?.length){probesH=`<div class="card"><div class="card-h"><h3>📋 Probing Flagged at Raise</h3></div>${t.probes.map(p=>`<div class="chk" style="cursor:default">✅ ${p}</div>`).join('')}</div>`}
 
-let mgrFbH='';if(isA){const a=gA(attId);if(a&&a.feedback&&a.feedback.length){mgrFbH='<div class="card"><div class="card-h"><h3>📣 Feedback from Manager</h3></div>'+a.feedback.slice(-5).reverse().map(f=>`<div class="lp"><div style="font-size:10px">${f.msg}</div><div style="font-size:8px;color:var(--t3);margin-top:3px">— ${f.by} · ${f.when}</div></div>`).join('')+'</div>'}}  
+let mgrFbH='';
 
 let payProofH='';if(t.payment?.status==='paid'){
-  const canSee=isA||isR||isMg||isRM||isFn;
+  const canSee=isR;
   if(canSee){
     const total=t.costs.filter(c=>c.payStatus==='done').reduce((s,c)=>s+c.amt,0);
     const viewBtn=t.payment.proofUrl?`<a href="${t.payment.proofUrl}" target="_blank" class="btn btn-s btn-o btn-full" style="margin-top:8px;font-size:10px">🔗 View Payment Proof</a>`:'';
@@ -2423,11 +2189,10 @@ let payProofH='';if(t.payment?.status==='paid'){
       ${t.payment.remarks?`<div style="font-size:9px;color:var(--t2);font-style:italic;margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs)">📝 ${t.payment.remarks}</div>`:''}
       ${t.payment.proofUploaded?`<div style="font-size:9px;color:var(--ok);margin-top:6px">🧾 Payment screenshot attached</div>`:''}
       ${viewBtn}
-      ${isA?'<div style="font-size:8px;color:var(--t3);text-align:center;margin-top:6px">Show proof to merchant if needed</div>':''}
     </div>`;
   }
 }
-let workMetaH='';if(isA&&t.status!=='closed'){const m=getMeta((t.cat||'').toLowerCase(),t.sub);if(m.probes.length||m.solutions.length){workMetaH='<div class="card"><div class="card-h"><h3>🧭 Diagnostic & Solution Guide</h3></div>';if(m.probes.length){workMetaH+='<div style="font-size:9px;font-weight:700;color:var(--t2);margin-bottom:3px">Probing Questions</div>';m.probes.forEach((p,i)=>{workMetaH+=`<div style="margin-bottom:5px"><div style="font-size:10px">${p.q}</div><select class="fc" style="font-size:10px;padding:3px 6px" onchange="saveWorkAns('${t.id}','probe',${i},this.value)"><option value="">—</option>${(p.opts||[]).map(o=>`<option ${(t.workAns&&t.workAns['probe'+i]===o)?'selected':''}>${o}</option>`).join('')}</select></div>`})}if(m.solutions.length){workMetaH+='<div style="font-size:9px;font-weight:700;color:var(--t2);margin:8px 0 3px">Solution Steps</div>';m.solutions.forEach((s,i)=>{workMetaH+=`<div style="margin-bottom:5px"><div style="font-size:10px">${s.s}</div><select class="fc" style="font-size:10px;padding:3px 6px" onchange="saveWorkAns('${t.id}','sol',${i},this.value)"><option value="">—</option>${(s.opts||[]).map(o=>`<option ${(t.workAns&&t.workAns['sol'+i]===o)?'selected':''}>${o}</option>`).join('')}</select></div>`})}workMetaH+='</div>'}}
+let workMetaH='';
 
   // Vendor card
   let venH='';if(t.vendor){const v=t.vendor;const stM={'requested':'<span class="pay-st mgr">📋 Awaiting Vendor Assignment</span>','assigned':'<span class="pay-st appr">🤝 Vendor Working</span>','completed':'<span class="pay-st done">✓ Vendor Done</span>'};
@@ -2436,28 +2201,26 @@ let workMetaH='';if(isA&&t.status!=='closed'){const m=getMeta((t.cat||'').toLowe
     <div style="font-size:9px;color:var(--t3);font-style:italic;margin-top:3px">📝 ${v.desc}</div>
     <div style="font-size:9px;color:var(--t2);margin-top:3px">Est ₹${v.estAmt} · ${v.urgency} · By ${v.requestedBy}</div>
     ${v.vendorName?`<div style="margin-top:6px;padding:6px;background:var(--c2);border-radius:var(--rs)"><div style="font-size:11px;font-weight:600">🤝 ${v.vendorName}</div>${v.vendorPhone?`<div style="font-size:9px;color:var(--t2)">${v.vendorPhone} <a href="tel:+91${v.vendorPhone}" style="margin-left:4px;text-decoration:none">📞</a></div>`:''}${v.assignNotes?`<div style="font-size:9px;color:var(--t3);margin-top:3px">${v.assignNotes}</div>`:''}</div>`:''}
-    ${(isMg||isRM)&&v.status==='requested'?`<button class="btn btn-s btn-p btn-full" onclick="openAssignVendor('${t.id}')" style="margin-top:6px">🤝 Assign Vendor</button>`:''}
-    ${isA&&v.status==='assigned'?`<button class="btn btn-s btn-ok btn-full" onclick="vendorComplete('${t.id}')" style="margin-top:6px">✓ Vendor Completed Work</button>`:''}</div>`}
+    </div>`}
 
   // Purchaser task
   let puH='';if(t.puTask){const p=t.puTask;const stM={'assigned':'<span class="pay-st mgr">📋 Assigned</span>','rm-pending':'<span class="pay-st pend">⏳ R&M Approval</span>','approved':'<span class="pay-st appr">✅ Execute</span>','done':'<span class="pay-st done">✓ Done</span>','rejected':'<span class="pay-st rej">✕ Rejected</span>'};
-    puH=`<div class="card"><div class="card-h"><h3>🛍️ Internal Purchaser</h3>${stM[p.status]||''}</div><div style="font-size:11px;font-weight:600">${p.item} x${p.qty}</div><div style="font-size:9px;color:var(--t2);margin-top:2px">Est ₹${p.estAmt||0} · ${p.urgency} · By ${p.assignedBy}</div>${p.specs?`<div style="font-size:9px;color:var(--t3);margin-top:3px;font-style:italic">📝 ${p.specs}</div>`:''}${isP&&p.status==='assigned'?`<button class="btn btn-s btn-p btn-full" onclick="purchaserSeekApproval('${t.id}')" style="margin-top:6px">📤 Send to R&M Head</button>`:''}${isRM&&p.status==='rm-pending'?`<div style="display:flex;gap:4px;margin-top:6px"><button class="btn btn-s btn-ok" onclick="rmApprovePurchase('${t.id}')">✅ Approve</button><button class="btn btn-s btn-er" onclick="rmRejectPurchase('${t.id}')">✕ Reject</button></div>`:''}${isP&&p.status==='approved'?`<button class="btn btn-s btn-ok btn-full" onclick="purchaserComplete('${t.id}')" style="margin-top:6px">✅ Mark Purchased</button>`:''}</div>`}
+    puH=`<div class="card"><div class="card-h"><h3>🛍️ Internal Purchaser</h3>${stM[p.status]||''}</div><div style="font-size:11px;font-weight:600">${p.item} x${p.qty}</div><div style="font-size:9px;color:var(--t2);margin-top:2px">Est ₹${p.estAmt||0} · ${p.urgency} · By ${p.assignedBy}</div>${p.specs?`<div style="font-size:9px;color:var(--t3);margin-top:3px;font-style:italic">📝 ${p.specs}</div>`:''}</div>`}
 
   // Issue resolution
   let irH='';if(t.issueRes){irH='<div class="card"><div class="card-h"><h3>🔍 Resolution</h3></div>';t.issueRes.forEach(r=>{const bg={fixed:'var(--okb)',partial:'var(--wrb)',notfixed:'var(--erb)'}[r.status]||'var(--c2)';irH+=`<div class="ires" style="background:${bg}">${{fixed:'✅',partial:'⚠️',notfixed:'❌'}[r.status]||''} <span style="flex:1">${r.text}</span><span style="font-size:8px;font-weight:600">${{fixed:'Fixed',partial:'Partial',notfixed:'Not Fixed'}[r.status]||''}</span></div>`});irH+='</div>'}
 
   // Purchases
-  let lpH='';const canAdd=isA&&t.status!=='closed';
+  let lpH='';const canAdd=false;
   if(t.costs.length||canAdd){
     lpH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="font-size:12px;font-weight:600">🛒 Purchases (${t.costs.length})${tot>0?' — ₹'+tot.toLocaleString('en-IN'):''}</h3>${t.costs.length>0?`<button class="btn btn-s btn-o" onclick="showPurch('${t.id}')" style="font-size:9px">View All</button>`:''}</div>`;
-    if(canAdd)lpH+=`<button class="btn-big purple" onclick="curTkt='${t.id}';openM('lpM')" style="margin-bottom:8px;padding:11px;font-size:13px">🛒 + Add Purchase</button>`;
     if(t.costs.length){t.costs.slice(0,3).forEach(c=>{const ps={done:'<span class="pay-st done">✓ Paid</span>',hold:'<span class="pay-st hold">⏸</span>',rej:'<span class="pay-st rej">✕</span>',pend:'<span class="pay-st pend">⏳</span>','mgr-pending':'<span class="pay-st mgr">⏳ Mgr</span>',approved:'<span class="pay-st appr">✓ Appr</span>'}[c.payStatus||'pend'];lpH+=`<div class="lp"><div style="display:flex;justify-content:space-between"><div style="flex:1"><div style="font-weight:600;font-size:11px">${c.item} x${c.qty||1} ${c.unit||''}</div><div style="font-size:8px;color:var(--t3)">🏪 ${c.shop||'—'}</div></div><div style="font-family:var(--m);font-weight:700">₹${c.amt.toLocaleString('en-IN')}</div></div><div style="margin-top:3px">${ps}</div></div>`});if(t.costs.length>3)lpH+=`<div style="font-size:9px;color:var(--t3);text-align:center;margin:4px 0">+${t.costs.length-3} more</div>`;}
     lpH+='</div>';}
 
   // OTP
   let otpH='';if(isR&&t.otpRevealed&&t.status!=='closed'){otpH=`<div class="otp-reveal"><div style="font-size:12px;font-weight:700">🔐 Closure OTP</div><div class="otp-num">${t.otp}</div><p style="font-size:9px;color:var(--t2);margin-bottom:6px">Share with attender</p><div style="display:flex;gap:6px"><button class="btn btn-s btn-p btn-full" onclick="shareOTPInChat('${t.id}')" style="font-size:9px">📤 Chat</button><button class="btn btn-s btn-p btn-full" onclick="shareOTPViaWhatsApp('${t.id}')" style="font-size:9px">📱 WhatsApp</button></div></div>`}
   if(isR&&!t.otpRevealed&&t.status!=='closed'){otpH=`<div class="card" style="text-align:center;padding:14px;color:var(--t3)"><div style="font-size:18px">🔒</div><div style="font-size:9px;margin-top:4px">OTP appears when attender requests closure</div></div>`}
-  let otpEH='';if(isA&&t.status==='ready-closure'){const af=t.issueRes?t.issueRes.every(r=>r.status==='fixed'):true;otpEH=`<div class="card"><div class="card-h"><h3>🔐 Enter OTP</h3></div><input id="otpSingle" type="text" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●" style="width:100%;padding:12px;background:var(--c2);border:2px solid var(--bdr);border-radius:var(--rs);color:var(--t);font-size:22px;font-family:var(--m);font-weight:700;text-align:center;letter-spacing:6px;outline:none;margin-bottom:8px" oninput="this.value=this.value.replace(/\\D/g,'')"><button class="btn-big ${af?'green':'red'}" onclick="doCloseWithOTP('${t.id}')">${af?'✓ VERIFY OTP':'⚠ Issues not all Fixed'}</button></div>`}
+  let otpEH='';
 
   // Rating + Reopen (after closed)
   let rateH='';if(isR&&t.status==='closed'){
@@ -2473,10 +2236,10 @@ let workMetaH='';if(isA&&t.status!=='closed'){const m=getMeta((t.cat||'').toLowe
   let reH='';if(isR&&t.status==='closed'){reH=`<button class="btn btn-s btn-er btn-full" onclick="curTkt='${t.id}';openM('reopenM')" style="margin-top:4px">🔄 Re-open</button>`}
 
   // Attender card
-  let attH='';if(a&&!isA){attH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3 style="font-size:11px;font-weight:600">🔧 Attender</h3><div style="display:flex;gap:3px"><a href="tel:+91${a.phone}" class="btn btn-s btn-o" style="text-decoration:none;font-size:9px">📞</a></div></div><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:30px;height:30px;font-size:10px">${a.ini}</div><div><div style="font-weight:600;font-size:11px">${a.name}</div><div style="font-size:9px;color:var(--t3)">${a.skills.join(', ')} · ⭐${a.rating}</div></div></div></div>`}
+  let attH='';if(a){attH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3 style="font-size:11px;font-weight:600">🔧 Attender</h3><div style="display:flex;gap:3px"><a href="tel:+91${a.phone}" class="btn btn-s btn-o" style="text-decoration:none;font-size:9px">📞</a></div></div><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:30px;height:30px;font-size:10px">${a.ini}</div><div><div style="font-weight:600;font-size:11px">${a.name}</div><div style="font-size:9px;color:var(--t3)">${a.skills.join(', ')} · ⭐${a.rating}</div></div></div></div>`}
 
   // Quick contacts
-  let contactH='';if(isA){contactH=`<div class="card"><div class="card-h"><h3>📞 Quick Call</h3></div><div style="display:flex;gap:5px"><a href="tel:+91${reqPhone}" class="btn btn-s btn-ok btn-full" style="text-decoration:none;color:#000">📞 Requester</a><a href="tel:+91${outPhone}" class="btn btn-s btn-p btn-full" style="text-decoration:none">📞 Outlet</a></div></div>`}
+  let contactH='';
 
   // Chat
   let cMsgs=`<div class="cm r"><div class="b">Ticket ${t.id} created</div><div class="mt"><span>System</span><span>${ct}</span></div></div>`;
@@ -2484,15 +2247,14 @@ let workMetaH='';if(isA&&t.status!=='closed'){const m=getMeta((t.cat||'').toLowe
   const chatH=`<div class="card" style="padding:0;overflow:hidden"><div style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:600">💬 Chat</div><div class="cht"><div class="cht-m" id="chMs">${cMsgs}</div><div class="cht-in"><input placeholder="Type..." id="chI" onkeydown="if(event.key==='Enter')sendC()"><button class="snd" onclick="sendC()">➤</button></div></div></div>`;
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
-  pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="go('${isA?'att-dash':'tickets'}')" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span><span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.sla?.startsWith('-')&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
+  pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="go('tickets')" style="margin-bottom:8px">← Back</button>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.sla?.startsWith('-')&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
-function saveWorkAns(id,type,i,val){const t=TKS.find(x=>x.id===id);if(!t)return;if(!t.workAns)t.workAns={};t.workAns[type+i]=val}
 
-function sendC(){const i=document.getElementById('chI');if(!i||!i.value.trim())return;const t=TKS.find(x=>x.id===curTkt);if(!t)return;if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:i.value,time:ts()});i.value='';viewT(curTkt)}
-function shareOTPInChat(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:'🔐 OTP: '+t.otp,time:ts(),isOtp:true});viewT(id)}
+function sendC(){const i=document.getElementById('chI');if(!i||!i.value.trim())return;const t=TKS.find(x=>x.id===curTkt);if(!t)return;if(!t.chat)t.chat=[];const m=i.value;t.chat.push({by:userName,role,msg:m,time:ts()});writeChat(curTkt,m,false);i.value='';viewT(curTkt)}
+function shareOTPInChat(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:'🔐 OTP: '+t.otp,time:ts(),isOtp:true});writeChat(id,'🔐 OTP: '+t.otp,true);viewT(id)}
 
 function openM(id){document.getElementById(id).classList.add('show')}
 function closeM(id){document.getElementById(id).classList.remove('show')}
@@ -2510,39 +2272,33 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelec
 
 // BOOT — fill dropdowns from current OL/CATS (called after sheet data loads)
 function fillBootDropdowns(){
-  const s=document.getElementById('tO'),f=document.getElementById('fOt'),fc=document.getElementById('fCt');
-  if(s&&!(role==='requester'&&userOutlet))s.innerHTML='<option value="">Select</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');
+  const f=document.getElementById('fOt'),fc=document.getElementById('fCt');
   if(f)f.innerHTML='<option value="">All Outlets</option>'+OL.map(o=>`<option value="${o}">${o}</option>`).join('');
   if(fc)fc.innerHTML='<option value="">All Categories</option>'+Object.entries(CATS).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join('');
 }
 
 toggleLoginMode();
+renderTagChips();
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
-let usersLoaded=false;
+let usersLoaded=true;
 (async function bootData(){
-  const btn=document.getElementById('loginBtn');
-  // Login is immediately available using hardcoded data as seed
-  usersLoaded=true;
-  if(btn){btn.textContent='Login →';}
-
-  // Fetch all sheet data silently in the background — no blocking
+  loadAttendersFromSheet();
   Promise.all([
-    loadUsersFromSheet(),
     loadOutletsFromSheet(),
     loadPriorityRulesFromSheet(),
-    loadCategoriesFromSheet(),	
+    loadCategoriesFromSheet(),
     loadSubMetaFromSheet(),
-    loadAttendersFromSheet(),
+    loadKeywordsFromSheet(),
+    loadTagOptionsFromSheet(),
+    loadFeedbackQuestionsFromSheet(),
     loadTicketsFromSheet()
   ]).then(async ()=>{
     await loadPurchaseOrdersFromSheet();
-  await loadTicketHistoryFromSheet();
+    await loadTicketHistoryFromSheet();
+    await loadTicketChatFromSheet();
+    ensureGeneralCategory();
     fillBootDropdowns();
-    // If user hasn't logged in yet, silently update USERS from sheet
-    // If already logged in, refresh the current view with sheet data
-  // Rebuild attender login dropdown with fresh sheet data
-    syncTCnt();   // ensure new ticket IDs don't collide with existing ones
-    if(selRV==='attender'){toggleLoginMode();}
+    syncTCnt();
     if(document.getElementById('app').style.display!=='none'){R();}
   });
 })();
