@@ -95,21 +95,33 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @media(max-width:768px){.sidebar{transform:translateX(-100%);height:100dvh;display:flex;flex-direction:column}.sidebar.open{transform:none}.sb-nav{flex:1;overflow-y:auto}.sb-u{flex-shrink:0}.main{margin-left:0}.mt-btn{display:block}.sts{grid-template-columns:1fr 1fr}.g32{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.cnt-area{padding:10px;padding-bottom:calc(60px + var(--sb))}.mn{display:block}.fab{bottom:calc(52px + var(--sb))}}
 @media(min-width:769px){.modal-bg{align-items:center}.modal{border-radius:var(--r);max-height:80vh}}
 #refreshBtn{transition:transform 0.3s ease;cursor:pointer}#refreshBtn.spinning{animation:spin 0.6s linear infinite}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}#refreshBtn:disabled{opacity:0.6;cursor:not-allowed}
+/* v19R: bigger fonts */
+.fg label{font-size:11px}
+.login-card h2{font-size:17px}
+.po .po-l{font-size:13px}
+.npop h4{font-size:12px}.npop p{font-size:11px}
+#subSelected #subSelectedName{font-size:14px}
+/* v19R: feedback popup centered + big */
+#fbM{align-items:center}
+#fbM .modal{border-radius:var(--r);max-width:360px;width:92%}
+#fbM .modal-hd h3{font-size:17px}
+#fbM .fg label{font-size:14px;text-transform:none;letter-spacing:0;color:var(--t)}
+#fbM textarea.fc{font-size:15px}
+#fbM .modal-ft .btn{font-size:14px;padding:10px 18px}
 </style>
 </head>
 <body>
 <div id="loginP" class="login"><div class="login-card">
   <div class="logo"><div class="logo-i">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M v7</span></div></div>
   <h2>🎫 Raise a Ticket</h2>
-  <div id="demoBanner" style="display:none;background:var(--wrb);border:1px solid var(--wr);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;font-size:10px;color:var(--wr);text-align:center;font-weight:600">⚠️ Demo mode — spreadsheet not connected. Categories &amp; keywords are sample data only. Open the app from its deployed (github.io) link for live data.</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="9876543210" maxlength="10"></div>
-    <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Your name" maxlength="40" autocomplete="off"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px">
+    <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="Number" maxlength="10"></div>
+    <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Name" maxlength="40" autocomplete="off"></div>
+    <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Search..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;right:0;left:auto;min-width:240px;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div></div>
   </div>
-  <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Type to search outlet..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div></div>
   <div class="fg"><label>🔍 Describe the problem *</label>
     <div style="position:relative">
-      <input class="fc" id="subSearch" placeholder="e.g. AC not working, drain blocked, gas smell..." oninput="onSubSearchAuto()" autocomplete="off" style="padding-right:70px">
+      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" autocomplete="off" style="padding-right:70px">
       <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:38px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
       <button type="button" id="srchMicBtn" onclick="voiceSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t2);font-size:16px;cursor:pointer">🎤</button>
     </div>
@@ -138,19 +150,28 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <select id="tS" style="display:none" onchange="onSub()"><option value="">—</option></select>
   <div style="margin-bottom:8px"><button type="button" class="btn btn-s btn-o" onclick="toggleCatDropdowns()" id="browseToggle" style="font-size:9px">📂 Browse by Category</button></div>
   <div id="catSubDropdowns" style="display:none" class="fr"><div class="fg"><label>Category</label><select class="fc" id="tCv" onchange="onCatVisible()"><option value="">Select</option></select></div><div class="fg"><label>Sub-Category</label><select class="fc" id="tSv" onchange="onSubVisible()"><option value="">—</option></select></div></div>
-  <div class="fg"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
+  <div class="fg" style="display:none"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
+  <div class="fg" id="flagWrap"><div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;text-transform:none"><label class="tog"><input type="checkbox" id="flagChk" onchange="onFlagToggle()"><span class="s"></span></label>🚩 Urgent?</label>
+    <select class="fc" id="flagReason" style="display:none"><option value="">Why urgent? *</option></select>
+  </div></div>
   <div class="fg" id="probeW" style="display:none"><label>📋 Diagnostic Checklist</label><div id="probeL"></div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    <div class="fg"><label>🎫 Ticket Type</label><select class="fc" id="actionSel" onchange="selAction=this.value;applyTicketTypeRules();renderTagChips()"><option value="">—</option></select></div>
     <div class="fg"><label>🔩 Item</label><select class="fc" id="itemSel" onchange="selItem=this.value"><option value="">—</option></select></div>
-    <div class="fg"><label>⚡ What happened *</label><select class="fc" id="whSel" onchange="selWH=this.value;updateAutoDesc()"><option value="">Select…</option></select></div>
-    <div class="fg"><label>🛠 Action to take</label><select class="fc" id="actionSel" onchange="selAction=this.value"><option value="">—</option></select></div>
+    <div class="fg" id="whWrap"><label>⚡ What happened *</label><select class="fc" id="whSel" onchange="selWH=this.value;updateAutoDesc()"><option value="">Select…</option></select></div>
     <div class="fg"><label>📍 Where</label><select class="fc" id="whereSel" onchange="selWhere=this.value;updateAutoDesc()"><option value="">—</option></select></div>
   </div>
   <div class="fg"><label>Description *</label><div style="position:relative"><textarea class="fc" id="tD" rows="2" placeholder="Detailed remarks..." style="padding-right:38px"></textarea><button onclick="voiceInput('tD')" type="button" id="vBtnTD" style="position:absolute;right:6px;top:6px;background:var(--c1);border:1px solid var(--bdr);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--t2);font-size:13px">🎤</button></div></div>
 
-  <div class="fg"><label>📷 Photos</label><div class="po" onclick="document.getElementById('tImg').click()"><div class="po-i">📷</div><div class="po-l" id="tImgL">Tap to upload</div><input type="file" accept="image/*" multiple style="display:none" id="tImg" onchange="addPhotos(this)"></div>
-  <div id="tImgList" style="margin-top:6px"></div>
-  <button type="button" class="btn btn-s btn-o btn-full" id="addPhotoBtn" style="display:none;margin-top:2px" onclick="document.getElementById('tImg').click()">📷 + Add Photo</button></div>
+  <div class="fg"><label>📷 Photos</label>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    <div class="po" style="padding:10px 6px" onclick="document.getElementById('tImgCam').click()"><div class="po-i" style="font-size:20px">📸</div><div class="po-l">Take Photo</div></div>
+    <div class="po" style="padding:10px 6px" onclick="document.getElementById('tImg').click()"><div class="po-i" style="font-size:20px">🖼</div><div class="po-l">Gallery</div></div>
+  </div>
+  <input type="file" accept="image/*" capture="environment" style="display:none" id="tImgCam" onchange="addPhotos(this)"><input type="file" accept="image/*" multiple style="display:none" id="tImg" onchange="addPhotos(this)">
+  <div id="tImgL" style="display:none;font-size:11px;color:var(--ok);font-weight:600;margin-top:5px"></div>
+  <div id="tImgList" style="margin-top:4px"></div></div>
   <button class="btn-big green" id="raiseBtn" onclick="raiseTicket()">🎫 Raise Ticket</button>
   <button class="btn btn-s btn-o btn-full" id="raiseBack" style="display:none;margin-top:8px" onclick="hideRaiseForm()">← Back to My Tickets</button>
 </div></div>
@@ -343,7 +364,7 @@ async function loadPriorityRulesFromSheet(){
 }
 
 let SHEET_LIVE=false;
-function updateDemoBanner(){const b=document.getElementById('demoBanner');if(b)b.style.display=SHEET_LIVE?'none':'block';}
+function updateDemoBanner(){}
 // PHASE 4: load Categories + Sub-Categories from the sheet and rebuild CATS + UMAP
 async function loadCategoriesFromSheet(){
   const cats=await apiRead('Categories');
@@ -494,6 +515,8 @@ function ticketToSheetRow(t){
     Item:t.item||'',
     What_Happened:t.whatHappened||'',
     Action:t.action||'',
+    Flag_Reason:t.flagReason||'',
+    Checklist_Answers:(t.probes||[]).join('|'),
     Where:t.where||'',
     Created_At:ts(),
     Updated_At:ts()
@@ -536,7 +559,7 @@ function sheetRowToTicket(r){
     by:String(r.Raised_By||'').trim(),
     otpRevealed:tf(r.OTP_Revealed),
     issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],
-    probes:[],
+    probes:String(r.Checklist_Answers||'').trim().split('|').filter(Boolean),
     locVisit:tf(r.Needs_Visit),
     confirmStatus:String(r.Confirm_Status||'').trim()||null,
     reopened:tf(r.Is_Reopened),
@@ -544,6 +567,7 @@ function sheetRowToTicket(r){
     item:String(r.Item||'').trim(),
     whatHappened:String(r.What_Happened||'').trim(),
     action:String(r.Action||'').trim(),
+    flagReason:String(r.Flag_Reason||'').trim(),
     where:String(r.Where||'').trim(),
     payment:String(r.Payment_Proof_URL||'').trim()?{
       status:'paid',
@@ -723,6 +747,7 @@ function showRaiseForm(){
   const ti=document.getElementById('tImg');if(ti)ti.value='';
   tImgFiles=[];renderPhotoList();
   selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
+  const fc2=document.getElementById('flagChk');if(fc2)fc2.checked=false;onFlagToggle();applyTicketTypeRules();
   refreshCatDropdown();
   const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
   document.getElementById('app').style.display='none';
@@ -1153,6 +1178,25 @@ let WH_OPTIONS=['Not Working','Broken / Damaged','Blocked','Leakage','Burnt','Ne
 let WHERE_OPTIONS=['Kitchen','Washing Area','Toilet / Bathroom','Staff Room','Store','Billing / Packing Area','Outside / Entrance','Terrace / Roof'];
 let selWH='',selWhere='',selAction='';
 let ACTION_OPTIONS=['New Requirement','Replacement','Need Repair','Need Cleaning','Need Service','Not Sure'];
+let WH_SHOWFOR={};
+let FLAG_REASONS=['Safety risk','Kitchen fully down','Food spoilage risk','VIP visit / audit','Multiple equipment affected'];
+// Ticket Type drives what is shown next. New Requirement = nothing "happened", so hide it.
+const TICKET_TYPE_RULES={'New Requirement':{hideWH:true}};
+function applyTicketTypeRules(){
+  const wrap=document.getElementById('whWrap');
+  const rule=TICKET_TYPE_RULES[selAction]||{};
+  if(wrap)wrap.style.display=rule.hideWH?'none':'block';
+  if(rule.hideWH){selWH=(WH_OPTIONS.indexOf('New Requirement')>=0)?'New Requirement':'';}
+}
+function onFlagToggle(){
+  const c=document.getElementById('flagChk');
+  const s=document.getElementById('flagReason');
+  if(s){s.style.display=(c&&c.checked)?'block':'none';if(!(c&&c.checked))s.value='';}
+}
+function fillFlagReasons(){
+  const s=document.getElementById('flagReason');
+  if(s)s.innerHTML='<option value="">Why urgent? *</option>'+FLAG_REASONS.map(o=>`<option>${o}</option>`).join('');
+}
 let autoDesc='',typedProblem='';
 function isKnownSubName(txt){
   const q=String(txt||'').trim().toLowerCase();
@@ -1184,7 +1228,8 @@ function renderTagChips(){
     is.value=selItem||'';
   }
   if(ws){
-    const wh=[...WH_OPTIONS];if(wh.indexOf('Other')<0)wh.push('Other');
+    let wh=[...WH_OPTIONS];if(wh.indexOf('Other')<0)wh.push('Other');
+    wh=wh.filter(o=>{const sf=WH_SHOWFOR[o];return !selAction||!sf||!sf.length||sf.indexOf(selAction)>=0;});
     ws.innerHTML='<option value="">Select…</option>'+wh.map(o=>`<option${o===selWH?' selected':''}>${o}</option>`).join('');
     ws.value=selWH||'';
   }
@@ -1339,6 +1384,7 @@ function applyAutoTags(text){
       if(pair[0].test(d)){const o=matchOption(pair[1],WHERE_OPTIONS);if(o){selWhere=o;break;}}
     }
   }
+  applyTicketTypeRules();
   renderTagChips();
 }
 
@@ -1347,21 +1393,25 @@ function applyAutoTags(text){
 async function loadTagOptionsFromSheet(){
   const rows=await apiRead('Tag_Options');
   if(!rows||!rows.length){renderTagChips();return false;}
-  const wh=[],whr=[],its=[],acts=[];
+  const wh=[],whr=[],its=[],acts=[],flags=[];const sfMap={};
   rows.slice().sort((a,b)=>(parseInt(a.Sort_Order)||0)-(parseInt(b.Sort_Order)||0)).forEach(r=>{
     const type=String(r.Type||'').trim().toLowerCase();
     const opt=String(r.Option||'').trim();
     const off=(r.Is_Active===false||String(r.Is_Active).toUpperCase()==='FALSE');
     if(!opt||off)return;
-    if(type.indexOf('what')===0)wh.push(opt);
+    if(type.indexOf('what')===0){wh.push(opt);const sf=String(r.Show_For||'').split('|').map(x=>x.trim()).filter(Boolean);if(sf.length)sfMap[opt]=sf;}
     else if(type.indexOf('where')===0)whr.push(opt);
     else if(type.indexOf('item')===0)its.push(opt);
     else if(type.indexOf('action')===0)acts.push(opt);
+    else if(type.indexOf('flag')===0)flags.push(opt);
   });
   if(wh.length)WH_OPTIONS=wh;
   if(whr.length)WHERE_OPTIONS=whr;
   if(its.length)ITEM_OPTIONS=its;
   if(acts.length)ACTION_OPTIONS=acts;
+  if(flags.length)FLAG_REASONS=flags;
+  WH_SHOWFOR=sfMap;
+  fillFlagReasons();
   renderTagChips();
   return true;
 }
@@ -1472,7 +1522,7 @@ function logUnmatched(q,action){
 
 function noMatchPanel(){
   return `<div style="padding:12px;text-align:center">
-    <div style="font-size:11px;font-weight:600;margin-bottom:2px">😕 Couldn't identify this problem</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:2px">😕 Couldn't identify this problem</div>
     <div style="font-size:9px;color:var(--t3);margin-bottom:8px">Pick the category yourself, or raise it as a general issue — the team will classify it</div>
     <div style="display:flex;gap:6px">
       <button type="button" onclick="nmBrowse()" style="flex:1;background:var(--c1);color:var(--t);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-size:11px;font-weight:600;cursor:pointer">📂 Browse Categories</button>
@@ -1626,7 +1676,7 @@ function renderSuggestList(matches){
     const priLabel={critical:'P0',high:'P1',medium:'P2',low:'P3'}[m.pri]||m.pri;
     return`<div onclick="selectSubFromSearch('${m.catId}','${esc(m.sub)}','${esc(m.catLabel)}','${m.pri}')" style="padding:10px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;${i===0?'background:rgba(124,106,240,.10);':''}" onmouseover="this.style.background='var(--c1)'" onmouseout="this.style.background='${i===0?'rgba(124,106,240,.10)':''}'">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><div style="font-size:11px;font-weight:${i===0?'700':'600'};${i===0?'color:var(--ac2)':''}">${i===0?'⭐ ':''}${m.sub}</div><div style="font-size:9px;color:var(--t3);margin-top:1px">${m.catLabel}</div></div>
+        <div><div style="font-size:13px;font-weight:${i===0?'700':'600'};${i===0?'color:var(--ac2)':''}">${i===0?'⭐ ':''}${m.sub}</div><div style="font-size:11px;color:var(--t3);margin-top:1px">${m.catLabel}</div></div>
         <span style="font-size:9px;font-weight:700;color:${priColor};flex-shrink:0;margin-left:8px">${priLabel}</span>
       </div></div>`;
   }).join('')+`<div onclick="nmBrowse()" style="padding:9px 12px;cursor:pointer;text-align:center;font-size:10px;color:var(--t3);font-weight:600">📂 None of these — Browse Categories</div>`;
@@ -1694,7 +1744,7 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
     opt.value=catId;opt.text=catLabel;
     tC.appendChild(opt);
   }
-  setTimeout(()=>{tC.value=catId;},10);
+  tC.value=catId;setTimeout(()=>{tC.value=catId;},10);
   tS.innerHTML=`<option value="${sub}" selected>${sub}</option>`;
   tS.value=sub;
   const tCv=document.getElementById('tCv');
@@ -1869,8 +1919,8 @@ function renderPhotoList(){
   const l=document.getElementById('tImgL');
   const list=document.getElementById('tImgList');
   const btn=document.getElementById('addPhotoBtn');
-  if(l)l.textContent=tImgFiles.length?('✅ '+tImgFiles.length+' photo(s) selected'):'Tap to upload';
-  if(btn)btn.style.display=tImgFiles.length?'block':'none';
+  if(l){if(tImgFiles.length){l.style.display='block';l.textContent='✅ '+tImgFiles.length+' photo(s) selected';}else{l.style.display='none';l.textContent='';}}
+  if(btn)btn.style.display='none';
   if(list)list.innerHTML=tImgFiles.map((f,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--c2);border-radius:var(--rs);margin-bottom:4px;font-size:10px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📷 ${f.name||('Photo '+(i+1))}</span><button type="button" onclick="removePhoto(${i})" style="background:none;border:none;color:var(--er);font-size:13px;cursor:pointer;padding:0 0 0 8px">✕</button></div>`).join('');
 }
 async function raiseTicket(){
@@ -1889,16 +1939,24 @@ async function raiseTicket(){
   if(!d){fail('Missing description','Please describe the issue');return}
   const iiR=document.getElementById('itemSel');if(iiR&&iiR.value)selItem=iiR.value;
   const acR=document.getElementById('actionSel');if(acR&&acR.value)selAction=acR.value;
-  if(!selWH){fail('What happened?','Select an option under ⚡ What');return}
+  const whWrapEl=document.getElementById('whWrap');
+  const whVisible=!whWrapEl||whWrapEl.style.display!=='none';
+  if(whVisible&&!selWH){fail('What happened?','Select an option under ⚡ What happened');return}
+  const flagOn=!!document.getElementById('flagChk')?.checked;
+  const flagWhy=document.getElementById('flagReason')?document.getElementById('flagReason').value:'';
+  if(flagOn&&!flagWhy){fail('Why urgent?','Select the reason for flagging urgent');return}
   // Set identity from the form
   role='requester';phone=ph;userName=nm;
   userIni=(nm.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||ph.slice(-2);
   userOutlet=o;selectedOutlets=[o];
   document.getElementById('uN').textContent=userName;document.getElementById('uR').textContent='requester · '+phone;document.getElementById('uAv').textContent=userIni;
-  tCnt++;const id=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'-0'+tCnt;const u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');const sla=SLAH[u]||CATS[c]?.sla||24;
-  const probes=[];document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
+  tCnt++;const id=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'-0'+tCnt;let u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');if(flagOn)u='critical';const sla=SLAH[u]||CATS[c]?.sla||24;
+  const probes=[];
+  document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
+  document.querySelectorAll('#probeL select').forEach(s=>{if(s.value)probes.push((s.parentElement?.firstElementChild?.textContent||'Q')+': '+s.value)});
   const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
-  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction};
+  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:''};
+  if(flagOn)t.hist.push({s:'raised',t:ts(),n:'🚩 Flagged URGENT by requester: '+flagWhy});
   const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
   // Upload ticket photos to Google Drive
   const imgUrls=[];
@@ -1910,13 +1968,13 @@ async function raiseTicket(){
     }
   }
   t.photoUrls=imgUrls;
-  TKS.unshift(t);['tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';tImgFiles=[];renderPhotoList();clearSubSelection();selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
+  TKS.unshift(t);['tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';tImgFiles=[];renderPhotoList();clearSubSelection();selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';const fc1=document.getElementById('flagChk');if(fc1)fc1.checked=false;onFlagToggle();applyTicketTypeRules();
   buildNav();R();
   // PHASE 5: write-through — save the new ticket to the sheet, then log its history
   nf('Saving…','Sending ticket to the sheet','ok');
   apiAppend('Tickets',ticketToSheetRow(t)).then(ok=>{
     if(ok){
-      t.synced=true;nf('✅ Saved',id+' stored in sheet','ok');
+      t.synced=true;nf('✅ '+id+' raised',(PRILABELS[u]||u)+' · SLA '+sla+'h — saved to sheet','ok');
       // log the events that happened at raise time
       writeHistory(id,'raised','Raised by '+userName,userName);
       if(t.att){const an=gA(t.att);writeHistory(id,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
@@ -2258,7 +2316,7 @@ let workMetaH='';
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
   pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="go('tickets')" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.sla?.startsWith('-')&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.sla?.startsWith('-')&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
@@ -2289,6 +2347,7 @@ function fillBootDropdowns(){
 
 toggleLoginMode();
 renderTagChips();
+fillFlagReasons();
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
 let usersLoaded=true;
