@@ -95,6 +95,18 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @media(max-width:768px){.sidebar{transform:translateX(-100%);height:100dvh;display:flex;flex-direction:column}.sidebar.open{transform:none}.sb-nav{flex:1;overflow-y:auto}.sb-u{flex-shrink:0}.main{margin-left:0}.mt-btn{display:block}.sts{grid-template-columns:1fr 1fr}.g32{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.cnt-area{padding:10px;padding-bottom:calc(60px + var(--sb))}.mn{display:block}.fab{bottom:calc(52px + var(--sb))}}
 @media(min-width:769px){.modal-bg{align-items:center}.modal{border-radius:var(--r);max-height:80vh}}
 #refreshBtn{transition:transform 0.3s ease;cursor:pointer}#refreshBtn.spinning{animation:spin 0.6s linear infinite}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}#refreshBtn:disabled{opacity:0.6;cursor:not-allowed}
+/* v24R: category grid tiles + animations */
+.cat-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 4px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;color:var(--t);font-size:11px;font-weight:600;text-align:center;min-height:66px;transition:transform .15s,border-color .2s,background .2s;animation:tileIn .3s backwards}
+.cat-tile:active{transform:scale(.94)}
+.cat-tile .cat-emoji{font-size:24px;line-height:1;transition:transform .2s}
+.cat-tile.matched{box-shadow:0 0 0 2px var(--ac);filter:brightness(1.25);animation:tilePulse 1.1s ease}
+.cat-tile.matched .cat-emoji{animation:emojiPop .5s ease}
+.cat-tile.dim{opacity:.4}
+@keyframes tileIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tilePulse{0%{box-shadow:0 0 0 0 var(--acg)}60%{box-shadow:0 0 0 7px rgba(124,106,240,0)}100%{box-shadow:0 0 0 2px var(--acg)}}
+@keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.sub-row{animation:rowIn .25s backwards}
 /* v19R: bigger fonts */
 .fg label{font-size:11px}
 .login-card h2{font-size:17px}
@@ -122,7 +134,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div class="fg"><label>🔍 Describe the problem *</label>
     <div style="position:relative">
       <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" autocomplete="off" style="padding-right:70px">
-      <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:38px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
+      <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:70px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
+      <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="position:absolute;right:38px;top:50%;transform:translateY(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
       <button type="button" id="srchMicBtn" onclick="voiceSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t2);font-size:16px;cursor:pointer">🎤</button>
     </div>
     <div id="autoSuggestBar" style="display:none;margin-top:6px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs)">
@@ -148,8 +161,11 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <select id="tC" style="display:none" onchange="onCat()"><option value="">Select</option></select>
   <select id="tS" style="display:none" onchange="onSub()"><option value="">—</option></select>
-  <div style="margin-bottom:8px"><button type="button" class="btn btn-s btn-o" onclick="toggleCatDropdowns()" id="browseToggle" style="font-size:9px">📂 Browse by Category</button></div>
-  <div id="catSubDropdowns" style="display:none" class="fr"><div class="fg"><label>Category</label><select class="fc" id="tCv" onchange="onCatVisible()"><option value="">Select</option></select></div><div class="fg"><label>Sub-Category</label><select class="fc" id="tSv" onchange="onSubVisible()"><option value="">—</option></select></div></div>
+  <div class="fg" id="catGridWrap"><label id="catGridLabel">📂 Or tap the area</label>
+    <div id="catGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
+    <div id="catSubList" style="display:none"></div>
+  </div>
+  <select id="tCv" style="display:none" onchange="onCatVisible()"></select><select id="tSv" style="display:none" onchange="onSubVisible()"></select>
   <div class="fg" style="display:none"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
   <div class="fg" id="flagWrap"><div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center">
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;text-transform:none"><label class="tog"><input type="checkbox" id="flagChk" onchange="onFlagToggle()"><span class="s"></span></label>🚩 Urgent?</label>
@@ -762,7 +778,7 @@ function logout(){role='';phone='';userName='';userIni='';userOutlet='';selected
   ['lPh','lNm','lOutSearch','lOut'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});
   const b=document.getElementById('raiseBack');if(b)b.style.display='none';
   document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
-async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
+async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
 function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home',tickets:'Tickets',detail:'Details'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0}
 	function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('show')}
@@ -1521,21 +1537,35 @@ function logUnmatched(q,action){
 }
 
 function noMatchPanel(){
-  return `<div style="padding:12px;text-align:center">
-    <div style="font-size:14px;font-weight:600;margin-bottom:2px">😕 Couldn't identify this problem</div>
-    <div style="font-size:9px;color:var(--t3);margin-bottom:8px">Pick the category yourself, or raise it as a general issue — the team will classify it</div>
-    <div style="display:flex;gap:6px">
-      <button type="button" onclick="nmBrowse()" style="flex:1;background:var(--c1);color:var(--t);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px;font-size:11px;font-weight:600;cursor:pointer">📂 Browse Categories</button>
-      <button type="button" onclick="nmGeneral()" style="flex:1;background:var(--ok);color:#000;border:none;border-radius:var(--rs);padding:8px;font-size:11px;font-weight:700;cursor:pointer">✅ Raise as General</button>
-    </div>
+  // Visual category buttons — a worker who can't describe it can tap the picture
+  const tiles=Object.entries(CATS).filter(([k,c])=>!c.disabled&&k!=='other').map(([k,c])=>{
+    const label=String(c.label||k);
+    return `<button type="button" onclick="pickCatTile('${k}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 4px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;color:var(--t);font-size:11px;font-weight:600;text-align:center;min-height:64px">${label}</button>`;
+  }).join('');
+  return `<div style="padding:12px">
+    <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:2px">😕 Couldn't identify — tap the area</div>
+    <div style="text-align:center;font-size:10px;color:var(--t3);margin-bottom:10px">Choose what the problem is about 👇</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">${tiles}</div>
+    <button type="button" onclick="nmGeneral()" style="width:100%;margin-top:10px;background:var(--ok);color:#000;border:none;border-radius:var(--rs);padding:9px;font-size:12px;font-weight:700;cursor:pointer">🤷 Not sure — Raise as General</button>
   </div>`;
+}
+// Worker tapped a category tile → show that category's sub-items to pick from
+function pickCatTile(catId){
+  logUnmatched(document.getElementById('subSearch').value.trim(),'cat-tile:'+catId);
+  const cat=CATS[catId];if(!cat)return;
+  const res=document.getElementById('subSearchResults');
+  const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const subs=(cat.subs||[]);
+  res.style.display='block';
+  res.innerHTML=`<div style="padding:8px 12px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:700;color:var(--ac2)">${cat.label} — pick the item</div>`+
+    subs.map(s=>{const pri=UMAP[s]||cat.pri;return `<div onclick="selectSubFromSearch('${catId}','${esc(s)}','${esc(cat.label)}','${pri}')" style="padding:10px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;font-size:13px">${s}</div>`;}).join('')+
+    `<div onclick="document.getElementById('subSearchResults').innerHTML=noMatchPanel()" style="padding:9px 12px;cursor:pointer;text-align:center;font-size:10px;color:var(--t3);font-weight:600">← Back to categories</div>`;
 }
 function nmBrowse(){
   logUnmatched(document.getElementById('subSearch').value.trim(),'browsed');
   document.getElementById('subSearchResults').style.display='none';
-  const d=document.getElementById('catSubDropdowns');
-  if(d&&d.style.display==='none')toggleCatDropdowns();
-  const tCv=document.getElementById('tCv');if(tCv)tCv.focus();
+  closeCatTile();
+  const g=document.getElementById('catGridWrap');if(g)g.scrollIntoView({behavior:'smooth',block:'center'});
 }
 function nmGeneral(){
   const q=document.getElementById('subSearch').value.trim();
@@ -1665,6 +1695,250 @@ function fuzzySearchSubs(query){
   return usable.sort((a,b)=>b.score-a.score).slice(0,12);
 }
 
+// ===== ALWAYS-VISIBLE CATEGORY GRID (v24R) =====
+const CAT_EMOJI={gas:'🔥',electrical:'⚡','HVAC & Cooling':'❄️',hvac:'❄️',equipment_repair:'🍳',equipment_new:'🛒',plumbing:'🚰',civil:'🏗️',assets:'📦','connectivity & IT':'🌐',pest:'🐛',pms:'🗓️',safety:'🔒',other:'📌'};
+// Per-category tint {bg, border, text} + SVG icon path. Colors from the app palette.
+const CAT_STYLE={
+  gas:{bg:'rgba(255,94,94,.14)',bd:'#A32D2D',tx:'#FF8A8A',ic:'flame'},
+  electrical:{bg:'rgba(245,197,66,.16)',bd:'#854F0B',tx:'#F5C542',ic:'bolt'},
+  hvac:{bg:'rgba(66,201,190,.16)',bd:'#0F6E56',tx:'#5DE8DF',ic:'snow'},
+  'HVAC & Cooling':{bg:'rgba(66,201,190,.16)',bd:'#0F6E56',tx:'#5DE8DF',ic:'snow'},
+  equipment_repair:{bg:'rgba(239,140,47,.16)',bd:'#993C1D',tx:'#EF8C2F',ic:'gear'},
+  equipment_new:{bg:'rgba(124,106,240,.16)',bd:'#534AB7',tx:'#A99BFF',ic:'cart'},
+  plumbing:{bg:'rgba(55,138,221,.16)',bd:'#185FA5',tx:'#7FB6F0',ic:'drop'},
+  civil:{bg:'rgba(136,135,128,.16)',bd:'#5F5E5A',tx:'#B4B2A9',ic:'brick'},
+  assets:{bg:'rgba(232,126,173,.14)',bd:'#993556',tx:'#E87EAD',ic:'box'},
+  'connectivity & IT':{bg:'rgba(66,201,190,.14)',bd:'#0F6E56',tx:'#5DE8DF',ic:'wifi'},
+  pest:{bg:'rgba(99,153,34,.16)',bd:'#3B6D11',tx:'#97C459',ic:'bug'},
+  pms:{bg:'rgba(124,106,240,.14)',bd:'#534AB7',tx:'#A99BFF',ic:'cal'},
+  safety:{bg:'rgba(255,94,94,.12)',bd:'#A32D2D',tx:'#FF8A8A',ic:'shield'},
+  other:{bg:'var(--c1)',bd:'var(--bdr)',tx:'var(--t2)',ic:'dot'}
+};
+const CAT_ICON_PATH={
+  flame:'<path d="M50 12c8 14-6 20-6 30a12 12 0 1 0 20-6c2 8-2 12-2 12 10-6 14-20 4-32 2 8-6 10-6 4 0-8-6-14-10-8z"/>',
+  bolt:'<path d="M56 8 26 54h18l-6 38 34-52H52z"/>',
+  snow:'<g stroke-width="6" stroke-linecap="round" fill="none"><path d="M50 14v72M18 32l64 36M82 32 18 68"/></g>',
+  gear:'<path d="M50 34a16 16 0 1 0 0 32 16 16 0 0 0 0-32zm0-22 6 10h-12zM50 88l6-10h-12zM12 50l10-6v12zM88 50l-10 6v-12zM24 24l11 3-8 8zM76 76 65 73l8-8zM76 24 73 35l-8-8zM24 76l3-11 8 8z"/>',
+  cart:'<g stroke-width="6" fill="none" stroke-linejoin="round"><path d="M16 20h10l8 40h34l8-26H30"/></g><circle cx="38" cy="76" r="6"/><circle cx="68" cy="76" r="6"/>',
+  drop:'<path d="M50 14C38 34 30 44 30 58a20 20 0 0 0 40 0c0-14-8-24-20-44z"/>',
+  brick:'<g><rect x="14" y="24" width="30" height="18" rx="2"/><rect x="50" y="24" width="30" height="18" rx="2"/><rect x="14" y="48" width="30" height="18" rx="2"/><rect x="50" y="48" width="30" height="18" rx="2"/><rect x="32" y="72" width="30" height="14" rx="2"/></g>',
+  box:'<g stroke-width="6" fill="none" stroke-linejoin="round"><path d="M50 16 20 30v32l30 14 30-14V30z"/><path d="M20 30l30 14 30-14M50 44v32"/></g>',
+  wifi:'<g fill="none" stroke-width="7" stroke-linecap="round"><path d="M22 40a40 40 0 0 1 56 0M34 54a22 22 0 0 1 32 0"/></g><circle cx="50" cy="70" r="6"/>',
+  bug:'<g><ellipse cx="50" cy="56" rx="16" ry="20"/><circle cx="50" cy="30" r="9"/><g stroke-width="5" stroke-linecap="round"><path d="M30 44 18 36M70 44 82 36M28 60H14M72 60h14M30 76 18 84M70 76 82 84"/></g></g>',
+  cal:'<g><rect x="18" y="24" width="64" height="58" rx="6" fill="none" stroke-width="6"/><path d="M18 40h64" stroke-width="6"/><path d="M34 16v14M66 16v14" stroke-width="6" stroke-linecap="round"/></g>',
+  shield:'<path d="M50 14 22 26v22c0 20 14 32 28 38 14-6 28-18 28-38V26z"/>',
+  dot:'<circle cx="50" cy="50" r="20"/>',
+  dial:'<circle cx="50" cy="50" r="28" fill="none" stroke-width="6"/><path d="M50 50 66 38" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="50" r="5"/>',
+  cylinder:'<rect x="34" y="26" width="32" height="54" rx="10" fill="none" stroke-width="6"/><rect x="44" y="16" width="12" height="12" rx="3"/>',
+  fridge:'<rect x="30" y="14" width="40" height="72" rx="6" fill="none" stroke-width="6"/><path d="M30 46h40" stroke-width="6"/><path d="M40 28v8M40 56v10" stroke-width="5" stroke-linecap="round"/>',
+  fan:'<circle cx="50" cy="50" r="7"/><g fill="none" stroke-width="6" stroke-linecap="round"><path d="M50 43C40 30 30 30 28 40c-2 8 10 12 22 3M57 50c13-10 13-20 3-22-8-2-12 10-3 22M43 57C53 70 63 70 65 60c2-8-10-12-22-3"/></g>',
+  bulb:'<path d="M50 16a22 22 0 0 0-12 40c3 3 4 6 4 10h16c0-4 1-7 4-10a22 22 0 0 0-12-40z" fill="none" stroke-width="6"/><path d="M42 78h16M44 86h12" stroke-width="5" stroke-linecap="round"/>',
+  tap:'<path d="M20 40h24v-8h20c8 0 8 12 0 12H44v10" fill="none" stroke-width="6"/><path d="M50 54c-6 8-6 16 0 20 6-4 6-12 0-20z"/>',
+  drain:'<circle cx="50" cy="50" r="30" fill="none" stroke-width="6"/><g stroke-width="5" stroke-linecap="round"><path d="M50 26v48M34 30v40M66 30v40"/></g>',
+  motor:'<rect x="24" y="36" width="40" height="28" rx="5" fill="none" stroke-width="6"/><path d="M64 44h10v12H64M24 50H14" stroke-width="6" stroke-linecap="round"/>',
+  toilet:'<path d="M32 20h20v10c0 14-6 24-10 30-6-6-10-14-10-24z" fill="none" stroke-width="6"/><path d="M28 60h44l-6 20H34z" fill="none" stroke-width="6"/>',
+  mixer:'<path d="M36 20h28l-4 30H40z" fill="none" stroke-width="6"/><rect x="42" y="56" width="16" height="24" rx="3" fill="none" stroke-width="6"/>',
+  oven:'<rect x="20" y="24" width="60" height="52" rx="6" fill="none" stroke-width="6"/><path d="M20 40h60" stroke-width="6"/><circle cx="32" cy="32" r="3"/><circle cx="46" cy="32" r="3"/>',
+  camera:'<rect x="18" y="32" width="64" height="44" rx="8" fill="none" stroke-width="6"/><circle cx="50" cy="54" r="13" fill="none" stroke-width="6"/><path d="M34 32l6-10h20l6 10" fill="none" stroke-width="6"/>',
+  printer:'<rect x="26" y="44" width="48" height="28" rx="4" fill="none" stroke-width="6"/><path d="M34 44V22h32v22M34 72v10h32V72" fill="none" stroke-width="6"/>',
+  ac:'<rect x="16" y="30" width="68" height="26" rx="6" fill="none" stroke-width="6"/><path d="M28 64c4 6 4 10 0 14M50 64c4 6 4 10 0 14M72 64c4 6 4 10 0 14" fill="none" stroke-width="5" stroke-linecap="round"/>',
+  pipe:'<path d="M20 40h30v-12h20v44H50v-12H20z" fill="none" stroke-width="6"/>',
+  wall:'<g stroke-width="5" fill="none"><path d="M20 30h60M20 50h60M20 70h60M40 30v20M60 50v20M40 70v-20"/></g>',
+  water:'<path d="M50 16C38 36 30 46 30 60a20 20 0 0 0 40 0c0-14-8-24-20-44z"/>',
+  weigh:'<path d="M24 30h52l-8 34H32z" fill="none" stroke-width="6"/><path d="M50 30V20M40 74h20" stroke-width="6" stroke-linecap="round"/>',
+  door:'<rect x="30" y="18" width="40" height="64" rx="3" fill="none" stroke-width="6"/><circle cx="60" cy="50" r="3"/>'
+};
+// Match a sub-category NAME to a specific icon; fall back to the category icon.
+const SUB_ICON_RULES=[
+ [/regulator|dial|gauge|thermostat/,'dial'],[/cylinder/,'cylinder'],
+ [/leak|smell|gas leak/,'flame'],[/burner|stove|chulha|tandoor/,'flame'],
+ [/fridge|refriger|chiller|freezer|cool/,'fridge'],[/\bac\b|air ?condition/,'ac'],
+ [/exhaust|chimney|hood|\bfan\b/,'fan'],[/bulb|light|tube/,'bulb'],
+ [/tap|faucet|\bnal\b/,'tap'],[/drain|nali|naali|block/,'drain'],
+ [/motor|pump/,'motor'],[/toilet|commode|flush|urinal/,'toilet'],
+ [/mixer|grinder|blender/,'mixer'],[/oven|otg|deck|micro/,'oven'],
+ [/cctv|camera|dvr/,'camera'],[/printer|kot/,'printer'],
+ [/pipe|pipeline/,'pipe'],[/wall|tile|crack|paint|ceiling/,'wall'],
+ [/water|ro |tank|geyser|heater/,'water'],[/weigh|scale/,'weigh'],
+ [/door|shutter|window|lock/,'door'],[/socket|switch|plug|board|mcb|wire/,'bolt'],
+ [/cockroach|rat|rodent|pest|bug|termite|fly/,'bug']
+];
+function subIconKey(subName,catId){
+  const d=String(subName||'').toLowerCase();
+  for(const[rx,key]of SUB_ICON_RULES)if(rx.test(d))return key;
+  return (CAT_STYLE[catId]||CAT_STYLE.other).ic;   // fall back to category icon
+}
+function subIconSVG(subName,catId,color){
+  const key=subIconKey(subName,catId);
+  const p=CAT_ICON_PATH[key]||CAT_ICON_PATH.dot;
+  return `<svg viewBox="0 0 100 100" style="position:absolute;right:-10px;bottom:-10px;width:74px;height:74px;opacity:.30;pointer-events:none" aria-hidden="true"><g fill="${color}" stroke="${color}">${p}</g></svg>`;
+}
+function catIconSVG(catId,color){
+  const st=CAT_STYLE[catId]||CAT_STYLE.other;
+  const p=CAT_ICON_PATH[st.ic]||CAT_ICON_PATH.dot;
+  return `<svg viewBox="0 0 100 100" style="position:absolute;right:-10px;bottom:-10px;width:74px;height:74px;opacity:.30;pointer-events:none" aria-hidden="true"><g fill="${color}" stroke="${color}">${p}</g></svg>`;
+}
+function catEmoji(id,label){if(CAT_EMOJI[id])return CAT_EMOJI[id];const m=String(label||'').match(/^\s*(\p{Emoji})/u);return m?m[1]:'📋';}
+function catText(label){return String(label||'').replace(/^\s*\p{Emoji}\s*/u,'').trim();}
+function buildCatGrid(){
+  const grid=document.getElementById('catGrid');if(!grid)return;
+  const entries=Object.entries(CATS).filter(([k,c])=>!c.disabled&&k!=='other');
+  grid.innerHTML=entries.map(([k,c],i)=>{const st=CAT_STYLE[k]||CAT_STYLE.other;return `<button type="button" class="cat-tile" data-cat="${k}" style="animation-delay:${i*30}ms;position:relative;overflow:hidden;background:${st.bg};border-color:${st.bd}" onclick="openCatTile('${k}')">${catIconSVG(k,st.tx)}<span class="cat-emoji" style="position:relative">${catEmoji(k,c.label)}</span><span style="position:relative;color:${st.tx}">${catText(c.label)}</span></button>`;}).join('');
+}
+// Auto-detect a 3rd level: split "Item - Issue" names, only when it actually shortens the list.
+function splitSubParts(sub){
+  // Separator = hyphen with a space BEFORE it (his data always has that),
+  // space after is optional/variable. Preserves inner hyphens like "Un- defined".
+  return String(sub||'').split(/\s+-\s*/).map(p=>p.trim()).filter(Boolean);
+}
+// Build the full tree for a category from dash-count alone. No sheet config needed.
+function buildTree(catId){
+  const cat=CATS[catId];if(!cat)return null;
+  const subs=cat.subs||[];
+  const items={};const order=[];
+  subs.forEach(sub=>{
+    const parts=splitSubParts(sub);
+    const itemName=parts[0]||sub;const key=itemName.toLowerCase();
+    if(!items[key]){items[key]={item:itemName,leaves:[],comps:{},compOrder:[]};order.push(key);}
+    if(parts.length<=2){
+      items[key].leaves.push({issue:parts[1]||itemName,sub});
+    }else{
+      const compName=parts[1];const compKey=compName.toLowerCase();
+      const issue=parts.slice(2).join(' - ');
+      if(!items[key].comps[compKey]){items[key].comps[compKey]={comp:compName,issues:[]};items[key].compOrder.push(compKey);}
+      items[key].comps[compKey].issues.push({issue,sub});
+    }
+  });
+  const distinct=order.length;
+  const useItems=subs.length>8&&distinct>=1&&distinct<=subs.length*0.6;
+  return {useItems,items,order};
+}
+function findPathForSub(catId,subName){
+  const tree=buildTree(catId);if(!tree)return null;
+  for(const key of tree.order){
+    const it=tree.items[key];
+    if(it.leaves.some(x=>x.sub===subName))return{itemKey:key,compKey:null};
+    for(const ck of it.compOrder){if(it.comps[ck].issues.some(x=>x.sub===subName))return{itemKey:key,compKey:ck};}
+  }
+  return null;
+}
+function clearCatHighlight(){document.querySelectorAll('#catGrid .cat-tile').forEach(el=>el.classList.remove('matched','dim'))}
+function highlightCat(catId){
+  const tiles=document.querySelectorAll('#catGrid .cat-tile');
+  tiles.forEach(el=>{el.classList.remove('matched','dim');if(el.dataset.cat===catId)el.classList.add('matched');else el.classList.add('dim');});
+}
+let currentCatId=null,currentItemKey=null,currentCompKey=null;
+
+// LEVEL 1 -> 2: category tapped, show its items (leaf or branch tiles decided per item)
+function openCatTile(catId){
+  const cat=CATS[catId];if(!cat)return;
+  const grid=document.getElementById('catGrid');
+  const tree=buildTree(catId);
+  currentCatId=catId;currentItemKey=null;currentCompKey=null;
+  grid.style.display='none';
+  if(tree&&tree.useItems){
+    if(tree.order.length===1){openItemTile(catId,tree.order[0]);}
+    else{renderItemLevel(catId,tree);}
+  }else{
+    renderTiles(catId,(cat.subs||[]).map(s=>({label:s,sub:s,branch:false})),cat.label,closeCatTile,'pick the item');
+  }
+}
+// LEVEL 2: item tiles (Bain Marie, Microwave...) — tapping opens level 3
+function renderItemLevel(catId,tree){
+  const cat=CATS[catId];
+  const label=document.getElementById('catGridLabel');
+  if(label)label.innerHTML=`<span onclick="closeCatTile()" style="cursor:pointer;color:var(--ac2)">\u2190 ${catText(cat.label)} \u00b7 tap to go back</span>`;
+  const tiles=tree.order.map(key=>({label:tree.items[key].item,sub:null,branch:true,onClick:`openItemTile('${catId}','${key.replace(/'/g,"\\'")}')`,iconSrc:tree.items[key].item}));
+  renderTilesRaw(catId,tiles,`${catEmoji(catId,cat.label)} ${catText(cat.label)} \u2014 pick the item (tap to go back)`,closeCatTile);
+}
+// LEVEL 3: inside one item — mix of direct issues (select now) + component tiles (drill deeper)
+function openItemTile(catId,key){
+  const cat=CATS[catId];if(!cat)return;
+  const tree=buildTree(catId);if(!tree)return;
+  const it=tree.items[key];if(!it)return;
+  currentItemKey=key;currentCompKey=null;
+  const label=document.getElementById('catGridLabel');
+  if(label)label.innerHTML=`<span onclick="openCatTile('${catId}')" style="cursor:pointer;color:var(--ac2)">\u2190 ${it.item} \u00b7 tap to go back</span>`;
+  const distinctComps=it.compOrder.length;
+  const useComps=distinctComps>=2&&(it.leaves.length+distinctComps)<(it.leaves.length+it.compOrder.reduce((s,ck)=>s+it.comps[ck].issues.length,0));
+  const tiles=[];
+  it.leaves.forEach(x=>tiles.push({label:x.issue,sub:x.sub,branch:false,iconSrc:x.sub}));
+  if(useComps){
+    it.compOrder.forEach(ck=>tiles.push({label:it.comps[ck].comp,sub:null,branch:true,onClick:`openCompTile('${catId}','${key.replace(/'/g,"\\'")}','${ck.replace(/'/g,"\\'")}')`,iconSrc:it.comps[ck].comp}));
+  }else{
+    it.compOrder.forEach(ck=>it.comps[ck].issues.forEach(x=>tiles.push({label:x.issue,sub:x.sub,branch:false,iconSrc:x.sub})));
+  }
+  const backToParent=(tree.order.length===1)?closeCatTile:function(){openCatTile(catId);};
+  renderTilesRaw(catId,tiles,`${catEmoji(catId,cat.label)} ${it.item} \u2014 pick the issue (tap to go back)`,backToParent);
+}
+// LEVEL 4: inside one component (e.g. Bain Marie > Coil) — final selectable issues
+function openCompTile(catId,itemKey,compKey){
+  const tree=buildTree(catId);if(!tree)return;
+  const it=tree.items[itemKey];if(!it)return;
+  const comp=it.comps[compKey];if(!comp)return;
+  currentCompKey=compKey;
+  const cat=CATS[catId];
+  const label=document.getElementById('catGridLabel');
+  if(label)label.innerHTML=`<span onclick="openItemTile('${catId}','${itemKey.replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--ac2)">\u2190 ${it.item} \u00b7 ${comp.comp} \u00b7 tap to go back</span>`;
+  const tiles=comp.issues.map(x=>({label:x.issue,sub:x.sub,branch:false,iconSrc:x.sub}));
+  renderTilesRaw(catId,tiles,`${catEmoji(catId,cat.label)} ${it.item} \u203a ${comp.comp} \u2014 pick the issue (tap to go back)`,function(){openItemTile(catId,itemKey);});
+}
+// Shared tile renderer: leaf tiles select immediately, branch tiles drill one level deeper (marked with \u203a)
+function renderTilesRaw(catId,tiles,headerText,backFn){
+  const cat=CATS[catId];const list=document.getElementById('catSubList');
+  const st=CAT_STYLE[catId]||CAT_STYLE.other;
+  const esc=s=>String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const compact=tiles.reduce((m,x)=>Math.max(m,x.label.length),0)<=22;
+  list.style.display='grid';list.style.gridTemplateColumns='1fr 1fr';list.style.gap='6px';
+  window.__backFn=backFn;
+  const back=`<div class="sub-row" onclick="__backFn()" style="grid-column:1/-1;padding:9px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ac2)">\u2190 ${headerText}</div>`;
+  const cells=tiles.map((x,idx)=>{
+    const fSize=compact?'13px':'10.5px';const minH=compact?'56px':'70px';
+    const pri=x.sub?(UMAP[x.sub]||cat.pri):cat.pri;
+    const click=x.branch?x.onClick:`selectSubFromSearch('${catId}','${esc(x.sub)}','${esc(cat.label)}','${pri}')`;
+    const dataAttr=x.sub?` data-sub="${esc(x.sub)}"`:'';
+    const chevron=x.branch?'<span style="position:absolute;top:4px;right:6px;font-size:11px;opacity:.6">\u203a</span>':'';
+    const cls=x.branch?'sub-row item-tile':'sub-row issue-tile';
+    return `<div class="${cls}"${dataAttr} style="animation-delay:${idx*20}ms;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 5px;border:1px solid ${st.bd};border-radius:var(--rs);cursor:pointer;font-size:${fSize};font-weight:600;line-height:1.25;background:${st.bg};min-height:${minH}" onclick="${click}">${subIconSVG(x.iconSrc||x.label,catId,st.tx)}${chevron}<span style="position:relative;color:${st.tx};word-break:break-word">${x.label}</span></div>`;
+  }).join('');
+  list.innerHTML=back+cells;
+}
+function renderTiles(catId,tiles,catLabel,backFn,verb){
+  renderTilesRaw(catId,tiles.map(t=>({label:t.label,sub:t.sub,branch:false,iconSrc:t.sub})),`${catEmoji(catId,catLabel)} ${catText(catLabel)} \u2014 ${verb} (tap to go back)`,backFn);
+}
+function closeCatTile(){
+  const grid=document.getElementById('catGrid');
+  const list=document.getElementById('catSubList');
+  const label=document.getElementById('catGridLabel');
+  currentCatId=null;currentItemKey=null;currentCompKey=null;
+  if(list){list.style.display='none';list.innerHTML='';}
+  if(grid)grid.style.display='grid';
+  if(label)label.textContent='\ud83d\udcc2 Or tap the area';
+  clearCatHighlight();
+}
+// Search/voice confident match: walk straight to the deepest screen containing it, highlighted
+function openToSub(catId,subName){
+  const grid=document.getElementById('catGrid');
+  const tree=buildTree(catId);
+  currentCatId=catId;
+  grid.style.display='none';
+  if(tree&&tree.useItems){
+    const path=findPathForSub(catId,subName);
+    if(path){
+      if(path.compKey)openCompTile(catId,path.itemKey,path.compKey);
+      else openItemTile(catId,path.itemKey);
+    }else{openCatTile(catId);}
+  }else{
+    openCatTile(catId);
+  }
+  setTimeout(function(){
+    document.querySelectorAll('#catSubList .issue-tile').forEach(function(el){
+      if(el.dataset.sub===subName){el.style.boxShadow='0 0 0 2px var(--ac)';el.style.filter='brightness(1.2)';}
+    });
+  },30);
+}
+
+
 // ===== SMART SEARCH =====
 function renderSuggestList(matches){
   const res=document.getElementById('subSearchResults');
@@ -1691,7 +1965,7 @@ function onSubSearchAuto(){
   const res=document.getElementById('subSearchResults');
   const btn=document.getElementById('srchClearBtn');
   if(btn)btn.style.display=q?'block':'none';
-  if(!q){bar.style.display='none';res.style.display='none';autoSuggestPending=null;return;}
+  if(!q){bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();closeCatTile();return;}
   clearTimeout(autoSuggestTimer);
   autoSuggestTimer=setTimeout(()=>{
     const matches=fuzzySearchSubs(q);
@@ -1699,9 +1973,18 @@ function onSubSearchAuto(){
       bar.style.display='none';
       res.style.display='block';
       res.innerHTML=noMatchPanel();
+      clearCatHighlight();
       return;
     }
     bar.style.display='none';
+    // Highlight the category of the top match on the always-visible grid
+    highlightCat(matches[0].catId);
+    // Confident? (clear top score AND well ahead of #2) → auto-open that category
+    const top=matches[0].score, second=matches[1]?matches[1].score:0;
+    const confident=top>=25&&(matches.length===1||top>second);
+    if(confident&&document.getElementById('catSubList').style.display==='none'){
+      openToSub(matches[0].catId,matches[0].sub);
+    }
     renderSuggestList(matches);
   },400);
 }
@@ -1758,6 +2041,7 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
   selEl.style.display='block';
   document.getElementById('subSelectedName').textContent=sub;
   document.getElementById('subSelectedCat').textContent=catLabel;
+  const gw=document.getElementById('catGridWrap');if(gw)gw.style.display='none';
   onSub();
   selItem=detectItem(typedQ)||sub;showItemField();
   applyAutoTags(typedQ+' '+sub);
@@ -1765,6 +2049,8 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
 }
 
 function clearSubSelection(){
+  if(typeof clearCatHighlight==='function'){clearCatHighlight();closeCatTile();}
+  const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';
   const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
@@ -1779,17 +2065,7 @@ function clearSubSelection(){
   if(pe)pe.textContent='—';if(se)se.style.display='none';
 }
 
-function toggleCatDropdowns(){
-  const d=document.getElementById('catSubDropdowns');
-  const btn=document.getElementById('browseToggle');
-  const showing=d.style.display!=='none';
-  d.style.display=showing?'none':'grid';
-  btn.textContent=showing?'📂 Browse by Category':'✕ Hide';
-  if(!showing){
-    const tCv=document.getElementById('tCv');
-    tCv.innerHTML='<option value="">Select</option>'+Object.entries(CATS).filter(([k,c])=>!c.disabled).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join('');
-  }
-}
+function toggleCatDropdowns(){const g=document.getElementById('catGridWrap');if(g)g.scrollIntoView({behavior:'smooth',block:'center'});}
 
 function onCatVisible(){
   const c=document.getElementById('tCv').value;
@@ -1818,6 +2094,7 @@ function onSubVisible(){
   selEl.style.display='block';
   document.getElementById('subSelectedName').textContent=s;
   document.getElementById('subSelectedCat').textContent=CATS[c]?.label||c;
+  const gw2=document.getElementById('catGridWrap');if(gw2)gw2.style.display='none';
   onSub();
   selItem=detectItem(typedProblem||'')||s;showItemField();
   applyAutoTags(s);
@@ -1825,13 +2102,21 @@ function onSubVisible(){
 }
 
 // ===== VOICE SEARCH =====
+let voiceLang='en-IN';
+function toggleVoiceLang(){
+  voiceLang=(voiceLang==='en-IN')?'hi-IN':'en-IN';
+  const b=document.getElementById('voiceLangBtn');
+  if(b)b.textContent=(voiceLang==='hi-IN')?'हिं':'EN';
+  const vb=document.getElementById('vBtnTD');  // description mic follows the same language
+  nf('🎤 '+(voiceLang==='hi-IN'?'हिंदी':'English'),(voiceLang==='hi-IN'?'Ab Hindi mein boliye':'Speak in English'),'ok');
+}
 function voiceSearch(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const btn=document.getElementById('srchMicBtn');
   if(!SR){nf('Not supported','Voice needs Chrome on Android/desktop','warn');return}
   if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return}
   const r=new SR();
-  r.lang='en-IN';r.continuous=false;r.interimResults=false;
+  r.lang=voiceLang;r.continuous=false;r.interimResults=false;
   if(btn){btn.textContent='🔴';btn.style.color='var(--er)'}
   nf('🎤 Listening','Speak the problem now...','ok');
   r.onresult=e=>{
@@ -1846,6 +2131,9 @@ function voiceSearch(){
       nf('Heard','"'+txt+'"','warn');
     } else {
       document.getElementById('autoSuggestBar').style.display='none';
+      highlightCat(matches[0].catId);
+      const vtop=matches[0].score,vsec=matches[1]?matches[1].score:0;
+      if(vtop>=25&&(matches.length===1||vtop>vsec)&&document.getElementById('catSubList').style.display==='none')openToSub(matches[0].catId,matches[0].sub);
       renderSuggestList(matches);
       nf('Heard','"'+txt+'"','ok');
     }
@@ -2081,7 +2369,7 @@ function voiceInput(targetId,btnEl){
   }
 
   const r=new SR();
-  r.lang='en-IN';
+  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');
   r.continuous=false;
   r.interimResults=false;
 
@@ -2204,7 +2492,7 @@ document.addEventListener('click',function(e){
   }
 });
 
-function refreshCatDropdown(){const tcs=document.getElementById('tC');if(!tcs)return;const cur=tcs.value;tcs.innerHTML='<option value="">Select</option>';Object.entries(CATS).forEach(([k,c])=>{if(!c.disabled)tcs.innerHTML+=`<option value="${k}">${c.label}</option>`});if(cur&&CATS[cur]&&!CATS[cur].disabled)tcs.value=cur}
+function refreshCatDropdown(){const tcs=document.getElementById('tC');if(!tcs)return;const cur=tcs.value;tcs.innerHTML='<option value="">Select</option>';Object.entries(CATS).forEach(([k,c])=>{if(!c.disabled)tcs.innerHTML+=`<option value="${k}">${c.label}</option>`});if(cur&&CATS[cur]&&!CATS[cur].disabled)tcs.value=cur;if(typeof buildCatGrid==='function')buildCatGrid();}
 
 
 
@@ -2348,6 +2636,7 @@ function fillBootDropdowns(){
 toggleLoginMode();
 renderTagChips();
 fillFlagReasons();
+setTimeout(buildCatGrid,100);
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
 let usersLoaded=true;
@@ -2369,6 +2658,7 @@ let usersLoaded=true;
     ensureGeneralCategory();
     fillBootDropdowns();
     updateDemoBanner();
+    buildCatGrid();
     syncTCnt();
     if(document.getElementById('app').style.display!=='none'){R();}
   });
