@@ -134,11 +134,12 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <div class="fg"><label>🔍 Describe the problem *</label>
     <div style="position:relative">
-      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" autocomplete="off" style="padding-right:70px">
+      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" autocomplete="off" style="padding-right:70px">
       <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:70px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
       <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="position:absolute;right:38px;top:50%;transform:translateY(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
       <button type="button" id="srchMicBtn" onclick="voiceSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t2);font-size:16px;cursor:pointer">🎤</button>
     </div>
+    <button type="button" id="findBtn" onclick="runFind()" style="display:none;width:100%;margin-top:6px;background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:9px;font-size:13px;font-weight:700;cursor:pointer">🔍 Find</button>
     <div id="autoSuggestBar" style="display:none;margin-top:6px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs)">
       <div style="font-size:9px;color:var(--t3);margin-bottom:6px">Best match found:</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -1968,34 +1969,70 @@ let subSearchSelected={cat:'',sub:''};
 let autoSuggestPending=null;
 let autoSuggestTimer=null;
 
+// Typing only manages the ✕ button and clears any stale result from a previous search —
+
+// it does NOT search. The user finishes their whole thought, then taps 🔍 Find (or hits
+
+// Enter) when ready. This matches how voice search already behaves: results only appear
+
+// once the user is done, never mid-thought.
+
 function onSubSearchAuto(){
+
   const q=document.getElementById('subSearch').value.trim();
+
   const bar=document.getElementById('autoSuggestBar');
+
   const res=document.getElementById('subSearchResults');
+
   const btn=document.getElementById('srchClearBtn');
+
+  const findBtn=document.getElementById('findBtn');
+
   if(btn)btn.style.display=q?'block':'none';
-  if(!q){bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();closeCatTile();return;}
-  clearTimeout(autoSuggestTimer);
-  autoSuggestTimer=setTimeout(()=>{
-    const matches=fuzzySearchSubs(q);
-    if(!matches.length){
-      bar.style.display='none';
-      res.style.display='block';
-      res.innerHTML=noMatchPanel();
-      clearCatHighlight();
-      return;
-    }
-    bar.style.display='none';
-    // Highlight the category of the top match on the always-visible grid
-    highlightCat(matches[0].catId);
-    // Confident? (clear top score AND well ahead of #2) → auto-open that category
-    const top=matches[0].score, second=matches[1]?matches[1].score:0;
-    const confident=top>=25&&(matches.length===1||top>second);
-    if(confident&&document.getElementById('catSubList').style.display==='none'){
-      openToSub(matches[0].catId,matches[0].sub);
-    }
-    renderSuggestList(matches);
-  },400);
+
+  if(findBtn)findBtn.style.display=q?'block':'none';
+
+  bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();
+
+  if(!q)closeCatTile();
+
+}
+
+// Explicit search — runs only when the user taps Find or presses Enter.
+
+function runFind(){
+
+  const q=document.getElementById('subSearch').value.trim();
+
+  const res=document.getElementById('subSearchResults');
+
+  if(!q)return;
+
+  const matches=fuzzySearchSubs(q);
+
+  if(!matches.length){
+
+    res.style.display='block';
+
+    res.innerHTML=noMatchPanel();
+
+    clearCatHighlight();
+
+    return;
+
+  }
+
+  highlightCat(matches[0].catId);
+
+  renderSuggestList(matches);
+
+}
+
+function onSearchKeydown(e){
+
+  if(e.key==='Enter'){e.preventDefault();runFind();}
+
 }
 
 function confirmSuggest(){
@@ -2122,38 +2159,60 @@ function toggleVoiceLang(){
 function voiceSearch(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const btn=document.getElementById('srchMicBtn');
-  if(!SR){nf('Not supported','Voice needs Chrome on Android/desktop','warn');return}
+  const inp=document.getElementById('subSearch');
+  if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return}
   if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return}
   const r=new SR();
-  r.lang=voiceLang;r.continuous=false;r.interimResults=false;
-  if(btn){btn.textContent='🔴';btn.style.color='var(--er)'}
-  nf('🎤 Listening','Speak the problem now...','ok');
+  r.lang=voiceLang;r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
+  const preExisting=inp?inp.value:'';
+  if(btn){btn.textContent='\ud83d\udd34';btn.style.color='var(--er)';btn.classList.add('mic-listening')}
+  nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
   r.onresult=e=>{
-    const txt=e.results[0][0].transcript.toLowerCase().trim();
-    const inp=document.getElementById('subSearch');
-    if(inp){inp.value=txt;}
-    const matches=fuzzySearchSubs(txt);
-    if(!matches.length){
-      const res=document.getElementById('subSearchResults');
-      if(res){res.style.display='block';res.innerHTML=noMatchPanel();}
+    const res=e.results[e.results.length-1];
+    if(!res.isFinal){
+      // Live caption — shown the instant words are heard, so a mis-hear is obvious immediately
+      if(inp)inp.value=res[0].transcript;
+      return;
+    }
+    // Final result: consider every alternative the recognizer offers, not just #1.
+    // Whichever alternative actually matches something in our real vocabulary wins —
+    // this alone fixes a lot of "close but wrong" transcriptions at zero extra cost.
+    let best=null,bestMatches=null,bestScore=-1,rawTop=res[0].transcript;
+    for(let i=0;i<res.length;i++){
+      const txt=res[i].transcript.toLowerCase().trim();
+      const m=fuzzySearchSubs(txt);
+      const score=m.length?m[0].score:0;
+      if(score>bestScore){bestScore=score;best=txt;bestMatches=m;}
+    }
+    const txt=best||rawTop.toLowerCase().trim();
+    if(inp)inp.value=txt;
+    if(!bestMatches||!bestMatches.length){
+      const resEl=document.getElementById('subSearchResults');
+      if(resEl){resEl.style.display='block';resEl.innerHTML=noMatchPanel()+voiceRetryBtn();}
       document.getElementById('autoSuggestBar').style.display='none';
       nf('Heard','"'+txt+'"','warn');
     } else {
       document.getElementById('autoSuggestBar').style.display='none';
-      highlightCat(matches[0].catId);
-      const vtop=matches[0].score,vsec=matches[1]?matches[1].score:0;
-      if(vtop>=25&&(matches.length===1||vtop>vsec)&&document.getElementById('catSubList').style.display==='none')openToSub(matches[0].catId,matches[0].sub);
-      renderSuggestList(matches);
+      highlightCat(bestMatches[0].catId);
+      renderSuggestList(bestMatches);
+      const resEl=document.getElementById('subSearchResults');
+      if(resEl)resEl.innerHTML+=voiceRetryBtn();
       nf('Heard','"'+txt+'"','ok');
     }
   };
-  r.onend=()=>{if(btn){btn.textContent='🎤';btn.style.color='var(--t2)'}};
+  r.onend=()=>{if(btn){btn.textContent='\ud83c\udfa4';btn.style.color='var(--t2)';btn.classList.remove('mic-listening')}};
   r.onerror=e=>{
-    if(btn){btn.textContent='🎤';btn.style.color='var(--t2)'}
-    const msg={'not-allowed':'Mic access denied','no-speech':'No speech detected','network':'Network error'}[e.error]||e.error;
-    nf('Voice error',msg,'warn');
+    if(btn){btn.textContent='\ud83c\udfa4';btn.style.color='var(--t2)';btn.classList.remove('mic-listening')}
+    if(inp&&!inp.value.trim())inp.value=preExisting;
+    const msg={'not-allowed':'Mic access denied \u2014 check phone settings','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet for voice \u2014 check connection','aborted':'Cancelled'}[e.error]||e.error;
+    nf('\ud83c\udfa4 '+msg,'Tap the mic to retry','warn');
   };
   try{r.start()}catch(e){nf('Error',e.message,'warn')}
+}
+// Small inline "try again" affordance shown right where the result appeared —
+// no need to hunt for the mic icon after a mis-hear.
+function voiceRetryBtn(){
+  return `<div style="padding:8px 12px;text-align:center"><button type="button" onclick="voiceSearch()" style="background:var(--c1);color:var(--ac2);border:1px solid var(--ac);border-radius:var(--rs);padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer">\ud83c\udfa4 Try Again</button></div>`;
 }
 
 function onCat(){const c=document.getElementById('tC').value,s=document.getElementById('tS');s.innerHTML='<option value="">—</option>';if(CATS[c])CATS[c].subs.forEach(x=>s.innerHTML+=`<option>${x}</option>`);document.getElementById('probeW').style.display='none';uPri()}
@@ -2380,25 +2439,32 @@ function voiceInput(targetId,btnEl){
   const r=new SR();
   r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');
   r.continuous=false;
-  r.interimResults=false;
+  r.interimResults=true;
 
+  const ta0=document.getElementById(targetId);
+  const baseVal=ta0?ta0.value:'';
+  const sep=baseVal&&!baseVal.endsWith(' ')?' ':'';
   startVisual();
 
   r.onresult=e=>{
-    const txt=e.results[0][0].transcript;
+    const res=e.results[e.results.length-1];
     const ta=document.getElementById(targetId);
-    if(ta){ta.value=(ta.value?ta.value+' ':'')+txt;ta.focus();}
-    nf('🎤 Got it','"'+txt+'"','ok');
+    if(!ta)return;
+    // Live caption while speaking — lets them see a mis-hear immediately instead of after the fact
+    ta.value=baseVal+sep+res[0].transcript;
+    if(res.isFinal){ta.focus();nf('\ud83c\udfa4 Got it','"'+res[0].transcript+'"','ok');}
   };
 
   r.onend=()=>{stopVisual();};
 
   r.onerror=e=>{
     stopVisual();
-    const msg={'not-allowed':'Mic access denied — check browser settings',
-               'no-speech':'No speech detected — try again',
-               'network':'Network error'}[e.error]||e.error;
-    nf('Voice error',msg,'warn');
+    const ta=document.getElementById(targetId);
+    if(ta&&e.error==='no-speech')ta.value=baseVal; // nothing heard — don't leave a half-typed fragment
+    const msg={'not-allowed':'Mic access denied — check phone settings',
+               'no-speech':'Didn’t catch that — tap mic to retry',
+               'network':'Needs internet for voice'}[e.error]||e.error;
+    nf('\ud83c\udfa4 '+msg,'','warn');
   };
 
   try{r.start();}catch(e){stopVisual();nf('Error',e.message,'warn');}
