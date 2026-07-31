@@ -172,7 +172,12 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <select id="tC" style="display:none" onchange="onCat()"><option value="">Select</option></select>
   <select id="tS" style="display:none" onchange="onSub()"><option value="">—</option></select>
-  <div class="fg" id="catGridWrap"><label id="catGridLabel">📂 Or tap the area</label>
+  <div class="fg" id="catGridWrap">
+    <div id="catGridToggle" onclick="toggleCatGridVisible()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);font-size:11.5px;font-weight:600;color:var(--ac2)">
+      <span>👆 Click to see all issues</span><span id="catGridToggleArrow">▾</span>
+    </div>
+    <div id="catGridInner" style="display:none;margin-top:6px">
+    <label id="catGridLabel">📂 Or tap the area</label>
     <div id="catGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
     <div style="grid-column:1/-1;text-align:center;padding:20px 12px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r)">
       <div style="font-size:26px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
@@ -181,7 +186,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
   </div>
     <div id="catSubList" style="display:none"></div>
-  </div>
+  </div></div>
   <select id="tCv" style="display:none" onchange="onCatVisible()"></select><select id="tSv" style="display:none" onchange="onSubVisible()"></select>
   <div class="fg" style="display:none"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
   <div class="fg" id="flagWrap"><div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center">
@@ -1845,7 +1850,29 @@ function findPathForSub(catId,subName){
   return null;
 }
 function clearCatHighlight(){document.querySelectorAll('#catGrid .cat-tile').forEach(el=>el.classList.remove('matched','dim'))}
+// Category grid is collapsed by default to keep the form calm — one tap reveals it.
+function expandCatGrid(){
+  const inner=document.getElementById('catGridInner');
+  const arrow=document.getElementById('catGridToggleArrow');
+  const label=document.querySelector('#catGridToggle span');
+  if(inner)inner.style.display='block';
+  if(arrow)arrow.textContent='\u25b4';
+  if(label)label.textContent='\ud83d\udc46 Hide categories';
+}
+function collapseCatGrid(){
+  const inner=document.getElementById('catGridInner');
+  const arrow=document.getElementById('catGridToggleArrow');
+  const label=document.querySelector('#catGridToggle span');
+  if(inner)inner.style.display='none';
+  if(arrow)arrow.textContent='\u25be';
+  if(label)label.textContent='\ud83d\udc46 Click to see all issues';
+}
+function toggleCatGridVisible(){
+  const inner=document.getElementById('catGridInner');
+  if(inner&&inner.style.display==='none')expandCatGrid();else collapseCatGrid();
+}
 function highlightCat(catId){
+  expandCatGrid(); // a search match is pointless to show if the grid is hidden
   const tiles=document.querySelectorAll('#catGrid .cat-tile');
   tiles.forEach(el=>{el.classList.remove('matched','dim');if(el.dataset.cat===catId)el.classList.add('matched');else el.classList.add('dim');});
 }
@@ -2121,7 +2148,7 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
 
 function clearSubSelection(){
   if(typeof clearCatHighlight==='function'){clearCatHighlight();closeCatTile();}
-  const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';
+  const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';collapseCatGrid();
   const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
@@ -2192,8 +2219,18 @@ function voiceSearch(){
   const r=new SR();
   r.lang=voiceLang;r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
   const preExisting=inp?inp.value:'';
-  if(btn){btn.classList.add('mic-listening')}
-  nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
+  // Call start() FIRST, immediately — that is what actually activates the mic hardware,
+  // and it commonly takes a moment to fully engage. We let that happen silently, THEN cue
+  // the user to speak a beat later — so their first word lands after the pipeline is warm,
+  // not during its own startup gap.
+  nf('\ud83c\udfa4 Get ready\u2026','','ok');
+  let started=false;
+  try{r.start();started=true;}catch(e){nf('Error',e.message,'warn');return;}
+  setTimeout(()=>{
+    if(!started)return;
+    if(btn){btn.classList.add('mic-listening')}
+    nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
+  },350);
   r.onresult=e=>{
     const res=e.results[e.results.length-1];
     if(!res.isFinal){
@@ -2243,7 +2280,6 @@ function voiceSearch(){
     const msg={'not-allowed':'Mic access denied \u2014 check phone settings','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet for voice \u2014 check connection','aborted':'Cancelled'}[e.error]||e.error;
     nf('\ud83c\udfa4 '+msg,'Tap the mic to retry','warn');
   };
-  try{r.start()}catch(e){nf('Error',e.message,'warn')}
 }
 // Small inline "try again" affordance shown right where the result appeared —
 // no need to hunt for the mic icon after a mis-hear.
