@@ -1597,9 +1597,12 @@ function soundCode(word){
 }
 function phoneticMatch(a,b){
   const ca=soundCode(a),cb=soundCode(b);
-  if(!ca||!cb||ca.length<3||cb.length<3)return false;
+  if(!ca||!cb)return false;
+  // Exact code match is always legitimate, regardless of length — short real words
+  // (bon/ban/bain, tap/top) naturally produce short codes and must not be excluded here.
   if(ca===cb)return true;
-  // containment/suffix only when both codes are substantial — short codes inside long ones create junk matches
+  // Fuzzy containment/suffix stays length-gated — short codes partially matching many
+  // unrelated words is what caused false hits before; only the EXACT check above is exempt.
   if(ca.length>=4&&cb.length>=4){
     if(ca.includes(cb)||cb.includes(ca))return true;
     if(ca.slice(-3)===cb.slice(-3))return true;
