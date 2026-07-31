@@ -105,6 +105,9 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @keyframes tileIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes tilePulse{0%{box-shadow:0 0 0 0 var(--acg)}60%{box-shadow:0 0 0 7px rgba(124,106,240,0)}100%{box-shadow:0 0 0 2px var(--acg)}}
 @keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
+.mic-eyecatch{animation:micIdleGlow 2.2s ease-in-out infinite}
+.mic-eyecatch.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
+@keyframes micIdleGlow{0%,100%{box-shadow:0 2px 10px rgba(124,106,240,.5);transform:translateY(-50%) scale(1)}50%{box-shadow:0 2px 16px rgba(124,106,240,.9);transform:translateY(-50%) scale(1.06)}}
 @keyframes wrenchWobble{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
 @keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 .sub-row{animation:rowIn .25s backwards}
@@ -134,10 +137,10 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <div class="fg"><label>🔍 Describe the problem *</label>
     <div style="position:relative">
-      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" autocomplete="off" style="padding-right:70px">
-      <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:70px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
-      <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="position:absolute;right:38px;top:50%;transform:translateY(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
-      <button type="button" id="srchMicBtn" onclick="voiceSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t2);font-size:16px;cursor:pointer">🎤</button>
+      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" autocomplete="off" style="padding-right:92px">
+      <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:82px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
+      <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="position:absolute;right:48px;top:50%;transform:translateY(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
+      <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55)">🎤</button>
     </div>
     <button type="button" id="findBtn" onclick="runFind()" style="display:none;width:100%;margin-top:6px;background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:9px;font-size:13px;font-weight:700;cursor:pointer">🔍 Find</button>
     <div id="autoSuggestBar" style="display:none;margin-top:6px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs)">
@@ -2004,14 +2007,26 @@ function onSubSearchAuto(){
 
 // Explicit search — runs only when the user taps Find or presses Enter.
 
+const MIN_QUERY_WORDS=2,MIN_QUERY_CHARS=6;
+// Known single-word problems that are already complete on their own — not blocked.
+const SINGLE_WORD_OK=new Set(['gas','leak','leakage','fire','smoke','shock','flood']);
+function tooShort(q){
+  const words=q.trim().split(/\s+/).filter(Boolean);
+  if(SINGLE_WORD_OK.has(q.trim().toLowerCase()))return false;
+  return words.length<MIN_QUERY_WORDS||q.trim().length<MIN_QUERY_CHARS;
+}
+function shortInputPanel(){
+  return '<div style="padding:14px 12px;text-align:center">'
+    +'<div style="font-size:22px">✍️</div>'
+    +'<div style="font-size:13px;font-weight:700;margin-top:4px">Tell us a bit more</div>'
+    +'<div style="font-size:11px;color:var(--t3);margin-top:3px">What\'s the item, and what happened? e.g. "bain marie not heating"</div>'
+    +'</div>';
+}
 function runFind(){
-
   const q=document.getElementById('subSearch').value.trim();
-
   const res=document.getElementById('subSearchResults');
-
   if(!q)return;
-
+  if(tooShort(q)){res.style.display='block';res.innerHTML=shortInputPanel();clearCatHighlight();return;}
   const matches=fuzzySearchSubs(q);
 
   if(!matches.length){
@@ -2168,7 +2183,7 @@ function voiceSearch(){
   const r=new SR();
   r.lang=voiceLang;r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
   const preExisting=inp?inp.value:'';
-  if(btn){btn.textContent='\ud83d\udd34';btn.style.color='var(--er)';btn.classList.add('mic-listening')}
+  if(btn){btn.classList.add('mic-listening')}
   nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
   r.onresult=e=>{
     const res=e.results[e.results.length-1];
@@ -2189,6 +2204,13 @@ function voiceSearch(){
     }
     const txt=best||rawTop.toLowerCase().trim();
     if(inp)inp.value=txt;
+    if(tooShort(txt)){
+      const resEl=document.getElementById('subSearchResults');
+      if(resEl){resEl.style.display='block';resEl.innerHTML=shortInputPanel()+voiceRetryBtn();}
+      document.getElementById('autoSuggestBar').style.display='none';
+      nf('🎤 Heard "'+txt+'"','Tell us a bit more, then try again','warn');
+      return;
+    }
     if(!bestMatches||!bestMatches.length){
       const resEl=document.getElementById('subSearchResults');
       if(resEl){resEl.style.display='block';resEl.innerHTML=noMatchPanel()+voiceRetryBtn();}
@@ -2203,9 +2225,9 @@ function voiceSearch(){
       nf('Heard','"'+txt+'"','ok');
     }
   };
-  r.onend=()=>{if(btn){btn.textContent='\ud83c\udfa4';btn.style.color='var(--t2)';btn.classList.remove('mic-listening')}};
+  r.onend=()=>{if(btn){btn.classList.remove('mic-listening')}};
   r.onerror=e=>{
-    if(btn){btn.textContent='\ud83c\udfa4';btn.style.color='var(--t2)';btn.classList.remove('mic-listening')}
+    if(btn){btn.classList.remove('mic-listening')}
     if(inp&&!inp.value.trim())inp.value=preExisting;
     const msg={'not-allowed':'Mic access denied \u2014 check phone settings','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet for voice \u2014 check connection','aborted':'Cancelled'}[e.error]||e.error;
     nf('\ud83c\udfa4 '+msg,'Tap the mic to retry','warn');
