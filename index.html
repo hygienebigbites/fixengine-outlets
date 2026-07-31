@@ -135,14 +135,20 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Name" maxlength="40" autocomplete="off"></div>
     <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Search..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;right:0;left:auto;min-width:240px;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div></div>
   </div>
-  <div class="fg"><label>🔍 Describe the problem *</label>
-    <div style="position:relative">
-      <input class="fc" id="subSearch" placeholder="Use 🎤 mic button, describe your issue..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" autocomplete="off" style="padding-right:92px">
-      <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="position:absolute;right:82px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;display:none">✕</button>
-      <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="position:absolute;right:48px;top:50%;transform:translateY(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
-      <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55)">🎤</button>
+  <div class="fg">
+  <div id="searchBoxWrap" style="background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px 10px;transition:border-color .15s">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">
+      <span style="font-size:9px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px">🔍 Describe the problem *</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:15px;cursor:pointer;display:none;padding:2px">✕</button>
+        <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:3px 7px">EN</button>
+        <button type="button" id="voiceRetryBtn" onclick="voiceSearch()" title="Try voice again" style="display:none;background:var(--c1);border:1px solid var(--ac);border-radius:50%;width:28px;height:28px;color:var(--ac2);font-size:13px;cursor:pointer;align-items:center;justify-content:center">🔁</button>
+        <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55);flex-shrink:0">🎤</button>
+      </div>
     </div>
-    <button type="button" id="findBtn" onclick="runFind()" style="display:none;width:100%;margin-top:6px;background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:9px;font-size:13px;font-weight:700;cursor:pointer">🔍 Find</button>
+    <textarea id="subSearch" rows="2" placeholder="Use the mic, or type your issue here — full sentences welcome..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:transparent;border:none;outline:none;color:var(--t);font-size:14px;resize:vertical;padding:0;font-family:inherit;min-height:44px"></textarea>
+  </div>
+  <button type="button" id="findBtn" onclick="runFind()" style="display:none;width:100%;margin-top:6px;background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:9px;font-size:13px;font-weight:700;cursor:pointer">🔍 Find</button>
     <div id="autoSuggestBar" style="display:none;margin-top:6px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs)">
       <div style="font-size:9px;color:var(--t3);margin-bottom:6px">Best match found:</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -1998,6 +2004,7 @@ function onSubSearchAuto(){
   if(btn)btn.style.display=q?'block':'none';
 
   if(findBtn)findBtn.style.display=q?'block':'none';
+  showVoiceRetry(false);
 
   bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();
 
@@ -2123,6 +2130,8 @@ function clearSubSelection(){
   document.getElementById('subSearchResults').style.display='none';
   document.getElementById('autoSuggestBar').style.display='none';
   const btn=document.getElementById('srchClearBtn');if(btn)btn.style.display='none';
+  const fb=document.getElementById('findBtn');if(fb)fb.style.display='none';
+  showVoiceRetry(false);
   document.getElementById('tS').innerHTML='<option value="">—</option>';
   document.getElementById('probeW').style.display='none';
   const pe=document.getElementById('tP');const se=document.getElementById('tSL');
@@ -2206,14 +2215,16 @@ function voiceSearch(){
     if(inp)inp.value=txt;
     if(tooShort(txt)){
       const resEl=document.getElementById('subSearchResults');
-      if(resEl){resEl.style.display='block';resEl.innerHTML=shortInputPanel()+voiceRetryBtn();}
+      if(resEl){resEl.style.display='block';resEl.innerHTML=shortInputPanel();}
+      showVoiceRetry(true);
       document.getElementById('autoSuggestBar').style.display='none';
       nf('🎤 Heard "'+txt+'"','Tell us a bit more, then try again','warn');
       return;
     }
     if(!bestMatches||!bestMatches.length){
       const resEl=document.getElementById('subSearchResults');
-      if(resEl){resEl.style.display='block';resEl.innerHTML=noMatchPanel()+voiceRetryBtn();}
+      if(resEl){resEl.style.display='block';resEl.innerHTML=noMatchPanel();}
+      showVoiceRetry(true);
       document.getElementById('autoSuggestBar').style.display='none';
       nf('Heard','"'+txt+'"','warn');
     } else {
@@ -2221,7 +2232,7 @@ function voiceSearch(){
       highlightCat(bestMatches[0].catId);
       renderSuggestList(bestMatches);
       const resEl=document.getElementById('subSearchResults');
-      if(resEl)resEl.innerHTML+=voiceRetryBtn();
+      showVoiceRetry(true);
       nf('Heard','"'+txt+'"','ok');
     }
   };
@@ -2236,8 +2247,10 @@ function voiceSearch(){
 }
 // Small inline "try again" affordance shown right where the result appeared —
 // no need to hunt for the mic icon after a mis-hear.
-function voiceRetryBtn(){
-  return `<div style="padding:8px 12px;text-align:center"><button type="button" onclick="voiceSearch()" style="background:var(--c1);color:var(--ac2);border:1px solid var(--ac);border-radius:var(--rs);padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer">\ud83c\udfa4 Try Again</button></div>`;
+// Shows/hides the persistent retry button that lives next to the mic (in the search box header).
+function showVoiceRetry(show){
+  const b=document.getElementById('voiceRetryBtn');
+  if(b)b.style.display=show?'flex':'none';
 }
 
 function onCat(){const c=document.getElementById('tC').value,s=document.getElementById('tS');s.innerHTML='<option value="">—</option>';if(CATS[c])CATS[c].subs.forEach(x=>s.innerHTML+=`<option>${x}</option>`);document.getElementById('probeW').style.display='none';uPri()}
