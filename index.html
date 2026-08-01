@@ -212,6 +212,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
       <div style="font-size:26px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
       <div id="loadMsgTitle" style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fetching your categories…</div>
       <div id="loadMsgSub" style="font-size:11.5px;color:var(--t3);margin-top:3px">Meanwhile, tap 🎤 and describe your issue!</div>
+      <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:8px;cursor:pointer">Skip tips</div>
     </div>
   </div>
     <div id="catSubList" style="display:none"></div>
@@ -2874,17 +2875,29 @@ function startLoadMessages(){
   if(!titleEl||!subEl)return;
   loadMsgIdx=0;
   const tick=()=>{
-    const seq=loadMsgIdx<LOAD_PROGRESS.length?LOAD_PROGRESS:LOAD_TIPS;
-    const i=loadMsgIdx<LOAD_PROGRESS.length?loadMsgIdx:(loadMsgIdx-LOAD_PROGRESS.length)%LOAD_TIPS.length;
+    // One brief "fetching" beat so it's clear something is happening, then tips are the
+    // default content from there on — not just a fallback for slow connections.
+    const seq=loadMsgIdx===0?LOAD_PROGRESS:LOAD_TIPS;
+    const i=loadMsgIdx===0?0:(loadMsgIdx-1)%LOAD_TIPS.length;
     const pair=seq[i];
     titleEl.textContent=pair[0];subEl.textContent=pair[1];
     loadMsgIdx++;
   };
   tick();
-  loadMsgTimer=setInterval(tick,1400);
+  loadMsgTimer=setInterval(tick,2200);
+  const skipBtn=document.getElementById('loadSkipBtn');
+  if(skipBtn)skipBtn.style.display='block';
 }
 function stopLoadMessages(){
   if(loadMsgTimer){clearInterval(loadMsgTimer);loadMsgTimer=null;}
+}
+// Lets the user opt out of watching tips — freezes on a plain, calm loading message instead.
+function skipLoadTips(){
+  stopLoadMessages();
+  const titleEl=document.getElementById('loadMsgTitle'),subEl=document.getElementById('loadMsgSub'),skipBtn=document.getElementById('loadSkipBtn');
+  if(titleEl)titleEl.textContent='⏳ Loading…';
+  if(subEl)subEl.textContent='';
+  if(skipBtn)skipBtn.style.display='none';
 }
 function checkChatUnlock(){
   const ph=(document.getElementById('lPh')?document.getElementById('lPh').value:'').replace(/\D/g,'');
