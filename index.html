@@ -2252,6 +2252,22 @@ function toggleVoiceLang(){
   const vb=document.getElementById('vBtnTD');  // description mic follows the same language
   nf('🎤 '+(voiceLang==='hi-IN'?'हिंदी':'English'),(voiceLang==='hi-IN'?'Ab Hindi mein boliye':'Speak in English'),'ok');
 }
+// Voice no-match coaching: the first two misses get encouragement to try again
+// (speak louder, hold the mic closer) rather than immediately dumping the user into
+// category browsing. Only the 3rd consecutive miss falls back to that.
+let voiceNoMatchCount=0;
+const VOICE_RETRY_TIPS=[
+  ['🎤 Didn\u2019t quite catch that','Try again — speak clearly into the mic'],
+  ['🔊 Still not sure','Try once more — speak a little louder, mic close to your mouth']
+];
+function voiceNoMatchPanel(){
+  const tip=VOICE_RETRY_TIPS[Math.min(voiceNoMatchCount-1,VOICE_RETRY_TIPS.length-1)];
+  return '<div style="padding:14px 12px;text-align:center">'
+    +'<div style="font-size:22px">'+tip[0].slice(0,2)+'</div>'
+    +'<div style="font-size:13px;font-weight:700;margin-top:4px">'+tip[0].slice(3)+'</div>'
+    +'<div style="font-size:11px;color:var(--t3);margin-top:3px">'+tip[1]+'</div>'
+    +'</div>';
+}
 function voiceSearch(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const btn=document.getElementById('srchMicBtn');
@@ -2301,12 +2317,22 @@ function voiceSearch(){
       return;
     }
     if(!bestMatches||!bestMatches.length){
+      voiceNoMatchCount++;
       const resEl=document.getElementById('subSearchResults');
+      if(voiceNoMatchCount<3){
+        if(resEl){resEl.style.display='block';resEl.innerHTML=voiceNoMatchPanel();}
+        showVoiceRetry(true);
+        document.getElementById('autoSuggestBar').style.display='none';
+        nf('🎤 Heard "'+txt+'"','Give it another try','warn');
+        return;
+      }
+      voiceNoMatchCount=0;
       if(resEl){resEl.style.display='block';resEl.innerHTML=noMatchPanel();}
       showVoiceRetry(true);
       document.getElementById('autoSuggestBar').style.display='none';
       nf('Heard','"'+txt+'"','warn');
     } else {
+      voiceNoMatchCount=0;
       document.getElementById('autoSuggestBar').style.display='none';
       highlightCat(bestMatches[0].catId);
       renderSuggestList(bestMatches);
