@@ -210,8 +210,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div id="catGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
     <div style="grid-column:1/-1;text-align:center;padding:20px 12px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r)">
       <div style="font-size:26px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
-      <div style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fetching your categories…</div>
-      <div style="font-size:11.5px;color:var(--t3);margin-top:3px">Meanwhile, tap 🎤 and describe your issue!</div>
+      <div id="loadMsgTitle" style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fetching your categories…</div>
+      <div id="loadMsgSub" style="font-size:11.5px;color:var(--t3);margin-top:3px">Meanwhile, tap 🎤 and describe your issue!</div>
     </div>
   </div>
     <div id="catSubList" style="display:none"></div>
@@ -812,7 +812,7 @@ function showRaiseForm(){
   selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
   const fc2=document.getElementById('flagChk');if(fc2)fc2.checked=false;onFlagToggle();applyTicketTypeRules();
   refreshCatDropdown();
-  if(raiseMode==='chat'){chatUnlocked=false;checkChatUnlock();}
+  if(raiseMode==='chat'){const cm=document.getElementById('chatMsgs');if(cm)cm.innerHTML='';chatUnlocked=false;checkChatUnlock();}
   const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
   document.getElementById('app').style.display='none';
   document.getElementById('loginP').style.display='flex';
@@ -1848,6 +1848,8 @@ function fitFontSize(text){
 function catEmoji(id,label){if(CAT_EMOJI[id])return CAT_EMOJI[id];const m=String(label||'').match(/^\s*(\p{Emoji})/u);return m?m[1]:'📋';}
 function catText(label){return String(label||'').replace(/^\s*\p{Emoji}\s*/u,'').trim();}
 function buildCatGrid(){
+
+  stopLoadMessages();
   const grid=document.getElementById('catGrid');if(!grid)return;
   const entries=Object.entries(CATS).filter(([k,c])=>!c.disabled&&k!=='other');
   grid.innerHTML=entries.map(([k,c],i)=>{const st=CAT_STYLE[k]||CAT_STYLE.other;return `<button type="button" class="cat-tile" data-cat="${k}" style="animation-delay:${i*30}ms;position:relative;overflow:hidden;background:${st.bg};border-color:${st.bd}" onclick="openCatTile('${k}')">${catIconSVG(k,st.tx)}<span class="cat-emoji" style="position:relative">${catEmoji(k,c.label)}</span><span style="position:relative;color:${st.tx};font-size:${fitFontSize(catText(c.label))}">${catText(c.label)}</span></button>`;}).join('');
@@ -2824,6 +2826,40 @@ let raiseMode='chat';
 let chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
 
 let chatUnlocked=false;
+// Loading screen: quick progress phase first (matches normal load time), then genuinely
+// useful tips on rotation if the connection is slow enough that the wait drags on.
+const LOAD_PROGRESS=[
+  ['🔧 Fetching your categories…','Meanwhile, tap 🎤 and describe your issue!'],
+  ['⏳ Preparing everything for you…','Almost there…'],
+  ['✨ Almost done…','Just a moment more']
+];
+const LOAD_TIPS=[
+  ['💡 Tip','Speak your problem instead of typing — tap the mic anytime'],
+  ['💡 Tip','The more you say, the better the match — try a full sentence'],
+  ['💡 Tip','Not sure what to say? Just tap a category tile instead'],
+  ['💡 Tip','Add a photo 📸 — it helps the attender fix it faster'],
+  ['💡 Tip','Only flag 🚩 Urgent for real emergencies — it jumps the queue'],
+  ['💡 Tip','Try 💬 Chat mode — it walks you through, step by step'],
+  ['💡 Tip','You can switch languages — tap the EN/हिं button by the mic']
+];
+let loadMsgTimer=null,loadMsgIdx=0;
+function startLoadMessages(){
+  const titleEl=document.getElementById('loadMsgTitle'),subEl=document.getElementById('loadMsgSub');
+  if(!titleEl||!subEl)return;
+  loadMsgIdx=0;
+  const tick=()=>{
+    const seq=loadMsgIdx<LOAD_PROGRESS.length?LOAD_PROGRESS:LOAD_TIPS;
+    const i=loadMsgIdx<LOAD_PROGRESS.length?loadMsgIdx:(loadMsgIdx-LOAD_PROGRESS.length)%LOAD_TIPS.length;
+    const pair=seq[i];
+    titleEl.textContent=pair[0];subEl.textContent=pair[1];
+    loadMsgIdx++;
+  };
+  tick();
+  loadMsgTimer=setInterval(tick,1400);
+}
+function stopLoadMessages(){
+  if(loadMsgTimer){clearInterval(loadMsgTimer);loadMsgTimer=null;}
+}
 function checkChatUnlock(){
   const ph=(document.getElementById('lPh')?document.getElementById('lPh').value:'').replace(/\D/g,'');
   const nm=(document.getElementById('lNm')?document.getElementById('lNm').value:'').trim();
@@ -3197,7 +3233,7 @@ function fillBootDropdowns(){
 
 toggleLoginMode();
 renderTagChips();
-setTimeout(()=>{setRaiseMode('chat');checkChatUnlock();},50);
+setTimeout(()=>{setRaiseMode('chat');checkChatUnlock();startLoadMessages();},50);
 fillFlagReasons();
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
