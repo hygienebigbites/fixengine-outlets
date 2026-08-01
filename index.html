@@ -107,7 +107,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
 .mic-eyecatch{animation:micIdleGlow 2.2s ease-in-out infinite}
 .mic-eyecatch.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
-@keyframes micIdleGlow{0%,100%{box-shadow:0 2px 10px rgba(124,106,240,.5);transform:translateY(-50%) scale(1)}50%{box-shadow:0 2px 16px rgba(124,106,240,.9);transform:translateY(-50%) scale(1.06)}}
+@keyframes micIdleGlow{0%,100%{box-shadow:0 2px 10px rgba(124,106,240,.5);transform:scale(1)}50%{box-shadow:0 2px 16px rgba(124,106,240,.9);transform:scale(1.08)}}
 @keyframes wrenchWobble{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
 @keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 .sub-row{animation:rowIn .25s backwards}
@@ -131,9 +131,38 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div class="logo"><div class="logo-i">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M v7</span></div></div>
   <h2>🎫 Raise a Ticket</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px">
-    <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="Number" maxlength="10"></div>
-    <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Name" maxlength="40" autocomplete="off"></div>
+    <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="Number" maxlength="10" oninput="checkChatUnlock()"></div>
+    <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Name" maxlength="40" autocomplete="off" oninput="checkChatUnlock()"></div>
     <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Search..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;right:0;left:auto;min-width:240px;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div></div>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <button type="button" id="modeChatBtn" onclick="setRaiseMode('chat')" style="flex:1;padding:9px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--ac);background:var(--ac);color:#fff">💬 Chat</button>
+    <button type="button" id="modeFormBtn" onclick="setRaiseMode('form')" style="flex:1;padding:9px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--bdr);background:var(--c1);color:var(--t2)">📋 Form</button>
+  </div>
+  <div id="chatModeContent">
+    <div id="chatWin" class="cht" style="height:min(58vh,420px);position:relative">
+      <div class="cht-m" id="chatMsgs"></div>
+      <div id="chatLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(10,12,20,.94);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px">
+        <div>
+          <div style="font-size:26px">🔒</div>
+          <div style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fill in your details above</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px">Mobile, name and outlet are needed before we start</div>
+        </div>
+      </div>
+      <button type="button" id="chatMicBtn" class="mic-eyecatch" onclick="chatVoice()" style="position:absolute;right:14px;bottom:54px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:23px;cursor:pointer;box-shadow:0 4px 14px rgba(124,106,240,.6);z-index:10">🎤</button>
+      <div class="cht-in">
+        <input id="chatInput" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')chatSend()">
+        <button class="snd" onclick="chatSend()">➤</button>
+      </div>
+    </div>
+  </div>
+  <div id="formModeContent" style="display:none;position:relative">
+  <div id="formLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(10,12,20,.96);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:var(--r)">
+    <div>
+      <div style="font-size:26px">🔒</div>
+      <div style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fill in your details above</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:3px">Mobile, name and outlet are needed before we start</div>
+    </div>
   </div>
   <div class="fg">
   <div id="searchBoxWrap" style="background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px 10px;transition:border-color .15s">
@@ -143,7 +172,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
         <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:15px;cursor:pointer;display:none;padding:2px">✕</button>
         <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="background:var(--c1);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;padding:3px 7px">EN</button>
         <button type="button" id="voiceRetryBtn" onclick="voiceSearch()" title="Try voice again" style="display:none;background:var(--c1);border:1px solid var(--ac);border-radius:50%;width:28px;height:28px;color:var(--ac2);font-size:13px;cursor:pointer;align-items:center;justify-content:center">🔁</button>
-        <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55);flex-shrink:0">🎤</button>
+        <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55);flex-shrink:0">🎤</button>
       </div>
     </div>
     <textarea id="subSearch" rows="2" placeholder="Use the mic, or type your issue here — full sentences welcome..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:transparent;border:none;outline:none;color:var(--t);font-size:14px;resize:vertical;padding:0;font-family:inherit;min-height:44px"></textarea>
@@ -211,6 +240,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div id="tImgL" style="display:none;font-size:11px;color:var(--ok);font-weight:600;margin-top:5px"></div>
   <div id="tImgList" style="margin-top:4px"></div></div>
   <button class="btn-big green" id="raiseBtn" onclick="raiseTicket()">🎫 Raise Ticket</button>
+  </div>
   <button class="btn btn-s btn-o btn-full" id="raiseBack" style="display:none;margin-top:8px" onclick="hideRaiseForm()">← Back to My Tickets</button>
 </div></div>
 <div id="app" class="app" style="display:none">
@@ -771,6 +801,7 @@ function selectOutlet(outlet) {
     document.getElementById('lOutSearch').value = outlet;
     document.getElementById('lOut').value = outlet;
     document.getElementById('lOutResults').style.display = 'none';
+  checkChatUnlock();
 }
 
 function showRaiseForm(){
@@ -781,6 +812,7 @@ function showRaiseForm(){
   selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
   const fc2=document.getElementById('flagChk');if(fc2)fc2.checked=false;onFlagToggle();applyTicketTypeRules();
   refreshCatDropdown();
+  if(raiseMode==='chat'){chatUnlocked=false;checkChatUnlock();}
   const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
   document.getElementById('app').style.display='none';
   document.getElementById('loginP').style.display='flex';
@@ -830,6 +862,9 @@ const VOICE_ALIASES={
   'bain mery':'bain marie','bm not working':'bain marie','banmere':'bain marie',
   'baenmari':'bain marie','benmary':'bain marie','bainmarei':'bain marie',
   'brain marie':'bain marie','ban marei':'bain marie','bain marei':'bain marie',
+  // acoustic mishears (a different real word entirely, not just a spelling variant):
+  'when mary':'bain marie','wen mari':'bain marie','ven mari':'bain marie','van mari':'bain marie',
+  'when marie':'bain marie','wen marie':'bain marie',
 
   // ══ OIL FRYER ══
   'oil fry':'deep fryer','oil fryer':'deep fryer','oil fri':'deep fryer',
@@ -916,6 +951,7 @@ const VOICE_ALIASES={
   // ══ CYLINDER ══
   'cylinder':'cylinder change','gas cylinder':'cylinder change',
   'cylinder change':'cylinder change','cylinder khatam':'cylinder change',
+  'silinder':'cylinder change','silender':'cylinder change',
 
   // ══ SWITCH BOARD / ELECTRICAL ══
   'switch board':'panel board issue','swich board':'panel board issue',
@@ -1098,6 +1134,8 @@ const VOICE_ALIASES={
   'geyser':'water boiler','water heater':'water boiler','gyser':'water boiler',
   'geysir':'water boiler','geysar':'water boiler','hot water not coming':'water boiler',
   'staff room geyser':'water boiler','gijar':'water boiler',
+  // acoustic mishear — 'geyser' and 'geezer' sound near-identical:
+  'geezer':'water boiler','geeser':'water boiler',
 
   // ══ OVEN / DECK OVEN ══
   'oven':'oven/otg','otg':'oven/otg','deck oven':'oven/otg',
@@ -1119,6 +1157,8 @@ const VOICE_ALIASES={
 
   // ══ TANDOOR ══
   'tandoor':'tandoor','tandoor not working':'tandoor','tandur':'tandoor',
+  // acoustic mishear — split into two real words:
+  'tan door':'tandoor','ten door':'tandoor',
 
   // ══ TILES / CIVIL ══
   'tile':'tile repair','tiles broken':'tile repair','tile damage':'tile repair',
@@ -2775,6 +2815,379 @@ function submitRating(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(t.ratin
 function nf(title,msg,type='ok'){const d=document.createElement('div');d.className='npop';d.innerHTML=`<div style="width:24px;height:24px;border-radius:50%;background:${type==='ok'?'var(--okb)':type==='warn'?'var(--wrb)':'var(--infb)'};color:${type==='ok'?'var(--ok)':type==='warn'?'var(--wr)':'var(--inf)'};display:flex;align-items:center;justify-content:center;font-size:10px">${type==='ok'?'✓':'⚠'}</div><div><h4>${title}</h4><p>${msg}</p></div>`;document.body.appendChild(d);setTimeout(()=>d.style.opacity='0',2500);setTimeout(()=>d.remove(),2800)}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-bg.show').forEach(m=>m.classList.remove('show'));closeSB()}});
 
+// ===== CHAT MODE — a conversational front-end over the EXACT SAME engine the form
+// uses (fuzzySearchSubs, buildTree, selectSubFromSearch, applyAutoTags, raiseTicket).
+// Nothing about matching, tagging, or submitting a ticket is reimplemented here —
+// the chat just drives the same hidden form fields the form itself would set, then
+// calls the same raiseTicket() at the end. This guarantees identical results either way.
+let raiseMode='chat';
+let chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
+
+let chatUnlocked=false;
+function checkChatUnlock(){
+  const ph=(document.getElementById('lPh')?document.getElementById('lPh').value:'').replace(/\D/g,'');
+  const nm=(document.getElementById('lNm')?document.getElementById('lNm').value:'').trim();
+  const ou=document.getElementById('lOut')?document.getElementById('lOut').value:'';
+  const ready = ph.length>=10 && nm.length>0 && !!ou;
+  const overlay=document.getElementById('chatLockOverlay');
+  const mic=document.getElementById('chatMicBtn');
+  const inp=document.getElementById('chatInput');
+  const formOverlay=document.getElementById('formLockOverlay');
+  if(ready){
+    if(overlay)overlay.style.display='none';
+    if(formOverlay)formOverlay.style.display='none';
+    if(mic)mic.disabled=false;
+    if(inp)inp.disabled=false;
+    if(!chatUnlocked){
+      chatUnlocked=true;
+      if(raiseMode==='chat'&&!document.getElementById('chatMsgs').children.length)chatInit();
+    }
+  }else{
+    chatUnlocked=false;
+    if(overlay)overlay.style.display='flex';
+    if(formOverlay)formOverlay.style.display='flex';
+    if(mic)mic.disabled=true;
+    if(inp)inp.disabled=true;
+  }
+  return ready;
+}
+function setRaiseMode(mode){
+  raiseMode=mode;
+  const chatBtn=document.getElementById('modeChatBtn'), formBtn=document.getElementById('modeFormBtn');
+  const chatC=document.getElementById('chatModeContent'), formC=document.getElementById('formModeContent');
+  if(!chatBtn||!formBtn||!chatC||!formC)return;
+  if(mode==='chat'){
+    chatC.style.display='block';formC.style.display='none';
+    chatBtn.style.background='var(--ac)';chatBtn.style.borderColor='var(--ac)';chatBtn.style.color='#fff';
+    formBtn.style.background='var(--c1)';formBtn.style.borderColor='var(--bdr)';formBtn.style.color='var(--t2)';
+    checkChatUnlock();
+  }else{
+    chatC.style.display='none';formC.style.display='block';
+    formBtn.style.background='var(--ac)';formBtn.style.borderColor='var(--ac)';formBtn.style.color='#fff';
+    chatBtn.style.background='var(--c1)';chatBtn.style.borderColor='var(--bdr)';chatBtn.style.color='var(--t2)';
+  }
+}
+
+function composeChoiceQuestion(intro,firstConnector,options){
+  const MAX_NARRATED=4;
+  const connectors=[firstConnector,'Or','Or maybe','Or perhaps'];
+  const shown=options.slice(0,MAX_NARRATED);
+  let text=intro?intro+' ':'';
+  shown.forEach((opt,i)=>{
+    const c=connectors[Math.min(i,connectors.length-1)];
+    text+=c+' <b>'+opt+'</b>? ';
+  });
+  if(options.length>MAX_NARRATED)text+='Or something else — pick below 👇';
+  return text.trim();
+}
+function addBotMsg(html){
+  const m=document.getElementById('chatMsgs');if(!m)return null;
+  const div=document.createElement('div');
+  div.className='cm r';
+  div.innerHTML='<div class="b"></div>';
+  div.querySelector('.b').innerHTML=html; // bot-authored strings only — never raw user text
+  m.appendChild(div);m.scrollTop=m.scrollHeight;
+  return div;
+}
+function addUserMsg(text){
+  const m=document.getElementById('chatMsgs');if(!m)return;
+  const div=document.createElement('div');
+  div.className='cm s';
+  div.innerHTML='<div class="b"></div>';
+  div.querySelector('.b').textContent=text; // textContent — user text is never treated as HTML
+  m.appendChild(div);m.scrollTop=m.scrollHeight;
+}
+function addQuickReplies(container,options){
+  if(!container)return;
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:6px';
+  options.forEach(o=>{
+    const b=document.createElement('button');
+    b.type='button';b.textContent=o.label;
+    b.style.cssText='background:var(--c1);border:1px solid var(--ac);color:var(--ac2);border-radius:14px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer';
+    b.onclick=()=>{wrap.querySelectorAll('button').forEach(x=>x.disabled=true);wrap.style.opacity='.5';o.fn();};
+    wrap.appendChild(b);
+  });
+  container.appendChild(wrap);
+  const m=document.getElementById('chatMsgs');if(m)m.scrollTop=m.scrollHeight;
+}
+
+function chatInit(){
+  const m=document.getElementById('chatMsgs');if(m)m.innerHTML='';
+  chatResetState();
+  addBotMsg("Hi! \ud83d\udc4b What's the problem? Type below, or tap \ud83c\udfa4 to speak.");
+  chatState.step='PROBLEM';
+}
+function chatResetState(){
+  chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
+  if(typeof clearSubSelection==='function')clearSubSelection();
+  selWH='';selAction='';selWhere='';selItem='';
+  const fc=document.getElementById('flagChk');if(fc)fc.checked=false;
+  if(typeof onFlagToggle==='function')onFlagToggle();
+}
+
+function chatSend(){
+  const inp=document.getElementById('chatInput');if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';
+  chatRoute(text);
+}
+function chatRoute(text){
+  addUserMsg(text);
+  if(chatState.step==='PROBLEM'){
+    chatHandleProblem(text);
+  }else if(chatState.step==='MORE_DETAILS'){
+    const tD=document.getElementById('tD');
+    if(tD)tD.value=(tD.value?tD.value+'. ':'')+text;
+    addBotMsg('Got it — added to the description ✅');
+    chatShowSummary();
+  }else{
+    // Free text at any other step — treat as extra description detail, don't derail the flow
+    const tD=document.getElementById('tD');
+    if(tD)tD.value=(tD.value?tD.value+'. ':'')+text;
+    addBotMsg('Got it — added that to the description. Please also pick one of the options above ☝️ to continue.');
+  }
+}
+
+function chatHandleProblem(text){
+  if(typeof tooShort==='function'&&tooShort(text)){
+    addBotMsg("Could you tell me a little more \u2014 what's the item, and what happened?");
+    return;
+  }
+  const box=document.getElementById('subSearch');if(box)box.value=text;
+  const matches=fuzzySearchSubs(text);
+  if(!matches.length){
+    chatShowCategoryBrowse("I couldn't quite place that \u2014 let's pick a category:");
+    return;
+  }
+  const top=matches[0].score, second=matches[1]?matches[1].score:0;
+  const confident=top>=25&&(matches.length===1||top>second);
+  if(confident)chatConfirmSingle(matches[0]);
+  else chatShowMatchChoices(matches.slice(0,4));
+}
+
+function chatConfirmSingle(m){
+  const box=addBotMsg('I think it\u2019s <b>'+m.sub+'</b> ('+m.catLabel+'). Is that right?');
+  addQuickReplies(box,[
+    {label:'\u2705 Yes, that\u2019s it',fn:()=>chatMatchConfirmed(m)},
+    {label:'\ud83d\udd04 Not quite',fn:()=>chatShowCategoryBrowse('No problem \u2014 pick a category:')}
+  ]);
+}
+function chatShowMatchChoices(matches){
+  const box=addBotMsg(composeChoiceQuestion("","Do you mean",matches.map(m=>m.sub)));
+  const opts=matches.map(m=>({label:m.sub,fn:()=>chatMatchConfirmed(m)}));
+  opts.push({label:'\ud83e\udd14 None of these',fn:()=>chatShowCategoryBrowse('No problem \u2014 pick a category:')});
+  addQuickReplies(box,opts);
+}
+
+function chatShowCategoryBrowse(msg){
+  const box=addBotMsg(msg||'Pick a category:');
+  const opts=Object.entries(CATS).filter(([k,c])=>!c.disabled&&k!=='other').map(([k,c])=>({label:c.label,fn:()=>chatPickCategory(k)}));
+  addQuickReplies(box,opts);
+}
+function chatPickCategory(catId){
+  const cat=CATS[catId];if(!cat)return;
+  addUserMsg(cat.label);
+  const tree=buildTree(catId);
+  if(tree&&tree.useItems){
+    if(tree.order.length===1){
+      chatPickItem(catId,tree.order[0]);
+    }else{
+      const box=addBotMsg('Which item?');
+      addQuickReplies(box,tree.order.map(key=>({label:tree.items[key].item,fn:()=>chatPickItem(catId,key)})));
+    }
+  }else{
+    const box=addBotMsg(composeChoiceQuestion("What's happening with "+cat.label+"?",'Is it',cat.subs||[]));
+    addQuickReplies(box,(cat.subs||[]).map(s=>({label:s,fn:()=>chatMatchConfirmed({catId,sub:s,catLabel:cat.label,pri:UMAP[s]||cat.pri})})));
+  }
+}
+function chatPickItem(catId,key){
+  const tree=buildTree(catId);const it=tree.items[key];if(!it)return;
+  addUserMsg(it.item);
+  const useComps=it.compOrder.length>=2;
+  const opts=[];
+  it.leaves.forEach(x=>opts.push({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})}));
+  if(useComps){
+    it.compOrder.forEach(ck=>opts.push({label:it.comps[ck].comp+' \u203a',fn:()=>chatPickComponent(catId,key,ck)}));
+  }else{
+    it.compOrder.forEach(ck=>it.comps[ck].issues.forEach(x=>opts.push({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})})));
+  }
+  const introText="What's happening with the "+it.item+"?";
+  const box=addBotMsg(composeChoiceQuestion(introText,'Is it',opts.map(o=>o.label)));
+  addQuickReplies(box,opts);
+}
+function chatPickComponent(catId,itemKey,compKey){
+  const tree=buildTree(catId);const comp=tree.items[itemKey].comps[compKey];if(!comp)return;
+  addUserMsg(comp.comp);
+  const introText="What's happening with the "+comp.comp+"?";
+  const box=addBotMsg(composeChoiceQuestion(introText,'Is it',comp.issues.map(x=>x.issue)));
+  addQuickReplies(box,comp.issues.map(x=>({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})})));
+}
+
+function chatMatchConfirmed(m){
+  selectSubFromSearch(m.catId,m.sub,m.catLabel,m.pri); // reuses the full existing engine
+  chatState.cat=m.catId;chatState.subFull=m.sub;chatState.catLabel=m.catLabel;chatState.pri=m.pri;
+  chatState.step='FLOW'; // match is locked in — free text from here on must not be re-matched as a new problem
+  addBotMsg('Got it \u2014 <b>'+m.sub+'</b> \u2705');
+  chatState.checklistQueue=buildChecklistQueue();
+  chatState.checklistIdx=0;
+  chatAskNextChecklist();
+}
+function buildChecklistQueue(){
+  const meta=getMeta((chatState.cat||'').toLowerCase(),chatState.subFull);
+  const q=[];
+  (meta.checklist||[]).forEach((item,i)=>q.push({type:'check',text:item,domIdx:i}));
+  (meta.probes||[]).forEach((p,i)=>q.push({type:'probe',text:p.q,opts:p.opts||[],domIdx:i}));
+  return q;
+}
+function chatAskNextChecklist(){
+  const q=chatState.checklistQueue;
+  if(chatState.checklistIdx>=q.length){chatAskActionStep();return;}
+  const item=q[chatState.checklistIdx];
+  if(item.type==='check'){
+    const box=addBotMsg('\u2611\ufe0f '+item.text);
+    addQuickReplies(box,[
+      {label:'Yes',fn:()=>{chatSetChecklistCheck(item.domIdx,true);chatState.checklistIdx++;chatAskNextChecklist();}},
+      {label:'No',fn:()=>{chatState.checklistIdx++;chatAskNextChecklist();}}
+    ]);
+  }else if(item.opts.length){
+    const box=addBotMsg('\u2753 '+item.text);
+    addQuickReplies(box,item.opts.map(o=>({label:o,fn:()=>{chatSetProbeAnswer(item.domIdx,o);chatState.checklistIdx++;chatAskNextChecklist();}})));
+  }else{
+    chatState.checklistIdx++;chatAskNextChecklist();
+  }
+}
+function chatSetChecklistCheck(idx,val){
+  const boxes=document.querySelectorAll('#probeL input[type=checkbox]');
+  if(boxes[idx])boxes[idx].checked=val;
+}
+function chatSetProbeAnswer(idx,val){
+  const sels=document.querySelectorAll('#probeL select');
+  if(sels[idx])sels[idx].value=val;
+}
+
+function chatAskActionStep(){
+  if(selAction){
+    addBotMsg('\ud83c\udfab Ticket type: '+selAction);
+    applyTicketTypeRules();
+    chatAskWhatStep();
+    return;
+  }
+  const box=addBotMsg('What kind of request is this?');
+  addQuickReplies(box,ACTION_OPTIONS.map(o=>({label:o,fn:()=>{selAction=o;applyTicketTypeRules();renderTagChips();chatAskWhatStep();}})));
+}
+function chatAskWhatStep(){
+  const hideWH=(TICKET_TYPE_RULES[selAction]||{}).hideWH;
+  if(hideWH){chatAskWhereStep();return;}
+  if(selWH){
+    addBotMsg('\u26a1 Noted: '+selWH);
+    chatAskWhereStep();
+    return;
+  }
+  const box=addBotMsg('What happened?');
+  const wh=[...WH_OPTIONS];if(wh.indexOf('Other')<0)wh.push('Other');
+  addQuickReplies(box,wh.map(o=>({label:o,fn:()=>{selWH=o;renderTagChips();updateAutoDesc();chatAskWhereStep();}})));
+}
+function chatAskWhereStep(){
+  if(selWhere){addBotMsg('\ud83d\udccd Noted: '+selWhere);chatAskPhotoStep();return;}
+  const box=addBotMsg('Where is this? (optional)');
+  const opts=WHERE_OPTIONS.map(o=>({label:o,fn:()=>{selWhere=o;renderTagChips();updateAutoDesc();chatAskPhotoStep();}}));
+  opts.push({label:'Skip',fn:chatAskPhotoStep});
+  addQuickReplies(box,opts);
+}
+
+function chatAskPhotoStep(){
+  const box=addBotMsg('Want to add a photo? \ud83d\udcf8');
+  addQuickReplies(box,[
+    {label:'\ud83d\udcf8 Take Photo',fn:()=>{const el=document.getElementById('tImgCam');if(el)el.click();chatWaitForPhoto();}},
+    {label:'\ud83d\uddbc Gallery',fn:()=>{const el=document.getElementById('tImg');if(el)el.click();chatWaitForPhoto();}},
+    {label:'Skip',fn:chatAskUrgentStep}
+  ]);
+}
+function chatWaitForPhoto(){
+  setTimeout(()=>{
+    addBotMsg(tImgFiles.length?('\u2705 '+tImgFiles.length+' photo(s) added'):'No photo added.');
+    chatAskUrgentStep();
+  },700);
+}
+
+function chatAskUrgentStep(){
+  const box=addBotMsg('Is this urgent? \ud83d\udea9');
+  addQuickReplies(box,[
+    {label:'\ud83d\udea9 Yes',fn:chatAskUrgentReason},
+    {label:'No',fn:chatAskMoreDetails}
+  ]);
+}
+function chatAskUrgentReason(){
+  const fc=document.getElementById('flagChk');if(fc)fc.checked=true;
+  if(typeof onFlagToggle==='function')onFlagToggle();
+  const box=addBotMsg('What makes it urgent?');
+  addQuickReplies(box,FLAG_REASONS.map(o=>({label:o,fn:()=>{const fr=document.getElementById('flagReason');if(fr)fr.value=o;chatAskMoreDetails();}})));
+}
+
+function chatAskMoreDetails(){
+  chatState.step='MORE_DETAILS';
+  const box=addBotMsg('Before I raise this — want to tell me a bit more? Like <b>what happened</b>, <b>since when</b>, or <b>how it happened</b>.');
+  addQuickReplies(box,[{label:'Skip, that’s all',fn:chatShowSummary}]);
+}
+function chatShowSummary(){
+  const tD=document.getElementById('tD');
+  const desc=tD?tD.value:'';
+  const urgent=document.getElementById('flagChk')&&document.getElementById('flagChk').checked;
+  const html='<b>Here\u2019s your ticket:</b><br>\ud83d\udd29 '+(selItem||'-')+'<br>\u26a1 '+(selWH||'-')+'<br>\ud83c\udfab '+(selAction||'-')+
+    '<br>\ud83d\udccd '+(selWhere||'Not specified')+'<br>\ud83d\udcdd '+desc+
+    (tImgFiles.length?'<br>\ud83d\udcf8 '+tImgFiles.length+' photo(s)':'')+(urgent?'<br>\ud83d\udea9 Urgent':'');
+  const box=addBotMsg(html);
+  addQuickReplies(box,[
+    {label:'\u2705 Raise Ticket',fn:chatDoRaise},
+    {label:'\u270f\ufe0f Start Over',fn:chatInit}
+  ]);
+}
+function chatDoRaise(){
+  addBotMsg('Raising your ticket\u2026 \ud83c\udf89');
+  raiseTicket(); // reuses the existing, fully-tested submit path (validation, sheet write, navigation)
+}
+
+// Voice input inside the chat. Same warm-up timing fix as the main search mic:
+// start() fires immediately (maximum head start for the hardware), the visual
+// "listening" cue is deliberately delayed a beat so the first word isn't lost.
+function chatVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('chatMicBtn');
+  if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return}
+  if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return}
+  const r=new SR();
+  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');
+  r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
+  const inp=document.getElementById('chatInput');
+  nf('\ud83c\udfa4 Get ready\u2026','','ok');
+  let started=false;
+  try{r.start();started=true;}catch(e){nf('Error',e.message,'warn');return;}
+  setTimeout(()=>{if(started&&btn)btn.style.background='linear-gradient(135deg,var(--er),#ff8a8a)';},350);
+  r.onresult=e=>{
+    const res=e.results[e.results.length-1];
+    if(!res.isFinal){if(inp)inp.value=res[0].transcript;return;}
+    let best=null,bestScore=-1;
+    for(let i=0;i<res.length;i++){
+      const txt=res[i].transcript.toLowerCase().trim();
+      const m=(chatState.step==='PROBLEM')?fuzzySearchSubs(txt):[];
+      const score=m.length?m[0].score:0;
+      if(score>bestScore){bestScore=score;best=txt;}
+    }
+    const txt=best||res[0].transcript.toLowerCase().trim();
+    if(inp)inp.value='';
+    chatRoute(txt);
+  };
+  r.onend=()=>{if(btn)btn.style.background='linear-gradient(135deg,var(--ac),var(--inf))';};
+  r.onerror=e=>{
+    if(btn)btn.style.background='linear-gradient(135deg,var(--ac),var(--inf))';
+    const msg={'not-allowed':'Mic access denied','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet'}[e.error]||e.error;
+    nf('\ud83c\udfa4 '+msg,'','warn');
+  };
+}
+
+
 // BOOT — fill dropdowns from current OL/CATS (called after sheet data loads)
 function fillBootDropdowns(){
   const f=document.getElementById('fOt'),fc=document.getElementById('fCt');
@@ -2784,6 +3197,7 @@ function fillBootDropdowns(){
 
 toggleLoginMode();
 renderTagChips();
+setTimeout(()=>{setRaiseMode('chat');checkChatUnlock();},50);
 fillFlagReasons();
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
