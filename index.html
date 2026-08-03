@@ -103,6 +103,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 .cat-tile.matched svg{animation:emojiPop .5s ease}
 .cat-tile.dim{opacity:.4}
 @keyframes tileIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes catCardSlide{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+.acc-card.cat-slide{animation:catCardSlide .7s cubic-bezier(.22,.61,.36,1) backwards}
 @keyframes tilePulse{0%{box-shadow:0 0 0 0 var(--acg)}60%{box-shadow:0 0 0 7px rgba(124,106,240,0)}100%{box-shadow:0 0 0 2px var(--acg)}}
 @keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
 .mic-eyecatch{animation:micIdleGlow 2.2s ease-in-out infinite}
@@ -141,10 +143,11 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <body>
 <div id="loginP" class="login"><div class="login-card">
   <div class="logo"><div class="logo-i">🔧</div><div><h1>Fix Engine</h1><span>Cloud Kitchen R&M v7</span></div></div>
-  <div style="background:linear-gradient(135deg,rgba(124,106,240,.22),rgba(66,201,190,.16));border:1px solid var(--bdr);border-radius:18px;padding:16px 14px;margin-bottom:12px;position:relative;overflow:hidden">
-    <div style="position:absolute;right:-14px;bottom:-16px;font-size:80px;opacity:.14;transform:rotate(-12deg)">🔧</div>
-    <div style="font-size:17px;font-weight:800;color:var(--t);position:relative">Need something fixed?</div>
-    <div style="font-size:12px;color:var(--t2);margin-top:2px;position:relative">We're right here in the kitchen with you</div>
+  <div id="heroTipsBanner" style="background:linear-gradient(135deg,rgba(124,106,240,.24),rgba(66,201,190,.17));border:1px solid var(--bdr);border-radius:18px;padding:18px 16px;margin-bottom:12px;position:relative;overflow:hidden;min-height:106px">
+    <div style="position:absolute;right:-14px;bottom:-16px;font-size:80px;opacity:.12;transform:rotate(-12deg)">🔧</div>
+    <div style="font-size:11px;font-weight:800;color:var(--ac2);text-transform:uppercase;letter-spacing:.6px;position:relative">✨ Did you know?</div>
+    <div id="heroTipText" style="font-size:18px;font-weight:800;color:var(--t);margin-top:6px;line-height:1.35;position:relative;min-height:50px"></div>
+    <div id="heroTipDots" style="display:flex;gap:5px;margin-top:10px;position:relative"></div>
   </div>
   <h2>🎫 Raise a Ticket</h2>
   <div style="display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px">
@@ -158,28 +161,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div id="loadMsgSub" style="font-size:11px;color:var(--t3);margin-top:2px">Meanwhile, tap 🎤 and describe your issue!</div>
     <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:6px;cursor:pointer">Skip tips</div>
   </div>
-  <div style="display:flex;gap:6px;margin-bottom:10px">
-    <button type="button" id="modeChatBtn" onclick="setRaiseMode('chat')" style="flex:1;padding:9px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--ac);background:var(--ac);color:#fff">💬 Chat</button>
-    <button type="button" id="modeFormBtn" onclick="setRaiseMode('form')" style="flex:1;padding:9px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--bdr);background:var(--c1);color:var(--t2)">📋 Form</button>
-  </div>
-  <div id="chatModeContent">
-    <div id="chatWin" class="cht" style="height:min(58vh,420px);position:relative">
-      <div class="cht-m" id="chatMsgs"></div>
-      <div id="chatLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(10,12,20,.94);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px">
-        <div>
-          <div style="font-size:26px">🔒</div>
-          <div style="font-size:13px;font-weight:700;margin-top:6px;color:var(--t)">Fill in your details above</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:3px">Mobile, name and outlet are needed before we start</div>
-        </div>
-      </div>
-      <button type="button" id="chatMicBtn" class="mic-eyecatch" onclick="chatVoice()" style="position:absolute;right:14px;bottom:54px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:23px;cursor:pointer;box-shadow:0 4px 14px rgba(124,106,240,.6);z-index:10">🎤</button>
-      <div class="cht-in">
-        <input id="chatInput" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')chatSend()">
-        <button class="snd" onclick="chatSend()">➤</button>
-      </div>
-    </div>
-  </div>
-  <div id="formModeContent" style="display:none;position:relative">
+  <div id="formModeContent" style="position:relative">
   <div id="formLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(10,12,20,.96);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:var(--r)">
     <div>
       <div style="font-size:26px">🔒</div>
@@ -225,10 +207,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <select id="tC" style="display:none" onchange="onCat()"><option value="">Select</option></select>
   <select id="tS" style="display:none" onchange="onSub()"><option value="">—</option></select>
   <div class="fg" id="catGridWrap">
-    <div id="catGridToggle" onclick="toggleCatGridVisible()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);font-size:11.5px;font-weight:600;color:var(--ac2)">
-      <span>👆 Click to see all issues</span><span id="catGridToggleArrow">▾</span>
-    </div>
-    <div id="catGridInner" style="display:none;margin-top:6px">
+    <div id="catGridInner" style="margin-top:0">
     <div id="stepAccordion"></div>
   </div></div>
   <select id="tCv" style="display:none" onchange="onCatVisible()"></select><select id="tSv" style="display:none" onchange="onSubVisible()"></select>
@@ -1821,6 +1800,8 @@ const CAT_ICON_PATH={
   water:'<rect x="34" y="14" width="32" height="52" rx="14" fill="none" stroke-width="6"/><circle cx="50" cy="30" r="3"/><path d="M40 78h20M44 86h12" stroke-width="5" stroke-linecap="round"/>',
   weigh:'<path d="M24 30h52l-8 34H32z" fill="none" stroke-width="6"/><path d="M50 30V20M40 74h20" stroke-width="6" stroke-linecap="round"/>',
   door:'<rect x="30" y="18" width="40" height="64" rx="3" fill="none" stroke-width="6"/><circle cx="60" cy="50" r="3"/>',
+  table:'<path d="M12 30h76" stroke-width="7" stroke-linecap="round"/><path d="M22 30v50M78 30v50" stroke-width="6" stroke-linecap="round"/>',
+  rack:'<rect x="20" y="14" width="60" height="72" rx="4" fill="none" stroke-width="6"/><path d="M20 36h60M20 58h60" stroke-width="5"/>',
   valve:'<path d="M20 56h60" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="50" cy="34" r="16" fill="none" stroke-width="6"/><path d="M50 50v6M38 34h-6M68 34h6" stroke-width="6" stroke-linecap="round"/>',
   coil:'<path d="M20 50a10 10 0 1 1 20 0 10 10 0 1 0 20 0 10 10 0 1 1 20 0" fill="none" stroke-width="6" stroke-linecap="round"/><path d="M20 50a24 6 0 0 0 60 0" fill="none" stroke-width="5" stroke-linecap="round" opacity=".5"/>',
   replace:'<path d="M26 40a24 24 0 0 1 42-14M74 60a24 24 0 0 1-42 14" fill="none" stroke-width="7" stroke-linecap="round"/><path d="M62 16l8 10-12 2M38 84l-8-10 12-2" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
@@ -1841,6 +1822,7 @@ const SUB_ICON_RULES=[
  [/water|ro |tank|geyser|heater/,'water'],[/weigh|scale/,'weigh'],
  [/door|shutter|window|lock/,'door'],[/mcb|breaker|\btrip/,'mcb'],[/\bwire\b|wiring|\bcable\b/,'wire'],[/socket|switch|plug|board/,'bolt'],
  [/cockroach|\brat\b|rodent|pest|termite|\bfly\b/,'bug'],
+ [/\btables?\b|\bdesks?\b/,'table'],[/\bss\b|steel|\brack\b|shelf|shelving/,'rack'],
  [/\breplace/,'replace']
 ];
 function subIconKey(subName,catId){
@@ -1945,10 +1927,34 @@ function toggleCatGridVisible(){
   const inner=document.getElementById('catGridInner');
   if(inner&&inner.style.display==='none')expandCatGrid();else collapseCatGrid();
 }
-function accCardHTML(catId,label,iconSubName,onClick,matched){
+let categoryDemoShown=false;
+function slowScrollTo(el,target,duration){
+  const start=el.scrollLeft;const startTime=performance.now();
+  function step(now){
+    const t=Math.min((now-startTime)/duration,1);
+    const eased=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    el.scrollLeft=start+(target-start)*eased;
+    if(t<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+// One-time hint, shown only the first time the category row appears — slides right slowly,
+// pauses, then slides back, so the user visually understands the row can be scrolled.
+function demoScrollCategoryHint(){
+  if(categoryDemoShown)return;
+  const el=document.getElementById('catStepScroll');
+  if(!el||el.scrollWidth<=el.clientWidth+10)return;
+  categoryDemoShown=true;
+  setTimeout(()=>{
+    slowScrollTo(el,100,1200);
+    setTimeout(()=>{slowScrollTo(el,0,1000);},1900);
+  },700);
+}
+function accCardHTML(catId,label,iconSubName,onClick,matched,slideIdx){
   const st=CAT_STYLE[catId]||CAT_STYLE.other;
   const icon=iconSubName?subIconSVG(iconSubName,catId,st.tx,true,34):catIconSVG(catId,st.tx,true,34);
-  return `<div class="acc-card${matched?' matched':''}" onclick="${onClick}">${icon}<span class="acc-card-label">${label}</span></div>`;
+  const slideAttr=slideIdx!=null?` cat-slide" style="animation-delay:${slideIdx*110}ms`:'';
+  return `<div class="acc-card${matched?' matched':''}${slideAttr}" onclick="${onClick}">${icon}<span class="acc-card-label">${label}</span></div>`;
 }
 function accStepHead(num,title,done,onChange){
   const changeBtn=done?`<button type="button" class="acc-change" onclick="${onChange}">Change</button>`:'';
@@ -1980,7 +1986,7 @@ function renderAccordion(){
   const catLabel=catDone?catText(CATS[accState.catId].label):'Select a category';
   html+=`<div class="acc-step">${accStepHead(1,catLabel,catDone,"accBackTo('cat')")}`;
   if(!catDone){
-    html+='<div class="acc-scroll">'+entries.map(([k,c])=>accCardHTML(k,catText(c.label),null,`accPickCategory('${k}')`,false)).join('')+'</div>';
+    html+='<div class="acc-scroll" id="catStepScroll">'+entries.map(([k,c],i)=>accCardHTML(k,catText(c.label),null,`accPickCategory('${k}')`,false,i)).join('')+'</div>';
   }
   html+='</div>';
   wrap.innerHTML=html;
@@ -2889,7 +2895,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelec
 // Nothing about matching, tagging, or submitting a ticket is reimplemented here —
 // the chat just drives the same hidden form fields the form itself would set, then
 // calls the same raiseTicket() at the end. This guarantees identical results either way.
-let raiseMode='chat';
+let raiseMode='form';
 let chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
 
 let chatUnlocked=false;
@@ -2949,30 +2955,45 @@ function skipLoadTips(){
   const banner=document.getElementById('tipsBanner');
   if(banner)banner.style.display='none';
 }
+const HERO_TIPS=[
+  '🎤 You can create a ticket just by tapping the Mic button',
+  '🔒 A ticket won\'t close until <b>you</b> confirm the issue is resolved',
+  '🔄 Not happy with the fix? You can re-open the ticket anytime',
+  '⭐ You can rate the attender and the job once it\'s done',
+  '💬 The attender can update you on WhatsApp as the job progresses',
+  '📝 Got feedback? You can share your thoughts to help us improve',
+  '💬 You can chat with the attender right inside the ticket'
+];
+let heroTipIdx=0,heroTipTimer=null;
+function startHeroTips(){
+  const textEl=document.getElementById('heroTipText'),dotsEl=document.getElementById('heroTipDots');
+  if(!textEl||!dotsEl)return;
+  dotsEl.innerHTML=HERO_TIPS.map((_,i)=>`<span data-i="${i}" style="width:6px;height:6px;border-radius:50%;background:var(--bdr);transition:background .2s"></span>`).join('');
+  const tick=()=>{
+    textEl.style.opacity='0';
+    setTimeout(()=>{
+      textEl.innerHTML=HERO_TIPS[heroTipIdx];
+      textEl.style.opacity='1';
+      [...dotsEl.children].forEach((d,i)=>d.style.background=i===heroTipIdx?'var(--ac)':'var(--bdr)');
+      heroTipIdx=(heroTipIdx+1)%HERO_TIPS.length;
+    },200);
+  };
+  textEl.style.transition='opacity .2s';
+  tick();
+  heroTipTimer=setInterval(tick,4200);
+}
 function checkChatUnlock(){
   const ph=(document.getElementById('lPh')?document.getElementById('lPh').value:'').replace(/\D/g,'');
   const nm=(document.getElementById('lNm')?document.getElementById('lNm').value:'').trim();
   const ou=document.getElementById('lOut')?document.getElementById('lOut').value:'';
   const ready = ph.length>=10 && nm.length>0 && !!ou;
-  const overlay=document.getElementById('chatLockOverlay');
-  const mic=document.getElementById('chatMicBtn');
-  const inp=document.getElementById('chatInput');
   const formOverlay=document.getElementById('formLockOverlay');
   if(ready){
-    if(overlay)overlay.style.display='none';
     if(formOverlay)formOverlay.style.display='none';
-    if(mic)mic.disabled=false;
-    if(inp)inp.disabled=false;
-    if(!chatUnlocked){
-      chatUnlocked=true;
-      if(raiseMode==='chat'&&!document.getElementById('chatMsgs').children.length)chatInit();
-    }
+    chatUnlocked=true;
   }else{
     chatUnlocked=false;
-    if(overlay)overlay.style.display='flex';
     if(formOverlay)formOverlay.style.display='flex';
-    if(mic)mic.disabled=true;
-    if(inp)inp.disabled=true;
   }
   return ready;
 }
@@ -3323,7 +3344,7 @@ function fillBootDropdowns(){
 toggleLoginMode();
 renderTagChips();
 startLoadMessages();
-setTimeout(()=>{setRaiseMode('chat');checkChatUnlock();},50);
+setTimeout(()=>{checkChatUnlock();startHeroTips();},50);
 fillFlagReasons();
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
