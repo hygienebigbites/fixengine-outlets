@@ -120,7 +120,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 .acc-scroll::-webkit-scrollbar{display:none}
 .acc-card{flex:0 0 auto;width:86px;background:var(--c2);border:1.5px solid var(--bdr);border-radius:14px;padding:10px 5px 9px;text-align:center;cursor:pointer;scroll-snap-align:start;transition:transform .1s,border-color .15s}
 .acc-card:active{transform:scale(.95)}
-.acc-card.matched{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.acc-card.matched{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac),0 4px 16px rgba(124,106,240,.45);transform:scale(1.06);animation:matchPulse 1.4s ease-in-out infinite}
+@keyframes matchPulse{0%,100%{box-shadow:0 0 0 3px var(--ac),0 4px 16px rgba(124,106,240,.45)}50%{box-shadow:0 0 0 5px var(--ac),0 6px 22px rgba(124,106,240,.65)}}
 .acc-card-label{font-size:10.5px;font-weight:700;color:var(--t);margin-top:6px;line-height:1.2;word-break:break-word;display:block}
 .footer-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px calc(9px + var(--sb));background:none;border:none;color:var(--t3);font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .footer-tab.on{color:var(--ac)}
@@ -215,6 +216,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
         <div><div id="subSelectedName" style="font-size:12px;font-weight:700;color:var(--ac2)"></div><div id="subSelectedCat" style="font-size:9px;color:var(--t3);margin-top:1px"></div></div>
         <button type="button" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer">✕ Change</button>
       </div>
+      <button type="button" onclick="proceedToTicketDetails()" class="btn-big purple" style="margin-top:10px;padding:10px">Continue →</button>
     </div>
   </div>
   <select id="tC" style="display:none" onchange="onCat()"><option value="">Select</option></select>
@@ -225,7 +227,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div></div>
   <select id="tCv" style="display:none" onchange="onCatVisible()"></select><select id="tSv" style="display:none" onchange="onSubVisible()"></select>
   <div class="fg" style="display:none"><label>Auto Priority & SLA</label><div style="display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--c2);border-radius:var(--rs)"><span id="tP" class="pri">—</span><span id="tSL" class="sla safe" style="display:none">—</span></div></div>
-  <div class="fg" id="flagWrap"><div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center">
+  <div id="ticketDetailsSection" style="display:none">
+<div class="fg" id="flagWrap"><div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center">
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;text-transform:none"><label class="tog"><input type="checkbox" id="flagChk" onchange="onFlagToggle()"><span class="s"></span></label>🚩 Urgent?</label>
     <select class="fc" id="flagReason" style="display:none"><option value="">Why urgent? *</option></select>
   </div></div>
@@ -247,6 +250,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div id="tImgL" style="display:none;font-size:11px;color:var(--ok);font-weight:600;margin-top:5px"></div>
   <div id="tImgList" style="margin-top:4px"></div></div>
   <button class="btn-big green" id="raiseBtn" onclick="raiseTicket()">🎫 Raise Ticket</button>
+  <button type="button" onclick="backToIssuePicker()" style="width:100%;background:none;border:none;color:var(--t3);font-size:11.5px;text-decoration:underline;cursor:pointer;margin-top:8px;padding:6px">← Back to change the issue</button>
+</div>
   </div>
   <button class="btn btn-s btn-o btn-full" id="raiseBack" style="display:none;margin-top:8px" onclick="hideRaiseForm()">← Back to My Tickets</button>
 </div></div>
@@ -2093,9 +2098,23 @@ function renderFinalStep(wrap,stepNum,catId,issues,contextLabel,backFn){
   wrap.innerHTML+='<div class="acc-scroll">'+issues.map(x=>accCardHTML(catId,x.issue,x.sub,`accPickIssue('${esc(x.sub)}')`,false)).join('')+'</div></div>';
 }
 
-function accPickCategory(catId){accState={catId,itemKey:null,compKey:null};renderAccordion();}
-function accPickItem(key){accState.itemKey=key;accState.compKey=null;renderAccordion();}
-function accPickComponent(key){accState.compKey=key;renderAccordion();}
+function proceedToTicketDetails(){
+  const chip=document.getElementById('subSelected');
+  if(chip)chip.style.display='none';
+  const sec=document.getElementById('ticketDetailsSection');
+  if(sec){sec.style.display='block';sec.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+function backToIssuePicker(){
+  clearSubSelection(); // same full reset as tapping "Change" — reopens the picker cleanly
+}
+function scrollNewStepIntoView(){
+  const steps=document.querySelectorAll('.acc-step');
+  const last=steps[steps.length-1];
+  if(last)setTimeout(()=>last.scrollIntoView({behavior:'smooth',block:'center'}),60);
+}
+function accPickCategory(catId){accState={catId,itemKey:null,compKey:null};renderAccordion();scrollNewStepIntoView();}
+function accPickItem(key){accState.itemKey=key;accState.compKey=null;renderAccordion();scrollNewStepIntoView();}
+function accPickComponent(key){accState.compKey=key;renderAccordion();scrollNewStepIntoView();}
 function accPickIssue(subName){
   const catId=accState.catId,cat=CATS[catId];
   const pri=UMAP[subName]||cat.pri;
@@ -2115,7 +2134,7 @@ function highlightCat(catId){
   accState={catId:null,itemKey:null,compKey:null};
   renderAccordion();
   const card=[...document.querySelectorAll('.acc-card')].find(el=>el.getAttribute('onclick')===`accPickCategory('${catId}')`);
-  if(card)card.classList.add('matched');
+  if(card){card.classList.add('matched');card.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});}
 }
 
 
@@ -2271,6 +2290,7 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
   selEl.style.display='block';
   document.getElementById('subSelectedName').textContent=sub;
   document.getElementById('subSelectedCat').textContent=catLabel;
+  const gwDone=document.getElementById('catGridWrap');if(gwDone)gwDone.style.display='none';
   onSub();
   selItem=detectItem(typedQ)||sub;showItemField();
   applyAutoTags(typedQ+' '+sub);
@@ -2279,7 +2299,8 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
 
 function clearSubSelection(){
   if(typeof clearCatHighlight==='function'){clearCatHighlight();closeCatTile();}
-  const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';collapseCatGrid();
+  const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';
+  const tds=document.getElementById('ticketDetailsSection');if(tds)tds.style.display='none';
   const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
