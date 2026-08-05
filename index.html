@@ -8,12 +8,12 @@
 <title>Fix Engine — Cloud Kitchen R&M</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;700&display=swap');
-:root{--bg:#F7F7FA;--c1:#FFFFFF;--c2:#F2F3F7;--c3:#E9EBF2;--bdr:#E3E5EC;--t:#14142B;--t2:#6B7280;--t3:#9CA3AF;--ac:#7C6AF0;--ac2:#6552E0;--acg:rgba(124,106,240,.14);--ok:#0E9F6E;--okb:rgba(14,159,110,.10);--wr:#D97706;--wrb:rgba(217,119,6,.10);--er:#DC2626;--erb:rgba(220,38,38,.09);--inf:#0D9488;--infb:rgba(13,148,136,.10);--or:#EA580C;--orb:rgba(234,88,12,.10);--pk:#DB2777;--r:10px;--rs:7px;--f:'DM Sans',system-ui,-apple-system,sans-serif;--m:'JetBrains Mono',monospace;--sb:env(safe-area-inset-bottom,0px)}
+:root{--bg:#F7F7FA;--c1:#FFFFFF;--c2:#F2F3F7;--c3:#E9EBF2;--bdr:#E3E5EC;--t:#14142B;--t2:#525A6B;--t3:#656C7C;--ac:#695ACC;--ac2:#6552E0;--acg:rgba(124,106,240,.14);--ok:#0B7C56;--okb:rgba(11,124,86,.10);--wr:#A35905;--wrb:rgba(163,89,5,.10);--er:#D02020;--erb:rgba(208,32,32,.09);--inf:#0B796F;--infb:rgba(11,121,111,.10);--or:#BF480A;--orb:rgba(191,72,10,.10);--pk:#CA246E;--r:10px;--rs:7px;--f:'DM Sans',system-ui,-apple-system,sans-serif;--m:'JetBrains Mono',monospace;--sb:env(safe-area-inset-bottom,0px)}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;font-family:var(--f);background:var(--bg);color:var(--t);overflow:hidden;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;font-size:15px}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:9px}
 input,select,textarea,button{font-family:var(--f);font-size:16px}
-.login{height:100dvh;display:flex;align-items:flex-start;justify-content:center;padding:20px;padding-bottom:calc(170px + var(--sb));overflow-y:auto;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 0%,rgba(124,106,240,.08),transparent 60%)}
+.login{height:100dvh;display:flex;align-items:flex-start;justify-content:center;padding:20px;padding-bottom:calc(110px + var(--sb));overflow-y:auto;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 0%,rgba(124,106,240,.08),transparent 60%)}
 .login-card{width:100%;max-width:380px;margin-bottom:30px}.login .logo{display:flex;align-items:center;gap:12px;margin-bottom:20px;justify-content:center}.login .logo-i{width:42px;height:42px;background:linear-gradient(135deg,var(--ac),var(--inf));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}.login .logo h1{font-size:19px;font-weight:700}.login .logo span{font-size:9px;color:var(--t2);display:block}
 .login-card h2{font-size:15px;text-align:center;margin-bottom:12px}
 .lr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px}
@@ -178,8 +178,12 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <h2>🎫 Raise a Ticket</h2>
   <div class="fg" style="margin-bottom:2px">
-    <label>🎫 Ticket Type</label>
-    <div id="ticketTypeRow" class="acc-scroll" style="padding:4px 2px 10px;margin:0 -12px"></div>
+    <div id="ticketTypeLabelWrap"><label>🎫 Ticket Type</label>
+    <div id="ticketTypeRow" class="acc-scroll" style="padding:4px 2px 10px;margin:0 -12px"></div></div>
+    <div id="ticketTypeChip" style="display:none;align-items:center;justify-content:space-between;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 12px">
+      <div style="display:flex;align-items:center;gap:9px"><div id="ticketTypeChipIcon" style="width:26px;height:26px"></div><span id="ticketTypeChipText" style="font-size:12.5px;font-weight:700;color:var(--t)"></span></div>
+      <button type="button" onclick="changeTicketType()" style="font-size:11px;color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700;background:none;border:none;font-family:inherit">Change</button>
+    </div>
   </div>
     <div id="tipsBanner" style="background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;text-align:center;position:relative">
     <div style="font-size:22px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
@@ -196,7 +200,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
   </div>
   <div class="fg">
-  <div id="searchBoxWrap" style="position:fixed;left:0;right:0;bottom:56px;max-width:480px;margin:0 auto;background:var(--c1);border-top:1px solid var(--bdr);padding:8px 12px calc(8px + var(--sb));z-index:190;box-shadow:0 -3px 14px rgba(0,0,0,.08)">
+  <div id="searchBoxWrap" style="position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--c1);border-top:1px solid var(--bdr);padding:8px 12px calc(8px + var(--sb));z-index:190;box-shadow:0 -3px 14px rgba(0,0,0,.08)">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-bottom:4px">
       <span style="font-size:9px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;flex:1;text-align:left">🔍 Describe the problem *</span>
       <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;display:none;padding:2px">✕</button>
@@ -205,7 +209,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px">
       <div style="flex:1;position:relative">
-        <textarea id="subSearch" rows="1" placeholder="Use the mic, or type your issue here..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:24px;outline:none;color:var(--t);font-size:16px;resize:none;padding:13px 48px 13px 18px;font-family:inherit;max-height:90px;box-sizing:border-box"></textarea>
+        <textarea id="subSearch" rows="1" placeholder="Use the mic, or type your issue here..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:24px;outline:none;color:var(--t);font-size:16px;resize:none;padding:13px 48px 13px 18px;font-family:inherit;min-height:52px;max-height:90px;box-sizing:border-box"></textarea>
         <button type="button" id="srchSendBtn" onclick="runFind()" title="Search" style="position:absolute;right:6px;bottom:6px;width:36px;height:36px;border-radius:50%;background:var(--ac);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">➤</button>
       </div>
       <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55);flex-shrink:0">🎤</button>
@@ -1303,6 +1307,15 @@ function pickTicketType(opt){
   selAction=opt;
   document.getElementById('actionSel').value=opt;
   applyTicketTypeRules();renderTagChips();
+  const iconKey=TICKET_TYPE_ICON_MAP[opt]||'tt_unsure';
+  document.getElementById('ticketTypeChipIcon').innerHTML=ticketTypeIconSVG(iconKey);
+  document.getElementById('ticketTypeChipText').textContent=opt;
+  document.getElementById('ticketTypeLabelWrap').style.display='none';
+  document.getElementById('ticketTypeChip').style.display='flex';
+}
+function changeTicketType(){
+  document.getElementById('ticketTypeChip').style.display='none';
+  document.getElementById('ticketTypeLabelWrap').style.display='block';
   renderTicketTypeIcons();
 }
 function applyTicketTypeRules(){
