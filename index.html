@@ -109,6 +109,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
 .mic-eyecatch{animation:micIdleGlow 2.2s ease-in-out infinite}
 .mic-eyecatch.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
+#bigMicBtn.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
 @keyframes micIdleGlow{0%,100%{box-shadow:0 2px 10px rgba(124,106,240,.5);transform:scale(1)}50%{box-shadow:0 2px 16px rgba(124,106,240,.9);transform:scale(1.08)}}
 .acc-step{background:var(--c1);border:1px solid var(--bdr);border-radius:14px;margin-bottom:8px;overflow:hidden;animation:tileIn .3s backwards}
 .acc-step-head{display:flex;align-items:center;gap:8px;padding:11px 12px}
@@ -186,12 +187,10 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <h2>🎫 Raise a Ticket</h2>
   <div class="fg" style="margin-bottom:2px">
     <div id="ticketTypeLabelWrap"><label>🎫 Ticket Type</label>
-    <div id="ticketTypeRow" class="acc-scroll" style="padding:4px 2px 10px;margin:0 -12px"></div></div>
-    <div id="ticketTypeChip" style="display:none;align-items:center;justify-content:space-between;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 12px">
-      <div style="display:flex;align-items:center;gap:9px"><div id="ticketTypeChipIcon" style="width:26px;height:26px"></div><span id="ticketTypeChipText" style="font-size:12.5px;font-weight:700;color:var(--t)"></span></div>
-      <button type="button" onclick="changeTicketType()" style="font-size:11px;color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700;background:none;border:none;font-family:inherit">Change</button>
-    </div>
-  </div>
+    <select id="ticketTypeSelect" class="fc" onchange="pickTicketType(this.value)" style="margin-top:4px">
+      <option value="">— Select Ticket Type —</option>
+    </select></div>
+      </div>
     <div id="tipsBanner" style="display:none;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;text-align:center;position:relative">
     <div style="font-size:22px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
     <div id="loadMsgTitle" style="font-size:13px;font-weight:700;margin-top:4px;color:var(--t)">Fetching your categories…</div>
@@ -199,10 +198,17 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:6px;cursor:pointer">Skip tips</div>
   </div>
 <div id="bigMicScreen" style="display:none;text-align:center;padding:36px 16px 20px">
-  <button type="button" onclick="voiceSearch()" style="width:92px;height:92px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 6px 22px rgba(124,106,240,.45);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
-  <div style="font-size:15px;font-weight:800;color:var(--t);margin-top:18px">Tap and speak your issue</div>
+  <button type="button" id="bigMicBtn" onclick="voiceSearch()" style="width:92px;height:92px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 6px 22px rgba(124,106,240,.45);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
+  <div id="bigMicStatus" style="font-size:15px;font-weight:800;color:var(--t);margin-top:18px">Tap and speak your issue</div>
   <div style="font-size:12.5px;color:var(--t2);margin-top:4px">e.g. “bain marie coil not heating”</div>
   <button type="button" onclick="revealNormalFlow(true)" style="background:none;border:none;color:var(--ac2);font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;margin-top:20px">⌨️ Or type it instead</button>
+</div>
+<div id="consumablesForm" style="display:none;padding:16px 2px 6px">
+  <h3 style="margin-bottom:2px">🧾 Request Items</h3>
+  <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Add each item you need, with quantity</div>
+  <div id="consumablesRows"></div>
+  <button type="button" onclick="addConsumableRow()" style="background:var(--c2);border:1px dashed var(--bdr);border-radius:var(--rs);padding:10px;width:100%;font-size:13px;font-weight:700;color:var(--ac2);cursor:pointer;margin-top:4px">+ Add Another Item</button>
+  <button type="button" onclick="submitConsumablesRequest()" class="btn-big purple" style="margin-top:16px">Continue →</button>
 </div>
   <div id="formModeContent" style="display:none;position:relative">
   <div id="formLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(247,247,250,.97);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:var(--r)">
@@ -322,7 +328,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 
 <div class="modal-bg" id="docM"><div class="modal"><div class="modal-hd"><h3>📎 Documents</h3><button class="modal-x" onclick="closeM('docM')">✕</button></div><div class="modal-bd" id="docMBody"></div></div></div>
 
-<div class="modal-bg" id="fbM"><div class="modal"><div class="modal-hd"><h3>💬 Quick Feedback</h3><button class="modal-x" onclick="closeM('fbM')">✕</button></div><div class="modal-bd" id="fbBody"></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('fbM')">Skip</button><button class="btn btn-p" onclick="submitFeedback()">Submit</button></div></div></div>
+<div class="modal-bg" id="fbM"><div class="modal"><div class="modal-hd"><h3 style="font-size:16px">💬 Quick Feedback</h3><button class="modal-x" onclick="closeM('fbM')">✕</button></div><div id="fbProgress" style="text-align:center;font-size:12px;color:var(--t3);font-weight:700;padding-top:4px"></div><div class="modal-bd" id="fbBody" style="font-size:15px"></div><div class="modal-ft" id="fbFooter"></div></div></div>
 <div class="modal-bg" id="confirmM"><div class="modal"><div class="modal-hd"><h3>✅ Confirm Resolution</h3><button class="modal-x" onclick="closeM('confirmM')">✕</button></div><div class="modal-bd">
   <div style="text-align:center;padding:10px"><div style="font-size:36px;margin-bottom:8px">🔧</div><p style="font-size:13px;font-weight:600">Is your issue fully resolved?</p><p style="font-size:10px;color:var(--t2);margin-top:6px">Confirming will let you share the OTP to close the ticket</p></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn-big green" onclick="confirmResolved()">✅ Yes, Resolved</button><button class="btn-big red" onclick="confirmNotResolved()">❌ Not Resolved</button></div>
@@ -857,6 +863,7 @@ function showRaiseForm(){
   tImgFiles=[];renderPhotoList();
   selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';
   const fc2=document.getElementById('flagChk');if(fc2)fc2.checked=false;onFlagToggle();applyTicketTypeRules();
+  resetTicketFlow();
   refreshCatDropdown();
   if(raiseMode==='chat'){const cm=document.getElementById('chatMsgs');if(cm)cm.innerHTML='';chatUnlocked=false;checkChatUnlock();}
   const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
@@ -1303,29 +1310,127 @@ function ticketTypeIconSVG(iconKey){
   return `<svg viewBox="0 0 100 100" style="width:34px;height:34px;display:block;margin:0 auto"><defs><linearGradient id="${gid}" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="${grad[0]}"/><stop offset="100%" stop-color="${grad[1]}"/></linearGradient></defs><g fill="url(#${gid})" stroke="url(#${gid})">${p}</g></svg>`;
 }
 function renderTicketTypeIcons(){
-  const row=document.getElementById('ticketTypeRow');
-  if(!row)return;
-  row.innerHTML=ACTION_OPTIONS.map(opt=>{
-    const iconKey=TICKET_TYPE_ICON_MAP[opt]||'tt_unsure';
-    const on=opt===selAction;
-    return `<div class="tt-card${on?' selected':''}" onclick="pickTicketType('${opt.replace(/'/g,"\\'")}')">${ticketTypeIconSVG(iconKey)}<span class="tt-card-label">${opt}</span></div>`;
-  }).join('');
+  const sel=document.getElementById('ticketTypeSelect');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Select Ticket Type —</option>'
+    +ACTION_OPTIONS.map(opt=>`<option value="${opt.replace(/"/g,'&quot;')}"${opt===selAction?' selected':''}>${opt}</option>`).join('');
 }
 function pickTicketType(opt){
   selAction=opt;
-  document.getElementById('actionSel').value=opt;
+  const actionSelHidden=document.getElementById('actionSel');if(actionSelHidden)actionSelHidden.value=opt;
   applyTicketTypeRules();renderTagChips();
-  const iconKey=TICKET_TYPE_ICON_MAP[opt]||'tt_unsure';
-  document.getElementById('ticketTypeChipIcon').innerHTML=ticketTypeIconSVG(iconKey);
-  document.getElementById('ticketTypeChipText').textContent=opt;
-  document.getElementById('ticketTypeLabelWrap').style.display='none';
-  document.getElementById('ticketTypeChip').style.display='flex';
+  // Every selection starts from a clean slate — switching types must clear whatever
+  // the PREVIOUS selection revealed, not just decide what the new one shows. Without
+  // this, going New Requirement -> Not Sure left the item form stuck visible, since
+  // nothing had ever explicitly hidden it again.
+  const form=document.getElementById('consumablesForm');
+  const bigMic=document.getElementById('bigMicScreen');
+  if(form)form.style.display='none';
+  if(bigMic)bigMic.style.display='none';
+  if(!opt)return; // placeholder re-selected — nothing to reveal yet
+  // "New Requirement"/"Replacement" aren't describing a problem — they're a request
+  // for items, so they get their own dedicated form instead of the describe/speak flow.
+  if(opt==='New Requirement'||opt==='Replacement'){
+    if(form){
+      document.getElementById('consumablesRows').innerHTML='';
+      addConsumableRow();
+      form.style.display='block';
+    }
+    return;
+  }
   // First real step of the form: once a type is picked, invite them to just speak the
   // issue rather than dropping straight into the full picker — the full flow stays
   // exactly as it already is, just deferred until there's something to search with.
-  const bigMic=document.getElementById('bigMicScreen');
   const subSearchEl=document.getElementById('subSearch');
   if(bigMic&&subSearchEl&&!subSearchEl.value.trim())bigMic.style.display='block';
+}
+const CONSUMABLE_ITEMS=[
+  {name:'2 Door Chiller',icon:'chiller_ic'},{name:'4 Door Chiller',icon:'chiller_ic'},{name:'Bain Marie',icon:'bain_marie'},{name:'Books',icon:'table'},{name:'Borwell',icon:'dot'},{name:'Bucket',icon:'utensil'},{name:'Bulb / Lights',icon:'bulb'},{name:'Burner',icon:'flame'},{name:'CCTV',icon:'camera'},{name:'Ceiling',icon:'wall'},{name:'Cello Tape',icon:'dot'},{name:'Chair',icon:'table'},{name:'Chest / Deep Freezer',icon:'fridge'},{name:'Chiller',icon:'chiller_ic'},{name:'Chopping Board',icon:'dot'},{name:'Cold Room',icon:'cold_room'},{name:'Compressor Oil',icon:'dot'},{name:'Computer Accessories',icon:'wifi'},{name:'Crates',icon:'table'},{name:'Cutting Board',icon:'utensil'},{name:'Deck Oven',icon:'oven'},{name:'Deep Freezer',icon:'fridge'},{name:'DG',icon:'backup_power'},{name:'Door',icon:'door'},{name:'Dust Pad',icon:'ppe'},{name:'Dust Pan',icon:'ppe'},{name:'Dustbin',icon:'ppe'},{name:'Duster',icon:'ppe'},{name:'DVR Box',icon:'camera'},{name:'Electrical Board',icon:'dot'},{name:'Electricity',icon:'power_panel'},{name:'Electricity Meter',icon:'meter'},{name:'Extension Box',icon:'bolt'},{name:'Fan',icon:'fan'},{name:'Fire Oil',icon:'dot'},{name:'Floor',icon:'wall'},{name:'Floor Oily',icon:'wall'},{name:'Fly Catcher',icon:'bug'},{name:'Folder File',icon:'table'},{name:'Freezer',icon:'fridge'},{name:'Fuse',icon:'bolt'},{name:'Gas',icon:'cylinder'},{name:'Gas Lighter',icon:'cylinder'},{name:'Geyser',icon:'water'},{name:'Gloves',icon:'ppe'},{name:'GN Pan',icon:'utensil'},{name:'Grinder Machine',icon:'mixer'},{name:'Handi',icon:'utensil'},{name:'Hanging Board',icon:'wall'},{name:'Induction Stove',icon:'flame'},{name:'Jug',icon:'utensil'},{name:'Key Board',icon:'wifi'},{name:'Knife',icon:'utensil'},{name:'Ladder',icon:'table'},{name:'Landline',icon:'wifi'},{name:'Lid',icon:'dot'},{name:'Lock',icon:'door'},{name:'MCB',icon:'mcb'},{name:'Micro Oven',icon:'oven'},{name:'Mixer Grinder',icon:'mixer'},{name:'Moisture Meter',icon:'meter'},{name:'Momo Steamer',icon:'cook_equip'},{name:'Motor',icon:'motor'},{name:'Mug',icon:'utensil'},{name:'Name Board',icon:'wall'},{name:'Notice Board',icon:'wall'},{name:'Oil Basket',icon:'dot'},{name:'Oil Brush',icon:'dot'},{name:'Oil Dip Tray',icon:'utensil'},{name:'Oil Fryer',icon:'cook_equip'},{name:'Oil Strainer',icon:'utensil'},{name:'Oil Tray',icon:'utensil'},{name:'Packing Machine',icon:'clean_equip'},{name:'Paining Brush',icon:'dot'},{name:'Palak Machine',icon:'cook_equip'},{name:'Panal Board',icon:'power_panel'},{name:'Paratha Lifter',icon:'cook_equip'},{name:'Pest / Rodent',icon:'bug'},{name:'Pest Control',icon:'bug'},{name:'Pillow',icon:'dot'},{name:'Plates',icon:'dot'},{name:'Plug',icon:'bolt'},{name:'Plug Point',icon:'bolt'},{name:'Power Issues',icon:'power_panel'},{name:'Printer',icon:'printer'},{name:'Pulverizer',icon:'mixer'},{name:'Rack',icon:'rack'},{name:'Rat & Cockroach',icon:'bug'},{name:'Regulator',icon:'dial'},{name:'Rice Cooker',icon:'cook_equip'},{name:'RO',icon:'water'},{name:'Scissors',icon:'scissors_ic'},{name:'Sign Board',icon:'wall'},{name:'Sink',icon:'tap'},{name:'Socket',icon:'bolt'},{name:'Spoons',icon:'utensil'},{name:'Switch',icon:'switch_brk'},{name:'Switch Board',icon:'switch_brk'},{name:'Tables',icon:'table'},{name:'Tape Dispenser',icon:'dot'},{name:'TDS Meter',icon:'meter'},{name:'Thermometer',icon:'dial'},{name:'Tiles',icon:'wall'},{name:'Toilet',icon:'toilet'},{name:'Toilet Flush Tank',icon:'toilet'},{name:'Undercounter Chiller',icon:'chiller_ic'},{name:'Visi Cooler',icon:'visi_cooler'},{name:'Wash Basin',icon:'tap'},{name:'Washing Machine',icon:'clean_equip'},{name:'Water',icon:'water'},{name:'Water Tap',icon:'tap'},{name:'Weighing Scale',icon:'weigh'},{name:'Whisk',icon:'prep_equip'},{name:'White Board',icon:'wall'},{name:'WiFi / Internet',icon:'wifi'},{name:'Wire',icon:'wire'}
+];
+let consumableRowId=0;
+function addConsumableRow(){
+  const wrap=document.getElementById('consumablesRows');
+  if(!wrap)return;
+  const id=consumableRowId++;
+  const row=document.createElement('div');
+  row.id='consRow'+id;
+  row.style.cssText='margin-bottom:10px;padding:10px;background:var(--c2);border-radius:var(--rs)';
+  row.innerHTML=`<div style="display:flex;gap:8px;align-items:center">`
+    +`<div id="consIcon${id}" style="width:34px;height:34px;flex-shrink:0">${ticketTypeIconSVG('utensil')}</div>`
+    +`<div style="flex:2;position:relative">`
+    +`<input type="text" class="fc" id="consSearch${id}" placeholder="Search or type item name..." oninput="filterConsumableItems(${id})" onfocus="filterConsumableItems(${id})" autocomplete="off">`
+    +`<div id="consResults${id}" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;z-index:30;box-shadow:0 4px 14px rgba(0,0,0,.12)"></div>`
+    +`</div>`
+    +`<input type="number" class="fc" placeholder="Qty" min="1" value="1" id="consQty${id}" style="flex:1;min-width:0">`
+    +`<button type="button" onclick="removeConsumableRow(${id})" style="background:none;border:none;color:var(--er);font-size:18px;cursor:pointer;flex-shrink:0">\u2715</button></div>`;
+  wrap.appendChild(row);
+}
+function filterConsumableItems(id){
+  const input=document.getElementById('consSearch'+id);
+  const results=document.getElementById('consResults'+id);
+  if(!input||!results)return;
+  const q=input.value.trim().toLowerCase();
+  let matches;
+  if(!q)matches=CONSUMABLE_ITEMS.slice(0,8);
+  else{
+    const starts=CONSUMABLE_ITEMS.filter(it=>it.name.toLowerCase().startsWith(q));
+    const contains=CONSUMABLE_ITEMS.filter(it=>it.name.toLowerCase().includes(q)&&!it.name.toLowerCase().startsWith(q));
+    matches=[...starts,...contains].slice(0,8);
+  }
+  if(!matches.length){
+    results.innerHTML='<div style="padding:10px;font-size:11.5px;color:var(--t3);text-align:center">No preset match \u2014 your typed name will be used as-is</div>';
+  }else{
+    results.innerHTML=matches.map(it=>`<div onclick="selectConsumableItem(${id},'${it.name.replace(/'/g,"\\'")}','${it.icon}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--bdr);font-size:12.5px">`
+      +`<div style="width:22px;height:22px;flex-shrink:0">${ticketTypeIconSVG(it.icon)}</div>${it.name}</div>`).join('');
+  }
+  results.style.display='block';
+}
+function selectConsumableItem(id,name,icon){
+  const input=document.getElementById('consSearch'+id);
+  const results=document.getElementById('consResults'+id);
+  const iconEl=document.getElementById('consIcon'+id);
+  if(input)input.value=name;
+  if(results)results.style.display='none';
+  if(iconEl)iconEl.innerHTML=ticketTypeIconSVG(icon);
+}
+document.addEventListener('click',e=>{
+  // Close any open item-search results when clicking elsewhere, same pattern as other
+  // dropdowns in the app — but not when the click is on the search input/results itself.
+  if(e.target.closest&&(e.target.closest('[id^="consSearch"]')||e.target.closest('[id^="consResults"]')))return;
+  document.querySelectorAll('[id^="consResults"]').forEach(r=>r.style.display='none');
+});
+function removeConsumableRow(id){
+  const row=document.getElementById('consRow'+id);
+  if(row)row.remove();
+}
+function submitConsumablesRequest(){
+  const rows=[...document.querySelectorAll('#consumablesRows > div')];
+  const items=[];
+  rows.forEach(row=>{
+    const nameEl=row.querySelector('input[type="text"]');
+    const qtyEl=row.querySelector('input[type="number"]');
+    const name=nameEl?nameEl.value.trim():'';
+    const qty=qtyEl?qtyEl.value.trim():'';
+    if(name)items.push({name,qty:qty||'1'});
+  });
+  if(!items.length){nf('Add at least one item','Enter an item name before continuing','warn');return;}
+  // Store item details within the Description field, as requested — a clear numbered
+  // list an attender/purchaser can act on directly, no separate columns needed.
+  const desc=items.map((it,i)=>(i+1)+'. '+it.name+' \u2014 Qty: '+it.qty).join('\n');
+  ensureGeneralCategory();
+  selectSubFromSearch('other','General Issue',CATS.other.label,CATS.other.pri||'medium');
+  const tD=document.getElementById('tD');
+  if(tD)tD.value=desc;
+  typedProblem=desc;
+  document.getElementById('consumablesForm').style.display='none';
+  // Setting the flag alone isn't enough — #ticketDetailsSection lives inside
+  // #formModeContent, which stays hidden by default until this actually runs.
+  // Only the container is needed here (not tips/composer — there's nothing left
+  // to search for once the items are already compiled into the description).
+  formFlowRevealed=true;
+  const content=document.getElementById('formModeContent');
+  if(content)content.style.display='block';
+  proceedToTicketDetails();
 }
 function revealNormalFlow(focusInput){
   formFlowRevealed=true;
@@ -1338,9 +1443,18 @@ function revealNormalFlow(focusInput){
   // voice result, where a keyboard appearing on top of their result would be unwelcome.
   if(focusInput){const ta=document.getElementById('subSearch');if(ta)setTimeout(()=>ta.focus(),50);}
 }
-function changeTicketType(){
-  document.getElementById('ticketTypeChip').style.display='none';
-  document.getElementById('ticketTypeLabelWrap').style.display='block';
+function resetTicketFlow(){
+  // A fresh ticket should never inherit the previous one's type — every "Create New
+  // Ticket" entry point calls this so nothing carries over silently.
+  selAction='';
+  const sel=document.getElementById('ticketTypeSelect');if(sel)sel.value='';
+  const bigMic=document.getElementById('bigMicScreen');if(bigMic)bigMic.style.display='none';
+  const consForm=document.getElementById('consumablesForm');if(consForm)consForm.style.display='none';
+  const consRows=document.getElementById('consumablesRows');if(consRows)consRows.innerHTML='';
+  formFlowRevealed=false;
+  const tips=document.getElementById('tipsBanner');if(tips)tips.style.display='none';
+  const content=document.getElementById('formModeContent');if(content)content.style.display='none';
+  const composer=document.getElementById('searchBoxWrap');if(composer)composer.style.display='none';
   renderTicketTypeIcons();
 }
 function applyTicketTypeRules(){
@@ -1600,37 +1714,66 @@ async function loadFeedbackQuestionsFromSheet(){
   if(fresh.length)FB_QUESTIONS=fresh;
   return true;
 }
+let fbCurrentIdx=0,fbCollected=[];
 function showFeedbackModal(ticketId){
   fbLastTicket=ticketId||'';
-  const body=document.getElementById('fbBody');
-  if(!body)return;
-  body.innerHTML=FB_QUESTIONS.map((f,i)=>{
-    let inner='';
-    if(f.type==='rating'){
-      inner='<div style="display:flex;gap:6px;justify-content:center">'+[1,2,3,4,5].map(n=>`<button type="button" class="fbStar" data-q="${i}" data-v="${n}" onclick="fbRate(${i},${n})" style="font-size:24px;background:none;border:none;cursor:pointer;color:var(--bdr)">★</button>`).join('')+`</div><input type="hidden" id="fbAns${i}">`;
-    } else if(f.type==='choice'){
-      inner='<div style="display:flex;flex-wrap:wrap;gap:5px">'+f.opts.map(o=>`<button type="button" class="fbChoice" data-q="${i}" onclick="fbChoose(${i},this)" data-v="${o.replace(/"/g,'&quot;')}" style="padding:6px 10px;border-radius:14px;font-size:11px;cursor:pointer;border:1px solid var(--bdr);background:var(--c2);color:var(--t2)">${o}</button>`).join('')+`</div><input type="hidden" id="fbAns${i}">`;
-    } else {
-      inner=`<textarea class="fc" id="fbAns${i}" rows="2" placeholder="Type here (optional)..."></textarea>`;
-    }
-    return `<div class="fg"><label>${f.q}</label>${inner}</div>`;
-  }).join('');
+  fbCurrentIdx=0;fbCollected=new Array(FB_QUESTIONS.length).fill('');
+  renderFeedbackStep();
   openM('fbM');
 }
-function fbRate(qi,n){
-  document.querySelectorAll('.fbStar[data-q="'+qi+'"]').forEach(s=>{s.style.color=(parseInt(s.dataset.v)<=n)?'var(--wr)':'var(--bdr)'});
-  const h=document.getElementById('fbAns'+qi);if(h)h.value=n;
+function renderFeedbackStep(){
+  const body=document.getElementById('fbBody');
+  const foot=document.getElementById('fbFooter');
+  const prog=document.getElementById('fbProgress');
+  if(!body||!foot)return;
+  const i=fbCurrentIdx,f=FB_QUESTIONS[i];
+  const isLast=i===FB_QUESTIONS.length-1;
+  if(prog)prog.textContent='Question '+(i+1)+' of '+FB_QUESTIONS.length;
+  let inner='';
+  if(f.type==='rating'){
+    inner='<div style="display:flex;gap:10px;justify-content:center;margin-top:6px">'+[1,2,3,4,5].map(n=>`<button type="button" class="fbStar" data-v="${n}" onclick="fbRate(${n})" style="font-size:34px;background:none;border:none;cursor:pointer;color:var(--bdr)">★</button>`).join('')+'</div><input type="hidden" id="fbAnsCur">';
+  } else if(f.type==='choice'){
+    inner='<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">'+f.opts.map(o=>`<button type="button" class="fbChoice" onclick="fbChoose(this)" data-v="${o.replace(/"/g,'&quot;')}" style="padding:12px 14px;border-radius:12px;font-size:15px;cursor:pointer;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);text-align:left">${o}</button>`).join('')+'</div><input type="hidden" id="fbAnsCur">';
+  } else {
+    inner='<textarea class="fc" id="fbAnsCur" rows="3" placeholder="Type here (optional)..." style="font-size:15px;margin-top:6px"></textarea>';
+  }
+  body.innerHTML=`<div class="fg"><label style="font-size:16px;font-weight:800;color:var(--t)">${f.q}</label>${inner}</div>`;
+  const cur=document.getElementById('fbAnsCur');
+  if(cur&&fbCollected[i]){
+    cur.value=fbCollected[i];
+    if(f.type==='rating')fbRate(parseInt(fbCollected[i]));
+    else if(f.type==='choice'){const match=[...document.querySelectorAll('.fbChoice')].find(b=>b.dataset.v===fbCollected[i]);if(match)fbChoose(match);}
+  }
+  foot.innerHTML=(i>0?'<button class="btn btn-o" onclick="fbBack()" style="font-size:14px">← Back</button>':'<button class="btn btn-o" onclick="closeM(\'fbM\')" style="font-size:14px">Skip</button>')
+    +`<button class="btn btn-p" onclick="fbNext()" style="font-size:14px">${isLast?'Submit':'Next →'}</button>`;
 }
-function fbChoose(qi,btn){
-  document.querySelectorAll('.fbChoice[data-q="'+qi+'"]').forEach(b=>{b.style.background='var(--c2)';b.style.color='var(--t2)';b.style.borderColor='var(--bdr)'});
+function fbRate(n){
+  document.querySelectorAll('.fbStar').forEach(s=>{s.style.color=(parseInt(s.dataset.v)<=n)?'var(--wr)':'var(--bdr)'});
+  const h=document.getElementById('fbAnsCur');if(h)h.value=n;
+}
+function fbChoose(btn){
+  document.querySelectorAll('.fbChoice').forEach(b=>{b.style.background='var(--c2)';b.style.color='var(--t2)';b.style.borderColor='var(--bdr)'});
   btn.style.background='rgba(124,106,240,.15)';btn.style.color='var(--ac2)';btn.style.borderColor='var(--ac)';
-  const h=document.getElementById('fbAns'+qi);if(h)h.value=btn.dataset.v;
+  const h=document.getElementById('fbAnsCur');if(h)h.value=btn.dataset.v;
+}
+function fbBack(){
+  const cur=document.getElementById('fbAnsCur');if(cur)fbCollected[fbCurrentIdx]=cur.value;
+  fbCurrentIdx=Math.max(0,fbCurrentIdx-1);
+  renderFeedbackStep();
+}
+function fbNext(){
+  const cur=document.getElementById('fbAnsCur');if(cur)fbCollected[fbCurrentIdx]=cur.value;
+  if(fbCurrentIdx<FB_QUESTIONS.length-1){fbCurrentIdx++;renderFeedbackStep();}
+  else submitFeedback();
 }
 function submitFeedback(){
+  // The last question's answer is still sitting in the live DOM field, not yet
+  // copied into fbCollected (that only happens on fbNext/fbBack) — grab it directly.
+  const cur=document.getElementById('fbAnsCur');
+  if(cur)fbCollected[fbCurrentIdx]=cur.value;
   let sent=0;
   FB_QUESTIONS.forEach((f,i)=>{
-    const el=document.getElementById('fbAns'+i);
-    const ans=el?String(el.value||'').trim():'';
+    const ans=String(fbCollected[i]||'').trim();
     if(!ans)return;
     sent++;
     apiAppend('App_Feedback',{
@@ -1711,6 +1854,7 @@ function nmBrowse(){
   logUnmatched(document.getElementById('subSearch').value.trim(),'browsed');
   document.getElementById('subSearchResults').style.display='none';
   closeCatTile();
+  expandCatGrid();
   const g=document.getElementById('catGridWrap');if(g)g.scrollIntoView({behavior:'smooth',block:'center'});
 }
 function nmGeneral(){
@@ -1940,6 +2084,11 @@ const CAT_ICON_PATH={
   chiller_ic:'<rect x="26" y="12" width="48" height="76" rx="8" fill="none" stroke-width="6"/><path d="M26 46h48" stroke-width="5"/><path d="M38 24h24M38 62h24" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="32" r="3"/><circle cx="66" cy="70" r="3"/>',
   visi_cooler:'<rect x="20" y="18" width="60" height="64" rx="7" fill="none" stroke-width="6"/><rect x="28" y="26" width="44" height="48" rx="4" fill="none" stroke-width="4"/><path d="M74 40h6M74 58h6" stroke-width="5" stroke-linecap="round"/>',
   cold_room:'<rect x="16" y="20" width="68" height="60" rx="6" fill="none" stroke-width="6"/><path d="M50 32v36M38 40l24 16M62 40 38 56" stroke-width="5" stroke-linecap="round"/>',
+  knife_ic:'<path d="M20 74 66 28c5-5 12-5 16 0 4 4 4 11-1 16L28 78z"/><path d="M20 74 8 86l6-18z"/>',
+  scissors_ic:'<circle cx="26" cy="26" r="12" fill="none" stroke-width="6"/><circle cx="26" cy="74" r="12" fill="none" stroke-width="6"/><path d="M35 35 82 82M35 65 82 18" stroke-width="6" stroke-linecap="round"/>',
+  ladle_ic:'<circle cx="30" cy="30" r="18" fill="none" stroke-width="6"/><path d="M44 44 82 82" stroke-width="7" stroke-linecap="round"/>',
+  tongs_ic:'<path d="M35 12c-14 6-20 22-14 40l10 34" fill="none" stroke-width="6" stroke-linecap="round"/><path d="M65 12c14 6 20 22 14 40L69 86" fill="none" stroke-width="6" stroke-linecap="round"/><path d="M38 40 26 30M62 40 74 30" stroke-width="5" stroke-linecap="round"/>',
+  board_ic:'<rect x="14" y="24" width="72" height="52" rx="8" fill="none" stroke-width="6"/><circle cx="76" cy="20" r="5"/>',
   food_warmer:'<ellipse cx="50" cy="24" rx="18" ry="7"/><path d="M35 26l6 24h18l6-24" fill="none" stroke-width="5.5"/><path d="M32 66h36" stroke-width="6" stroke-linecap="round"/><g stroke-width="4" stroke-linecap="round"><path d="M42 76v6M58 76v6"/></g>',
   heat_equip:'<path d="M22 46h56v8a28 24 0 0 1-56 0z"/><path d="M14 46h8M78 46h8" stroke-width="6" stroke-linecap="round"/><g stroke-width="5" stroke-linecap="round" fill="none"><path d="M36 36c-3-6 3-8 0-16M50 36c-3-6 3-8 0-16M64 36c-3-6 3-8 0-16"/></g>',
   cook_equip:'<circle cx="42" cy="52" r="26" fill="none" stroke-width="7"/><path d="M64 44 88 32" stroke-width="8" stroke-linecap="round"/><path d="M30 52a12 8 0 0 0 24 0" fill="none" stroke-width="5" stroke-linecap="round"/>',
@@ -1997,14 +2146,14 @@ const SUB_ICON_RULES=[
  [/visi\s*cooler/,'visi_cooler'],[/cold\s*room/,'cold_room'],[/chiller/,'chiller_ic'],
  [/freezer|fridge|refriger/,'fridge'],
  [/exhaust|chimney|hood|ventilation|\bfan\b/,'fan'],[/bulb|\blight\b|tube/,'bulb'],
- [/tap|faucet|\bnal\b/,'tap'],[/drain|nali|naali|grease trap|sink overflow/,'drain'],
+ [/\btap\b|faucet|\bnal\b/,'tap'],[/drain|nali|naali|grease trap|sink overflow/,'drain'],
  [/motor|pump/,'motor'],[/toilet|commode|flush|urinal|washbasin/,'toilet'],
  [/mixer|grinder|blender|juicer/,'mixer'],[/oven|otg|deck|micro/,'oven'],
  [/cctv|camera|dvr|nvr/,'camera'],[/\bkot\b/,'printer'],[/printer|paper jam/,'printer'],
  [/internet|wifi|wi-fi|router|landline|biometric|\bpos\b|computer|laptop|\bmouse\b|key\s*board|monitor|software|lan cable/,'wifi'],
  [/pipe|pipeline/,'pipe'],[/floor|wall|tile|crack|paint|ceiling|grout|staircase|railing|parking area|signage/,'wall'],
  [/water|\bro\b|tank|geyser|heater/,'water'],[/weigh|scale/,'weigh'],
- [/door|shutter|window|lock/,'door'],[/mcb|breaker|\btrip/,'mcb'],[/\bwire\b|wiring|\bcable\b/,'wire'],[/\bswitch/,'switch_brk'],[/earth|ground/,'earth'],[/socket|plug|board/,'bolt'],
+ [/door|shutter|window|lock/,'door'],[/mcb|breaker|\btrip/,'mcb'],[/\bwire\b|wiring|\bcable\b/,'wire'],[/\bswitch/,'switch_brk'],[/earth|ground/,'earth'],[/socket|plug/,'bolt'],
  [/electrical\s*panel|panel\s*(overheat|spark|burn)/,'power_panel'],
  [/generator|\bups\b|backup|\bdg\b\s*fuel|dg\s*service/,'backup_power'],
  [/\bvoltage\b|power supply|power in outlet|power available|high.*consumption|temporary.*connection/,'power_panel'],
@@ -2018,6 +2167,15 @@ const SUB_ICON_RULES=[
  [/hazard|contamination|fssai|compliance|injury|chemical storage|food safety|electric shock|shocking|overloaded circuit|unauthorized.*load|detector\s*(alarm|not working)/,'hazard'],
  [/cockroach|\brat\b|rodent|pest|termite|\bfly\b|\bant\b|mosquito|lizard|spider|infestation|fumigation|bait station/,'bug'],
  [/\btables?\b|\bdesks?\b|\bcounter\b|\bchair\b|\blocker\b/,'table'],[/\bss\b|steel|\brack\b|shelf|shelving/,'rack'],
+ [/\bgas\b/,'cylinder'],[/\belectricity\b/,'power_panel'],[/power issues/,'power_panel'],[/packing machine/,'clean_equip'],
+ [/scissors/,'scissors_ic'],[/\bwhisk\b/,'prep_equip'],[/washing machine/,'clean_equip'],
+ [/rice cooker|oil fryer|induction stove|momo steamer|palak machine|paratha lifter/,'cook_equip'],
+ [/thermometer|moisture meter|tds meter/,'dial'],[/\bdg\b|generator/,'backup_power'],
+ [/\bfuse\b|extension box|plug point|\bplug\b(?!.*point)/,'bolt'],[/\bsink\b|wash basin/,'tap'],
+ [/bucket|jug|\bmug\b|handi/,'utensil'],[/dustbin|duster|dust pad|dust pan/,'ppe'],
+ [/\bladder\b/,'table'],[/name board|notice board|sign board|hanging board|white board/,'wall'],[/panal board|switch board/,'power_panel'],
+ [/\bcrates\b|folder file|books/,'table'],[/pulverizer|grinder machine|mixer grinder/,'mixer'],
+ [/rat & cockroach/,'bug'],[/toilet flush tank/,'toilet'],
  [/\breplace/,'replace'],
  [/heating\s*equip/,'heat_equip'],[/cooking\s*equip/,'cook_equip'],
  [/preparation\s*equip|preperation\s*equip|preperations\s*equip/,'prep_equip'],[/cleaning\s*(machine|equip)/,'clean_equip'],
@@ -2059,6 +2217,8 @@ const ICON_GRADIENTS={
   utensil:['#C9C6C0','#7A776D'],trolley_cart:['#B0B7C2','#5C6472'],ppe:['#8FCBFF','#2E7DD1'],
   fire_ext:['#FF8A6B','#C9403F'],first_aid:['#FF8A8A','#C9403F'],maint_due:['#C9A0FF','#6B3FC9'],
   hazard:['#FFD23C','#D99A00'],chiller_ic:['#9FE3FF','#2E9BD1'],visi_cooler:['#9FE3FF','#2E9BD1'],cold_room:['#8FF0E8','#178B82'],
+  knife_ic:['#C9C6C0','#7A776D'],scissors_ic:['#C9C6C0','#7A776D'],ladle_ic:['#C9C6C0','#7A776D'],
+  tongs_ic:['#C9C6C0','#7A776D'],board_ic:['#D2B48C','#8B6B3D'],
   tt_service:['#C9A0FF','#6B3FC9'],tt_unsure:['#C9C6C0','#7A776D']
 };
 let __iconIdCounter=0;
@@ -2359,13 +2519,17 @@ function accBackTo(level){
 
 // Search-driven confident match: ensure the accordion is open and step 1 shows this category
 // highlighted — the user still confirms by picking from the (now visible) options below.
-function highlightCat(catId,query){
+function highlightCat(catId,query,autoShow){
   lastSearchQuery=query||'';
-  expandCatGrid();
   accState={catId:null,itemKey:null,compKey:null};
+  // Prepare the accordion's state and content, but don't SHOW it by default — when
+  // there are real suggestions, the category picker only adds noise. It stays ready
+  // to appear instantly (already highlighted to the right spot) the moment the user
+  // explicitly asks to browse instead (nmBrowse), or when there's nothing to suggest.
   renderAccordion();
   const card=[...document.querySelectorAll('.acc-card')].find(el=>el.getAttribute('onclick')===`accPickCategory('${catId}')`);
-  if(card){card.classList.add('matched');setTimeout(()=>centerCardInRow(card),80);}
+  if(card)card.classList.add('matched');
+  if(autoShow){expandCatGrid();if(card)setTimeout(()=>centerCardInRow(card),80);}
 }
 
 
@@ -2627,9 +2791,29 @@ function voiceNoMatchPanel(){
     +'<div style="font-size:11px;color:var(--t3);margin-top:3px">'+tip[1]+'</div>'
     +'</div>';
 }
+function playReadySound(){
+  // Synthesized tone (no audio file dependency) — two quick rising beeps, loud and
+  // distinct enough to notice even in a noisy kitchen, cueing "start talking now".
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    const ctx=new Ctx();
+    [880,1175].forEach((freq,i)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      const start=ctx.currentTime+i*0.14;
+      gain.gain.setValueAtTime(0,start);
+      gain.gain.linearRampToValueAtTime(0.35,start+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,start+0.13);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(start);osc.stop(start+0.14);
+    });
+  }catch(e){/* Web Audio unavailable — silently skip, voice still works */}
+}
 function voiceSearch(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const btn=document.getElementById('srchMicBtn');
+  const bigBtn=document.getElementById('bigMicBtn');
+  const bigStatus=document.getElementById('bigMicStatus');
   const inp=document.getElementById('subSearch');
   if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return}
   if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return}
@@ -2646,6 +2830,9 @@ function voiceSearch(){
   setTimeout(()=>{
     if(!started)return;
     if(btn){btn.classList.add('mic-listening')}
+    if(bigBtn){bigBtn.classList.add('mic-listening')}
+    if(bigStatus)bigStatus.textContent='\ud83c\udfa4 Listening\u2026';
+    playReadySound();
     nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
   },350);
   r.onresult=e=>{
@@ -2703,9 +2890,15 @@ function voiceSearch(){
       nf('Heard','"'+txt+'"','ok');
     }
   };
-  r.onend=()=>{if(btn){btn.classList.remove('mic-listening')}};
+  r.onend=()=>{
+    if(btn){btn.classList.remove('mic-listening')}
+    if(bigBtn){bigBtn.classList.remove('mic-listening')}
+    if(bigStatus)bigStatus.textContent='Tap and speak your issue';
+  };
   r.onerror=e=>{
     if(btn){btn.classList.remove('mic-listening')}
+    if(bigBtn){bigBtn.classList.remove('mic-listening')}
+    if(bigStatus)bigStatus.textContent='Tap and speak your issue';
     if(inp&&!inp.value.trim())inp.value=preExisting;
     const msg={'not-allowed':'Mic access denied \u2014 check phone settings','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet for voice \u2014 check connection','aborted':'Cancelled'}[e.error]||e.error;
     nf('\ud83c\udfa4 '+msg,'Tap the mic to retry','warn');
@@ -2843,7 +3036,7 @@ async function raiseTicket(){
     const btn=document.getElementById('raiseBtn');
     if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
     hideRaiseForm();
-    go('tickets');
+    openTicketDetail(id);
     if(!fbShown){fbShown=true;setTimeout(()=>showFeedbackModal(id),1200);}
   },800)}
 
@@ -3315,6 +3508,16 @@ function openTicketDetail(id){
   const bookings=document.getElementById('myBookingsPage');
   if(bookings)bookings.style.display='none';
   const footer=document.getElementById('footerNav');if(footer)footer.style.display='none';
+  // The old topbar's own hamburger is hidden above (it opens the unrelated attender
+  // sidebar) — inject our own, so this page never leaves the user without a way back
+  // to Home / Raise Ticket / My Tickets, same as every other screen in the app.
+  if(detail&&!detail.querySelector('.req-hamburger')){
+    const navBtn=document.createElement('button');
+    navBtn.type='button';navBtn.className='req-hamburger';navBtn.textContent='\u2630';
+    navBtn.style.cssText='position:sticky;top:8px;left:8px;margin:8px 0 0 8px;z-index:50';
+    navBtn.onclick=openSideMenu;
+    detail.insertBefore(navBtn,detail.firstChild);
+  }
 }
 function closeTicketDetail(){
   const appEl=document.getElementById('app');
@@ -3333,7 +3536,7 @@ function closeQuickHelp(){
   switchFooterTab('home');
 }
 const TOUR_STEPS=[
-  {sel:'#ticketTypeRow .tt-card',text:'👆 Select the type of request'},
+  {sel:'#ticketTypeSelect',text:'👆 Select the type of request'},
   {sel:'#srchMicBtn',text:'🎤 Tap and speak your issue'},
   {sel:'#subSearch',text:'⌨️ Or type it here instead'},
   {sel:'#catStepScroll .acc-card',text:'👆 Or select a category to browse'}
@@ -3341,6 +3544,7 @@ const TOUR_STEPS=[
 let tourIndex=0;
 let formFlowRevealed=false;
 function startOnboardingTour(){
+  return; // Tour temporarily disabled — infrastructure kept intact below to re-enable easily.
   try{ if(localStorage.getItem('fixEngineTourSeen'))return; }catch(e){}
   tourIndex=0;
   setTimeout(()=>showTourStep(0),700);
@@ -3416,7 +3620,7 @@ function closeSideMenu(){
 }
 function sideMenuGo(dest){
   closeSideMenu();
-  if(dest==='raise')switchFooterTab('home');
+  if(dest==='raise'){resetTicketFlow();switchFooterTab('home');}
   else if(dest==='home')switchFooterTab('bookings');
   else if(dest==='profile')showIdentityScreen();
   else if(dest==='help')showQuickHelp();
@@ -3486,9 +3690,11 @@ function renderMyBookings(){
   const wrap=document.getElementById('myBookingsList');
   if(!wrap)return;
   populateMyBookingsFilterOptions();
-  const myPhone=(document.getElementById('lPh').value||'').replace(/\D/g,'');
   const all=(typeof TKS!=='undefined')?TKS:[];
-  let mine=all.filter(t=>String(t.by||'').replace(/\D/g,'')===myPhone);
+  // Scoped by outlet, not by who personally raised each ticket — multiple staff at the
+  // same outlet share one ticket list, rather than each seeing only their own. The
+  // outlet filter below (defaulting to the logged-in outlet) is what narrows this now.
+  let mine=all;
 
   // Replicates the same filter logic already used elsewhere in the app (status/priority/
   // category/outlet), just scoped to the requester's own tickets instead of all tickets.
@@ -4068,7 +4274,7 @@ let usersLoaded=true;
       <div style="font-size:12.5px;color:var(--t2);margin-top:5px;line-height:1.5">If the issue comes back, reopen the same ticket instead of raising a new one — keeps the full history in one place.</div>
     </div>
   </div>
-  <button type="button" onclick="replayTour()" class="btn-big purple" style="margin-top:16px">▶ Replay the guided tour</button>
+  
 </div>
 <div id="myBookingsPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <div style="text-align:center;margin-bottom:16px"><img src="data:image/png;base64,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" alt="Hygiene Bigbites" style="height:32px;display:block;margin:0 auto"></div>
