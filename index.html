@@ -134,6 +134,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 #tourOverlay{position:fixed;inset:0;z-index:500;pointer-events:none}
 #tourBall{position:fixed;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,rgba(124,106,240,.9),rgba(124,106,240,.3));box-shadow:0 0 0 6px rgba(124,106,240,.25);animation:tourPulse 1.2s ease-in-out infinite;pointer-events:none;z-index:501;opacity:0}
 @keyframes tourPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+@keyframes bigMicPulse{0%,100%{transform:scale(1);box-shadow:0 6px 22px rgba(124,106,240,.45)}50%{transform:scale(1.06);box-shadow:0 8px 30px rgba(124,106,240,.6)}}
 #tourBubble{position:fixed;background:rgba(20,20,43,.92);backdrop-filter:blur(2px);color:#fff;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:12px;pointer-events:none;z-index:501;max-width:220px;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0}
 #tourBubble:after{content:"";position:absolute;width:10px;height:10px;background:var(--t);transform:rotate(45deg)}
 #tourSkip{position:fixed;bottom:calc(90px + var(--sb));left:50%;transform:translateX(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:20px;padding:8px 16px;font-size:11.5px;font-weight:700;color:var(--t2);z-index:501;pointer-events:none;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12);opacity:0}
@@ -191,13 +192,19 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
       <button type="button" onclick="changeTicketType()" style="font-size:11px;color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700;background:none;border:none;font-family:inherit">Change</button>
     </div>
   </div>
-    <div id="tipsBanner" style="background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;text-align:center;position:relative">
+    <div id="tipsBanner" style="display:none;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;text-align:center;position:relative">
     <div style="font-size:22px;animation:wrenchWobble 1s ease-in-out infinite">🔧</div>
     <div id="loadMsgTitle" style="font-size:13px;font-weight:700;margin-top:4px;color:var(--t)">Fetching your categories…</div>
     <div id="loadMsgSub" style="font-size:11px;color:var(--t3);margin-top:2px">Meanwhile, tap 🎤 and describe your issue!</div>
     <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:6px;cursor:pointer">Skip tips</div>
   </div>
-  <div id="formModeContent" style="position:relative">
+<div id="bigMicScreen" style="display:none;text-align:center;padding:36px 16px 20px">
+  <button type="button" onclick="voiceSearch()" style="width:92px;height:92px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 6px 22px rgba(124,106,240,.45);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
+  <div style="font-size:15px;font-weight:800;color:var(--t);margin-top:18px">Tap and speak your issue</div>
+  <div style="font-size:12.5px;color:var(--t2);margin-top:4px">e.g. “bain marie coil not heating”</div>
+  <button type="button" onclick="revealNormalFlow(true)" style="background:none;border:none;color:var(--ac2);font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;margin-top:20px">⌨️ Or type it instead</button>
+</div>
+  <div id="formModeContent" style="display:none;position:relative">
   <div id="formLockOverlay" style="display:none;position:absolute;inset:0;background:rgba(247,247,250,.97);z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:var(--r)">
     <div>
       <div style="font-size:26px">🔒</div>
@@ -206,7 +213,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
   </div>
   <div class="fg">
-  <div id="searchBoxWrap" style="position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--c1);border-top:1px solid var(--bdr);padding:8px 20px calc(8px + var(--sb));z-index:190;box-shadow:0 -3px 14px rgba(0,0,0,.08)">
+  <div id="searchBoxWrap" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--c1);border-top:1px solid var(--bdr);padding:8px 20px calc(8px + var(--sb));z-index:190;box-shadow:0 -3px 14px rgba(0,0,0,.08)">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-bottom:4px">
       <span style="font-size:9px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;flex:1;text-align:left">🔍 Describe the problem *</span>
       <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;display:none;padding:2px">✕</button>
@@ -1313,6 +1320,23 @@ function pickTicketType(opt){
   document.getElementById('ticketTypeChipText').textContent=opt;
   document.getElementById('ticketTypeLabelWrap').style.display='none';
   document.getElementById('ticketTypeChip').style.display='flex';
+  // First real step of the form: once a type is picked, invite them to just speak the
+  // issue rather than dropping straight into the full picker — the full flow stays
+  // exactly as it already is, just deferred until there's something to search with.
+  const bigMic=document.getElementById('bigMicScreen');
+  const subSearchEl=document.getElementById('subSearch');
+  if(bigMic&&subSearchEl&&!subSearchEl.value.trim())bigMic.style.display='block';
+}
+function revealNormalFlow(focusInput){
+  formFlowRevealed=true;
+  const bigMic=document.getElementById('bigMicScreen');
+  if(bigMic)bigMic.style.display='none';
+  const tips=document.getElementById('tipsBanner');if(tips)tips.style.display='block';
+  const content=document.getElementById('formModeContent');if(content)content.style.display='block';
+  const composer=document.getElementById('searchBoxWrap');if(composer)composer.style.display='block';
+  // Only pop the keyboard when they actually asked to type — not after a successful
+  // voice result, where a keyboard appearing on top of their result would be unwelcome.
+  if(focusInput){const ta=document.getElementById('subSearch');if(ta)setTimeout(()=>ta.focus(),50);}
 }
 function changeTicketType(){
   document.getElementById('ticketTypeChip').style.display='none';
@@ -2643,6 +2667,9 @@ function voiceSearch(){
     }
     const txt=best||rawTop.toLowerCase().trim();
     if(inp)inp.value=txt;
+    // Whatever was heard, the big-mic invitation has done its job — hand off to the
+    // normal flow, which already has its own retry/no-match handling built in.
+    revealNormalFlow(false);
     if(tooShort(txt)){
       const resEl=document.getElementById('subSearchResults');
       if(resEl){resEl.style.display='block';resEl.innerHTML=shortInputPanel();}
@@ -3206,7 +3233,12 @@ function startLoadMessages(){
   const titleEl=document.getElementById('loadMsgTitle'),subEl=document.getElementById('loadMsgSub');
   const banner=document.getElementById('tipsBanner');
   if(!titleEl||!subEl)return;
-  if(banner)banner.style.display='block';
+  // Data loading itself always runs in the background regardless of where the user is
+  // in the flow — but the visual banner should only appear once they've actually
+  // reached the point (ticket type picked, something spoken/typed) where it's relevant.
+  // Uses an explicit flag rather than inferring from element state, since bigMicScreen
+  // being hidden is ambiguous between "hasn't started yet" and "already revealed".
+  if(banner&&formFlowRevealed)banner.style.display='block';
   bannerShownAt=Date.now();
   loadMsgIdx=0;
   const tick=()=>{
@@ -3307,6 +3339,7 @@ const TOUR_STEPS=[
   {sel:'#catStepScroll .acc-card',text:'👆 Or select a category to browse'}
 ];
 let tourIndex=0;
+let formFlowRevealed=false;
 function startOnboardingTour(){
   try{ if(localStorage.getItem('fixEngineTourSeen'))return; }catch(e){}
   tourIndex=0;
