@@ -3684,12 +3684,268 @@ function closeSideMenu(){
   document.getElementById('reqSideMenu').classList.remove('open');
   document.getElementById('reqSideMenuOverlay').classList.remove('show');
 }
+// ===== REPORTS =====
+let reportFilters={outlets:[],categories:[],priorities:[]};
+
+function isClosedWithinSLA(t){
+  // null = can't determine (missing/unparseable timestamps) — kept separate from
+  // true/false so the report can show "undetermined" honestly rather than guessing.
+  if(!t.slaDeadline)return null;
+  const dl=new Date(t.slaDeadline);
+  if(isNaN(dl.getTime()))return null;
+  const closedEntry=(t.hist||[]).find(h=>h.s==='closed');
+  if(!closedEntry||!closedEntry.t)return null;
+  const ct=new Date(closedEntry.t);
+  if(isNaN(ct.getTime()))return null;
+  return ct<=dl;
+}
+
+function computeReportMetrics(tickets){
+  const total=tickets.length;
+  const closed=tickets.filter(t=>t.status==='closed');
+  const pending=tickets.filter(t=>t.status!=='closed');
+  let closedWithinSLA=0,closedOutOfSLA=0,closedUnknown=0;
+  closed.forEach(t=>{
+    const r=isClosedWithinSLA(t);
+    if(r===true)closedWithinSLA++;
+    else if(r===false)closedOutOfSLA++;
+    else closedUnknown++;
+  });
+  let pendingWithinSLA=0,pendingOutOfSLA=0;
+  pending.forEach(t=>{
+    if(String(t.sla||'').startsWith('-'))pendingOutOfSLA++;
+    else pendingWithinSLA++;
+  });
+  const closurePct=total?Math.round((closed.length/total)*100):0;
+  // SLA % is measured against DETERMINABLE closed tickets only, not all closed —
+  // an unknown-timestamp ticket shouldn't silently count as a compliance failure.
+  const slaBase=closedWithinSLA+closedOutOfSLA;
+  const slaPct=slaBase?Math.round((closedWithinSLA/slaBase)*100):0;
+  return {total,closedTotal:closed.length,closedWithinSLA,closedOutOfSLA,closedUnknown,
+    closurePct,slaPct,pendingTotal:pending.length,pendingWithinSLA,pendingOutOfSLA};
+}
+
+function applyReportFilters(all){
+  return all.filter(t=>{
+    if(reportFilters.outlets.length&&!reportFilters.outlets.includes(t.out))return false;
+    if(reportFilters.categories.length&&!reportFilters.categories.includes(t.cat))return false;
+    if(reportFilters.priorities.length&&!reportFilters.priorities.includes(t.pri))return false;
+    return true;
+  });
+}
+
+function renderOverallTable(m){
+  return `<div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:14px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:var(--c2)">
+        <th style="text-align:left;padding:9px 10px;font-weight:800;color:var(--t)">Overall</th>
+        <th style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">Total</th>
+        <th style="text-align:center;padding:9px 6px;font-weight:800;color:var(--ok)">SLA</th>
+        <th style="text-align:center;padding:9px 6px;font-weight:800;color:var(--er)">Out of SLA</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-top:1px solid var(--bdr)"><td style="padding:9px 10px;font-weight:700;color:var(--t)">Created</td><td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">${m.total}</td><td style="text-align:center;padding:9px 6px;color:var(--t3)">—</td><td style="text-align:center;padding:9px 6px;color:var(--t3)">—</td></tr>
+        <tr style="border-top:1px solid var(--bdr)"><td style="padding:9px 10px;font-weight:700;color:var(--t)">Closed</td><td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">${m.closedTotal}</td><td style="text-align:center;padding:9px 6px;color:var(--ok);font-weight:700">${m.closedWithinSLA}</td><td style="text-align:center;padding:9px 6px;color:var(--er);font-weight:700">${m.closedOutOfSLA}</td></tr>
+        <tr style="border-top:1px solid var(--bdr)"><td style="padding:9px 10px;font-weight:700;color:var(--t)">Pending</td><td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">${m.pendingTotal}</td><td style="text-align:center;padding:9px 6px;color:var(--ok);font-weight:700">${m.pendingWithinSLA}</td><td style="text-align:center;padding:9px 6px;color:var(--er);font-weight:700">${m.pendingOutOfSLA}</td></tr>
+      </tbody>
+    </table>
+    <div style="display:flex;gap:16px;padding:9px 10px;background:var(--c2);font-size:11.5px;color:var(--t2)">
+      <span>Closure %: <b style="color:var(--t)">${m.closurePct}%</b></span>
+      <span>SLA %: <b style="color:var(--t)">${m.slaPct}%</b></span>
+      ${m.closedUnknown?`<span style="color:var(--t3)">(${m.closedUnknown} undated)</span>`:''}
+    </div>
+  </div>`;
+}
+
+function sumMetrics(list){
+  // Combines several already-computed metric objects into one Total row — summed
+  // directly from the same per-group numbers shown in the rows above, so the Total
+  // is guaranteed to match what's actually displayed, not a separate recomputation
+  // that could silently drift out of sync.
+  const s={total:0,closedTotal:0,closedWithinSLA:0,closedOutOfSLA:0,closedUnknown:0,
+    pendingTotal:0,pendingWithinSLA:0,pendingOutOfSLA:0};
+  list.forEach(m=>{
+    s.total+=m.total;s.closedTotal+=m.closedTotal;s.closedWithinSLA+=m.closedWithinSLA;
+    s.closedOutOfSLA+=m.closedOutOfSLA;s.closedUnknown+=m.closedUnknown;
+    s.pendingTotal+=m.pendingTotal;s.pendingWithinSLA+=m.pendingWithinSLA;s.pendingOutOfSLA+=m.pendingOutOfSLA;
+  });
+  s.closurePct=s.total?Math.round((s.closedTotal/s.total)*100):0;
+  const slaBase=s.closedWithinSLA+s.closedOutOfSLA;
+  s.slaPct=slaBase?Math.round((s.closedWithinSLA/slaBase)*100):0;
+  return s;
+}
+
+function renderMetricRow(label,m,opts){
+  opts=opts||{};
+  return `<tr style="border-top:1px solid var(--bdr)${opts.totalRow?';background:var(--c2)':''}">
+    <td style="padding:8px 10px;font-weight:${opts.totalRow?800:700};color:var(--t);white-space:nowrap">${opts.toggleId?`<button type="button" onclick="event.stopPropagation();toggleReportSub('${opts.toggleId}')" style="background:none;border:1px solid var(--bdr);border-radius:4px;width:16px;height:16px;line-height:1;font-size:11px;cursor:pointer;color:var(--t2);margin-right:5px;padding:0">+</button>`:''}${label}</td>
+    <td style="text-align:center;padding:8px 4px;color:var(--t);font-weight:${opts.totalRow?800:400}">${m.total}</td>
+    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.closedTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.closedWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.closedOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
+    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.closurePct}%</td>
+    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.slaPct}%</td>
+    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.pendingTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.pendingWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.pendingOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
+  </tr>`;
+}
+
+function renderBreakdownTable(title,rows,totalMetrics){
+  const body=rows.map(r=>{
+    let rowHtml=renderMetricRow(r.label,r.m,{toggleId:r.subId});
+    if(r.subRows){
+      rowHtml+=`<tr id="${r.subId}" style="display:none"><td colspan="6" style="padding:0 0 0 20px;background:var(--bg)">
+        <table style="width:100%;border-collapse:collapse;font-size:10.5px">
+          <tbody>${r.subRows.map(sr=>renderMetricRow(sr.label,sr.m)).join('')}</tbody>
+        </table>
+      </td></tr>`;
+    }
+    return rowHtml;
+  }).join('');
+  const totalRow=totalMetrics?renderMetricRow('Total',totalMetrics,{totalRow:true}):'';
+  return `<div style="font-weight:800;font-size:13px;color:var(--t);margin:14px 0 6px">${title}</div>
+  <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:10px;overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:480px">
+      <thead><tr style="background:var(--c2)">
+        <th style="text-align:left;padding:8px 10px;font-weight:800;color:var(--t)"></th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Created</th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Closed (SLA/Out)</th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Closure%</th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">SLA%</th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Pending (SLA/Out)</th>
+      </tr></thead>
+      <tbody>${body}${totalRow}</tbody>
+    </table>
+  </div>`;
+}
+
+function toggleReportSub(id){
+  const row=document.getElementById(id);
+  if(!row)return;
+  row.style.display=row.style.display==='none'?'table-row':'none';
+}
+
+function renderReports(){
+  const body=document.getElementById('reportsBody');
+  if(!body)return;
+  const all=(typeof TKS!=='undefined')?TKS:[];
+  const filtered=applyReportFilters(all);
+  const catLabel=cid=>(CATS[cid]&&CATS[cid].label)?CATS[cid].label:cid;
+  const priLabel={critical:'\ud83d\udd34 Critical',high:'\ud83d\udfe0 High',medium:'\ud83d\udfe1 Medium',low:'\ud83d\udfe2 Low'};
+
+  let html='';
+  html+=renderOverallTable(computeReportMetrics(filtered));
+
+  // By Category — union of known categories AND any category value actually present
+  // in the data, so a ticket with an unrecognized/renamed category is never silently
+  // dropped from this table while still counting toward the Overall total above.
+  const byCat={};
+  filtered.forEach(t=>{const k=t.cat||'Uncategorized';(byCat[k]=byCat[k]||[]).push(t);});
+  const allCatIds=[...new Set([...Object.keys(CATS),...Object.keys(byCat)])];
+  const catMetricsList=allCatIds.map(cid=>computeReportMetrics(byCat[cid]||[]));
+  const catRows=allCatIds.map((cid,i)=>({label:catLabel(cid),m:catMetricsList[i]}))
+    .sort((a,b)=>a.label.localeCompare(b.label));
+  html+=renderBreakdownTable('By Category',catRows,sumMetrics(catMetricsList));
+
+  // By Priority — same union-safety, plus each row expands to show its own
+  // category breakdown for extra clarity without cluttering the default view.
+  const byPri={};
+  filtered.forEach(t=>{const k=t.pri||'unset';(byPri[k]=byPri[k]||[]).push(t);});
+  const allPriIds=[...new Set([...['critical','high','medium','low'],...Object.keys(byPri)])];
+  const priMetricsList=allPriIds.map(pid=>computeReportMetrics(byPri[pid]||[]));
+  const priRows=allPriIds.map((pid,i)=>{
+    const priTickets=byPri[pid]||[];
+    const byCatWithinPri={};
+    priTickets.forEach(t=>{const k=t.cat||'Uncategorized';(byCatWithinPri[k]=byCatWithinPri[k]||[]).push(t);});
+    const subRows=Object.keys(byCatWithinPri).sort((a,b)=>catLabel(a).localeCompare(catLabel(b)))
+      .map(cid=>({label:catLabel(cid),m:computeReportMetrics(byCatWithinPri[cid])}));
+    return {label:priLabel[pid]||pid,m:priMetricsList[i],subId:'priSub_'+pid,subRows};
+  });
+  html+=renderBreakdownTable('By Priority',priRows,sumMetrics(priMetricsList));
+
+  body.innerHTML=html;
+}
+
+function toggleReportPanel(kind){
+  ['reportOtPanel','reportCatPanel','reportPriPanel'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&id!=='report'+kind+'Panel')el.style.display='none';
+  });
+  const panel=document.getElementById('report'+kind+'Panel');
+  if(!panel)return;
+  panel.style.display=panel.style.display==='block'?'none':'block';
+}
+function buildReportOtPanel(){
+  const list=document.getElementById('reportOtList');
+  if(!list)return;
+  list.innerHTML=OL.map(o=>{
+    const checked=reportFilters.outlets.includes(o)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
+      <input type="checkbox" value="${o}" ${checked} onchange="onReportFilterCheck('outlets',this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
+      <span>${o}</span></label>`;
+  }).join('');
+}
+function buildReportCatPanel(){
+  const list=document.getElementById('reportCatList');
+  if(!list)return;
+  list.innerHTML=Object.keys(CATS).sort().map(cid=>{
+    const checked=reportFilters.categories.includes(cid)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
+      <input type="checkbox" value="${cid}" ${checked} onchange="onReportFilterCheck('categories',this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
+      <span>${CATS[cid].label||cid}</span></label>`;
+  }).join('');
+}
+function buildReportPriPanel(){
+  const list=document.getElementById('reportPriList');
+  if(!list)return;
+  const opts=[['critical','Critical (P0)'],['high','High (P1)'],['medium','Medium (P2)'],['low','Low (P3)']];
+  list.innerHTML=opts.map(([v,label])=>{
+    const checked=reportFilters.priorities.includes(v)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
+      <input type="checkbox" value="${v}" ${checked} onchange="onReportFilterCheck('priorities',this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
+      <span>${label}</span></label>`;
+  }).join('');
+}
+function onReportFilterCheck(kind,el){
+  if(el.checked){if(!reportFilters[kind].includes(el.value))reportFilters[kind].push(el.value);}
+  else reportFilters[kind]=reportFilters[kind].filter(v=>v!==el.value);
+  updateReportFilterButtons();
+  renderReports();
+}
+function updateReportFilterButtons(){
+  const setBtn=(id,arr,allLabel)=>{
+    const btn=document.getElementById(id);
+    if(!btn)return;
+    if(!arr.length)btn.textContent=allLabel;
+    else if(arr.length===1)btn.textContent=arr[0].length>14?arr[0].slice(0,14)+'\u2026':arr[0];
+    else btn.textContent=arr.length+' selected';
+  };
+  setBtn('reportOtBtn',reportFilters.outlets,'All Outlets \u25be');
+  setBtn('reportCatBtn',reportFilters.categories,'All Categories \u25be');
+  setBtn('reportPriBtn',reportFilters.priorities,'All Priorities \u25be');
+}
+function resetReportFilters(){
+  reportFilters={outlets:[],categories:[],priorities:[]};
+  updateReportFilterButtons();
+  renderReports();
+}
+function showReports(){
+  document.getElementById('loginP').style.display='none';
+  document.getElementById('myBookingsPage').style.display='none';
+  const qh=document.getElementById('quickHelpPage');if(qh)qh.style.display='none';
+  document.getElementById('reportsPage').style.display='block';
+  buildReportOtPanel();buildReportCatPanel();buildReportPriPanel();
+  updateReportFilterButtons();
+  renderReports();
+}
+function closeReports(){
+  document.getElementById('reportsPage').style.display='none';
+  document.getElementById('loginP').style.display='flex';
+}
 function sideMenuGo(dest){
   closeSideMenu();
   if(dest==='raise'){resetTicketFlow();switchFooterTab('home');}
   else if(dest==='home')switchFooterTab('bookings');
   else if(dest==='profile')showIdentityScreen();
   else if(dest==='help')showQuickHelp();
+  else if(dest==='reports')showReports();
 }
 function switchFooterTab(tab){
   if(tab==='profile'){showIdentityScreen();return;}
@@ -4313,12 +4569,33 @@ let usersLoaded=true;
   <div class="rsm-item" onclick="sideMenuGo('raise')"><span class="rsm-icon">🎫</span>Raise Ticket</div>
   <div class="rsm-item" onclick="sideMenuGo('home')"><span class="rsm-icon">📋</span>My Tickets</div>
   <div class="rsm-item" onclick="sideMenuGo('help')"><span class="rsm-icon">❓</span>Quick Help</div>
+  <div class="rsm-item" onclick="sideMenuGo('reports')"><span class="rsm-icon">📊</span>Report</div>
   <div class="rsm-item" onclick="sideMenuGo('profile')"><span class="rsm-icon">👤</span>Profile</div>
+</div>
+<div id="reportsPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
+  <button type="button" onclick="closeReports()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
+  <h2 style="margin-bottom:14px">📊 Report</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;position:relative">
+    <div style="position:relative;flex:1;min-width:100px">
+      <button type="button" id="reportOtBtn" onclick="toggleReportPanel('Ot')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Outlets ▾</button>
+      <div id="reportOtPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportOtList"></div></div>
+    </div>
+    <div style="position:relative;flex:1;min-width:100px">
+      <button type="button" id="reportCatBtn" onclick="toggleReportPanel('Cat')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Categories ▾</button>
+      <div id="reportCatPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportCatList"></div></div>
+    </div>
+    <div style="position:relative;flex:1;min-width:100px">
+      <button type="button" id="reportPriBtn" onclick="toggleReportPanel('Pri')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Priorities ▾</button>
+      <div id="reportPriPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportPriList"></div></div>
+    </div>
+  </div>
+  <button type="button" onclick="resetReportFilters()" style="background:none;border:none;color:var(--ac2);font-size:11px;text-decoration:underline;cursor:pointer;margin-bottom:14px">↺ Reset filters</button>
+  <div id="reportsBody"></div>
 </div>
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:2px">❓ Quick Help</h2>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v144R</div>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v147R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
