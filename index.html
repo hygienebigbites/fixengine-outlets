@@ -108,6 +108,8 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 @keyframes tilePulse{0%{box-shadow:0 0 0 0 var(--acg)}60%{box-shadow:0 0 0 7px rgba(124,106,240,0)}100%{box-shadow:0 0 0 2px var(--acg)}}
 @keyframes emojiPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
 .mic-eyecatch{animation:micIdleGlow 2.2s ease-in-out infinite}
+.esc-btn{background:var(--er);color:#fff;border:none;border-radius:20px;padding:9px 18px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(220,38,38,.3);display:inline-flex;align-items:center;gap:5px}
+.esc-btn:active{background:#B01818}
 .mic-eyecatch.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
 #bigMicBtn.mic-listening{background:linear-gradient(135deg,var(--er),#ff8a8a) !important;animation:micPulse 1s infinite}
 @keyframes micIdleGlow{0%,100%{box-shadow:0 2px 10px rgba(124,106,240,.5);transform:scale(1)}50%{box-shadow:0 2px 16px rgba(124,106,240,.9);transform:scale(1.08)}}
@@ -3416,7 +3418,7 @@ let workMetaH='';
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
   pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="closeTicketDetail()" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.sla?.startsWith('-')&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
@@ -3550,6 +3552,8 @@ function openTicketDetail(id){
   const fab=document.getElementById('fab');if(fab)fab.style.display='none';
   const bookings=document.getElementById('myBookingsPage');
   if(bookings)bookings.style.display='none';
+  const loginPg=document.getElementById('loginP');
+  if(loginPg)loginPg.style.display='none';
   const footer=document.getElementById('footerNav');if(footer)footer.style.display='none';
   // The old topbar's own hamburger is hidden above (it opens the unrelated attender
   // sidebar) — inject our own, so this page never leaves the user without a way back
