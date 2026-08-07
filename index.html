@@ -611,6 +611,19 @@ async function loadAttendersFromSheet(){
 
 // PHASE 5: convert an in-memory ticket into a row matching the Tickets tab headers
 function ticketToSheetRow(t){
+  const deadline=t.slaDeadline||new Date(Date.now()+(( SLAH[t.pri]||12)*3600000)).toISOString();
+  const nowIso=tsISO();
+  // A brand-new ticket never passes through setSt() (that's only for status
+  // CHANGES) — without this, SLA_Status would never get written at all for a
+  // ticket that's raised and then left untouched. A fresh ticket is essentially
+  // always within SLA at the moment of creation, so this sets that correctly
+  // from the start rather than leaving the column blank until the first update.
+  let slaStatus='';
+  const dl=new Date(deadline);
+  if(!isNaN(dl.getTime())){
+    const ct=new Date(nowIso);
+    if(!isNaN(ct.getTime()))slaStatus=ct<=dl?'Within SLA':'Out of SLA';
+  }
   return {
     Ticket_ID:t.id,
     Outlet_Code:t.out,
@@ -621,7 +634,8 @@ function ticketToSheetRow(t){
     Status:t.status,
     Raised_By:t.by||'',
     Assigned_To:t.att||'',
-    SLA_Deadline:t.slaDeadline||new Date(Date.now()+(( SLAH[t.pri]||12)*3600000)).toISOString(),
+    SLA_Deadline:deadline,
+    SLA_Status:slaStatus,
     OTP:t.otp||'',
     OTP_Revealed:t.otpRevealed?'TRUE':'FALSE',
     Needs_Visit:t.locVisit?'TRUE':'FALSE',
@@ -634,8 +648,8 @@ function ticketToSheetRow(t){
     Flag_Reason:t.flagReason||'',
     Checklist_Answers:(t.probes||[]).join('|'),
     Where:t.where||'',
-    Created_At:ts(),
-    Updated_At:ts()
+    Created_At:nowIso,
+    Updated_At:nowIso
   };
 }
 
@@ -4653,7 +4667,7 @@ let usersLoaded=true;
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:2px">❓ Quick Help</h2>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v150R</div>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v151R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
