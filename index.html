@@ -641,8 +641,18 @@ function ticketToSheetRow(t){
 
 // PHASE 5C: convert a sheet Tickets row back into an in-memory ticket object
 // PHASE 7 polish: compute a live SLA countdown string from a deadline ISO string
-function computeSLA(deadlineStr,status){
-  if(status==='closed')return '—';
+function computeSLA(deadlineStr,status,closedAtStr){
+  // Closed tickets used to always show a blank dash here, regardless of whether
+  // they closed on time or late — a countdown makes no sense once closed, but the
+  // outcome (on-time vs late) is exactly what matters and was being thrown away.
+  if(status==='closed'){
+    if(!deadlineStr||deadlineStr==='—'||!closedAtStr)return '—';
+    try{
+      const dl=new Date(deadlineStr),ct=new Date(closedAtStr);
+      if(isNaN(dl.getTime())||isNaN(ct.getTime()))return '—';
+      return ct<=dl?'✓ On-time':'✗ Late';
+    }catch(e){return '—';}
+  }
   if(!deadlineStr||deadlineStr==='—')return '—';
   try{
     const dl=new Date(deadlineStr);
@@ -664,11 +674,11 @@ function sheetRowToTicket(r){
     sub:String(r.SubCat_ID||'').trim(),
     out:String(r.Outlet_Code||'').trim(),
     pri:String(r.Priority_ID||'medium').trim(),
-    sla:computeSLA(String(r.SLA_Deadline||'—').trim(),String(r.Status||'').trim()),
+    sla:computeSLA(String(r.SLA_Deadline||'—').trim(),String(r.Status||'').trim(),String(r.Updated_At||'').trim()),
     slaDeadline:String(r.SLA_Deadline||'').trim(),
     status:status,
     att:String(r.Assigned_To||'').trim()||null,
-    hist:[{s:status,t:String(r.Updated_At||r.Created_At||ts()),n:'Loaded from sheet'}],
+    hist:[{s:status,t:fmtTs(r.Updated_At||r.Created_At)||String(r.Updated_At||r.Created_At||ts()),iso:String(r.Updated_At||'').trim(),n:'Loaded from sheet'}],
     desc:String(r.Description||'').trim(),
     otp:parseInt(r.OTP)||Math.floor(100000+Math.random()*900000),
     costs:[],                                  // Purchase_Orders wired in Phase 6
@@ -792,6 +802,16 @@ async function loadTicketHistoryFromSheet(){
 
 let USERS={};
 function ts(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})+' · '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
+function tsISO(){return new Date().toISOString();}
+function fmtTs(isoOrAny){
+  // Turns a raw ISO timestamp into the same human-readable style ts() produces,
+  // for reconstructing display-friendly history entries from a stored ISO value —
+  // falls back to showing the raw input if it isn't a parseable date at all.
+  if(!isoOrAny)return '';
+  const d=new Date(isoOrAny);
+  if(isNaN(d.getTime()))return String(isoOrAny);
+  return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})+' · '+d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+}
 
 let TKS=[
   {id:'RMT-0451',issue:'AC not cooling',cat:'Hvac',sub:'AC Not Cooling',out:'HSR01.BLR02',pri:'critical',sla:'-01:23',status:'in-progress',att:'ATT-012',hist:[{s:'raised',t:'09:30 AM',n:'By Priya'},{s:'assigned',t:'09:31 AM',n:'→ Raj Kumar'},{s:'accepted',t:'09:38 AM',n:'Accepted'},{s:'on-the-way',t:'09:40 AM',n:'On way'},{s:'reached-outlet',t:'09:50 AM',n:'Reached'},{s:'job-started',t:'09:55 AM',n:'Started'},{s:'in-progress',t:'10:25 AM',n:'Refrigerant leak'}],desc:'Temp above 35°C',otp:748392,costs:[{item:'R22 Gas',qty:1,unit:'kg',amt:1800,rate:1800,shop:'Sri Cooling',v:'qr',qrImg:true,billImg:true,payStatus:'pend'}],by:'9876543210',otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes:['Outdoor unit running?'],locVisit:true,confirmStatus:null,reopened:false},
@@ -3072,10 +3092,32 @@ function shareOTPViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t||!t.otp)re
 function setSt(id,ns,note){
   const t=TKS.find(x=>x.id===id);if(!t)return;
   t.status=ns;
-  t.hist.push({s:ns,t:ts(),n:note||SL[ns]});
+  const closeTs=ts();
+  const closeIso=tsISO();
+  // ts() is a display string ('07:11 am · 07 Aug'), not machine-parseable — the
+  // display field stays as-is (unchanged UI), but a real ISO timestamp travels
+  // alongside it specifically so date comparisons elsewhere are actually reliable.
+  t.hist.push({s:ns,t:closeTs,iso:closeIso,n:note||SL[ns]});
   if(ns==='closed'){const a=gA(t.att);if(a)a.load=Math.max(0,a.load-1)}
   R();
-  apiUpdate('Tickets','Ticket_ID',id,{Status:ns,Assigned_To:t.att||'',Updated_At:ts()});
+  const updateFields={Status:ns,Assigned_To:t.att||'',Updated_At:closeIso};
+  // Written to the sheet at every status change, not just closure — for a closed
+  // ticket this compares its actual closure time to the deadline (a permanent,
+  // final answer); for anything still open it compares right now to the deadline
+  // instead, so the sheet reflects current standing at each touch point. This isn't
+  // continuously live (nothing re-writes it between status changes), but it's
+  // refreshed every time the ticket moves, which is as current as the app can
+  // reasonably keep it without a background process.
+  if(t.slaDeadline){
+    const dl=new Date(t.slaDeadline);
+    if(!isNaN(dl.getTime())){
+      const compareAt=ns==='closed'?new Date(closeIso):new Date();
+      if(!isNaN(compareAt.getTime())){
+        updateFields.SLA_Status=compareAt<=dl?'Within SLA':'Out of SLA';
+      }
+    }
+  }
+  apiUpdate('Tickets','Ticket_ID',id,updateFields);
   writeHistory(id,ns,note||SL[ns],userName);
 }
 
@@ -3694,8 +3736,8 @@ function isClosedWithinSLA(t){
   const dl=new Date(t.slaDeadline);
   if(isNaN(dl.getTime()))return null;
   const closedEntry=(t.hist||[]).find(h=>h.s==='closed');
-  if(!closedEntry||!closedEntry.t)return null;
-  const ct=new Date(closedEntry.t);
+  if(!closedEntry||!(closedEntry.iso||closedEntry.t))return null;
+  const ct=new Date(closedEntry.iso||closedEntry.t);
   if(isNaN(ct.getTime()))return null;
   return ct<=dl;
 }
@@ -3721,8 +3763,9 @@ function computeReportMetrics(tickets){
   // an unknown-timestamp ticket shouldn't silently count as a compliance failure.
   const slaBase=closedWithinSLA+closedOutOfSLA;
   const slaPct=slaBase?Math.round((closedWithinSLA/slaBase)*100):0;
+  const avgMin=avgClosureVsSLA(closed);
   return {total,closedTotal:closed.length,closedWithinSLA,closedOutOfSLA,closedUnknown,
-    closurePct,slaPct,pendingTotal:pending.length,pendingWithinSLA,pendingOutOfSLA};
+    closurePct,slaPct,pendingTotal:pending.length,pendingWithinSLA,pendingOutOfSLA,avgMin};
 }
 
 function applyReportFilters(all){
@@ -3734,6 +3777,14 @@ function applyReportFilters(all){
   });
 }
 
+function fmtAvgMin(min){
+  if(min===null||min===undefined||isNaN(min))return '—';
+  const early=min>=0;
+  const abs=Math.round(Math.abs(min));
+  const h=Math.floor(abs/60),mm=abs%60;
+  const dur=(h?h+'h ':'')+mm+'m';
+  return early?dur+' early':dur+' late';
+}
 function renderOverallTable(m){
   return `<div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:14px;overflow:hidden">
     <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -3749,15 +3800,16 @@ function renderOverallTable(m){
         <tr style="border-top:1px solid var(--bdr)"><td style="padding:9px 10px;font-weight:700;color:var(--t)">Pending</td><td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">${m.pendingTotal}</td><td style="text-align:center;padding:9px 6px;color:var(--ok);font-weight:700">${m.pendingWithinSLA}</td><td style="text-align:center;padding:9px 6px;color:var(--er);font-weight:700">${m.pendingOutOfSLA}</td></tr>
       </tbody>
     </table>
-    <div style="display:flex;gap:16px;padding:9px 10px;background:var(--c2);font-size:11.5px;color:var(--t2)">
+    <div style="display:flex;gap:16px;padding:9px 10px;background:var(--c2);font-size:11.5px;color:var(--t2);flex-wrap:wrap">
       <span>Closure %: <b style="color:var(--t)">${m.closurePct}%</b></span>
       <span>SLA %: <b style="color:var(--t)">${m.slaPct}%</b></span>
+      <span>Avg SLA Closure: <b style="color:${m.avgMin>=0?'var(--ok)':'var(--er)'}">${fmtAvgMin(m.avgMin)}</b></span>
       ${m.closedUnknown?`<span style="color:var(--t3)">(${m.closedUnknown} undated)</span>`:''}
     </div>
   </div>`;
 }
 
-function sumMetrics(list){
+function sumMetrics(list,allTicketsForAvg){
   // Combines several already-computed metric objects into one Total row — summed
   // directly from the same per-group numbers shown in the rows above, so the Total
   // is guaranteed to match what's actually displayed, not a separate recomputation
@@ -3772,6 +3824,10 @@ function sumMetrics(list){
   s.closurePct=s.total?Math.round((s.closedTotal/s.total)*100):0;
   const slaBase=s.closedWithinSLA+s.closedOutOfSLA;
   s.slaPct=slaBase?Math.round((s.closedWithinSLA/slaBase)*100):0;
+  // avgMin can't be averaged from the per-row averages (unweighted, would skew
+  // toward groups with fewer tickets) — recompute directly from the full combined
+  // ticket set so it's correctly weighted, same as every other Total figure here.
+  s.avgMin=allTicketsForAvg?avgClosureVsSLA(allTicketsForAvg.filter(t=>t.status==='closed')):null;
   return s;
 }
 
@@ -3784,6 +3840,7 @@ function renderMetricRow(label,m,opts){
     <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.closurePct}%</td>
     <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.slaPct}%</td>
     <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.pendingTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.pendingWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.pendingOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
+    <td style="text-align:center;padding:8px 4px;color:${m.avgMin>=0?'var(--ok)':m.avgMin<0?'var(--er)':'var(--t)'};white-space:nowrap">${fmtAvgMin(m.avgMin)}</td>
   </tr>`;
 }
 
@@ -3802,7 +3859,7 @@ function renderBreakdownTable(title,rows,totalMetrics){
   const totalRow=totalMetrics?renderMetricRow('Total',totalMetrics,{totalRow:true}):'';
   return `<div style="font-weight:800;font-size:13px;color:var(--t);margin:14px 0 6px">${title}</div>
   <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:10px;overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:480px">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:560px">
       <thead><tr style="background:var(--c2)">
         <th style="text-align:left;padding:8px 10px;font-weight:800;color:var(--t)"></th>
         <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Created</th>
@@ -3810,6 +3867,7 @@ function renderBreakdownTable(title,rows,totalMetrics){
         <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Closure%</th>
         <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">SLA%</th>
         <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Pending (SLA/Out)</th>
+        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t);white-space:nowrap">Avg SLA</th>
       </tr></thead>
       <tbody>${body}${totalRow}</tbody>
     </table>
@@ -3842,7 +3900,7 @@ function renderReports(){
   const catMetricsList=allCatIds.map(cid=>computeReportMetrics(byCat[cid]||[]));
   const catRows=allCatIds.map((cid,i)=>({label:catLabel(cid),m:catMetricsList[i]}))
     .sort((a,b)=>a.label.localeCompare(b.label));
-  html+=renderBreakdownTable('By Category',catRows,sumMetrics(catMetricsList));
+  html+=renderBreakdownTable('By Category',catRows,sumMetrics(catMetricsList,filtered));
 
   // By Priority — same union-safety, plus each row expands to show its own
   // category breakdown for extra clarity without cluttering the default view.
@@ -3858,7 +3916,7 @@ function renderReports(){
       .map(cid=>({label:catLabel(cid),m:computeReportMetrics(byCatWithinPri[cid])}));
     return {label:priLabel[pid]||pid,m:priMetricsList[i],subId:'priSub_'+pid,subRows};
   });
-  html+=renderBreakdownTable('By Priority',priRows,sumMetrics(priMetricsList));
+  html+=renderBreakdownTable('By Priority',priRows,sumMetrics(priMetricsList,filtered));
 
   body.innerHTML=html;
 }
@@ -4065,8 +4123,8 @@ function avgClosureVsSLA(closedTickets){
     const dl=new Date(t.slaDeadline);
     if(isNaN(dl.getTime()))return;
     const closedEntry=(t.hist||[]).find(h=>h.s==='closed')||(t.hist||[])[(t.hist||[]).length-1];
-    if(!closedEntry||!closedEntry.t)return;
-    const ct=new Date(closedEntry.t);
+    if(!closedEntry||!(closedEntry.iso||closedEntry.t))return;
+    const ct=new Date(closedEntry.iso||closedEntry.t);
     if(isNaN(ct.getTime()))return;
     diffsMin.push((dl-ct)/60000); // positive = closed before deadline (within SLA)
   });
@@ -4595,7 +4653,7 @@ let usersLoaded=true;
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:2px">❓ Quick Help</h2>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v147R</div>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v150R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
