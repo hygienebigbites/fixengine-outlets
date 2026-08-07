@@ -3216,14 +3216,33 @@ function resetF(){['fSt','fPr','fCt','fOt'].forEach(x=>{const e=document.getElem
 function escalate(id){
   const t=TKS.find(x=>x.id===id);
   if(!t)return;
-  t.hist.push({s:t.status,t:ts(),n:'⚠ ESCALATED by '+userName});
+  t.escalationCount=(t.escalationCount||0)+1;
+  t.hist.push({s:t.status,t:ts(),n:'⚠ ESCALATED by '+userName+' (#'+t.escalationCount+')'});
   R();
   nf('Escalated','R&M notified','warn');
+  // Refresh the detail view now shown so the button's count updates immediately —
+  // R() above only refreshes the dashboard/list, not this page.
+  if(document.getElementById('pg-detail')?.classList.contains('on'))openTicketDetail(id);
   // Notify the escalation contact directly on WhatsApp with the full picture — opens
   // with the message pre-drafted; the person still taps Send themselves inside WhatsApp.
   const attender=(typeof ATTS!=='undefined')?ATTS.find(a=>a.id===t.att):null;
   const attenderName=attender?attender.name:'Not yet assigned';
   const deadlineText=t.slaDeadline?new Date(t.slaDeadline).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}):'Not set';
+  // A dedicated, queryable record of every escalation across all tickets — the
+  // in-ticket history log alone isn't easy to scan for patterns across the outlet.
+  try{
+    apiAppend('Escalation_Log',{
+      Ticket_ID:t.id,
+      Issue:t.sub||'',
+      SLA_Deadline:deadlineText,
+      Attender:attenderName,
+      Description:t.desc||'',
+      Escalation_Number:t.escalationCount,
+      Outlet:t.out||'',
+      Escalated_By:userName||'',
+      Logged_At:ts()
+    });
+  }catch(e){/* logging must never block the actual escalation */}
   const msg='\u26a0\ufe0f *Ticket Escalated*\n'
     +'Ticket ID: '+t.id+'\n'
     +'Issue: '+(t.sub||'')+'\n'
@@ -3418,7 +3437,7 @@ let workMetaH='';
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
   pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="closeTicketDetail()" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate</button></div>':''}</div>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate'+(t.escalationCount?' - '+t.escalationCount:'')+'</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
@@ -4298,7 +4317,8 @@ let usersLoaded=true;
 </div>
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
-  <h2 style="margin-bottom:16px">❓ Quick Help</h2>
+  <h2 style="margin-bottom:2px">❓ Quick Help</h2>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v144R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
