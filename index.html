@@ -1332,7 +1332,7 @@ function pickTicketType(opt){
   if(!opt)return; // placeholder re-selected — nothing to reveal yet
   // "New Requirement"/"Replacement" aren't describing a problem — they're a request
   // for items, so they get their own dedicated form instead of the describe/speak flow.
-  if(opt==='New Requirement'||opt==='Replacement'){
+  if(opt==='New Requirement'){
     if(form){
       document.getElementById('consumablesRows').innerHTML='';
       addConsumableRow();
@@ -3211,7 +3211,25 @@ function rList(){const el=document.getElementById('tCards');if(!el)return;let f=
 
   el.innerHTML=f.length?f.map(t=>renderTcard(t)).join(''):'<div style="text-align:center;color:var(--t3);padding:20px;font-size:11px">No tickets match</div>'}
 function resetF(){['fSt','fPr','fCt','fOt'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});selectedOutlets=role==='requester'&&userOutlet?[userOutlet]:[];updateOutletBtn();rList()}
-function escalate(id){const t=TKS.find(x=>x.id===id);if(t){t.hist.push({s:t.status,t:ts(),n:'⚠ ESCALATED by '+userName});R();nf('Escalated','R&M notified','warn')}}
+function escalate(id){
+  const t=TKS.find(x=>x.id===id);
+  if(!t)return;
+  t.hist.push({s:t.status,t:ts(),n:'⚠ ESCALATED by '+userName});
+  R();
+  nf('Escalated','R&M notified','warn');
+  // Notify the escalation contact directly on WhatsApp with the full picture — opens
+  // with the message pre-drafted; the person still taps Send themselves inside WhatsApp.
+  const attender=(typeof ATTS!=='undefined')?ATTS.find(a=>a.id===t.att):null;
+  const attenderName=attender?attender.name:'Not yet assigned';
+  const deadlineText=t.slaDeadline?new Date(t.slaDeadline).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}):'Not set';
+  const msg='\u26a0\ufe0f *Ticket Escalated*\n'
+    +'Ticket ID: '+t.id+'\n'
+    +'Issue: '+(t.sub||'')+'\n'
+    +'Ticket Closure Time (SLA): '+deadlineText+'\n'
+    +'Attender: '+attenderName+'\n'
+    +'Description: '+(t.desc||'');
+  window.open(generateWhatsAppLink('919986858788',msg),'_blank');
+}
 
 // ATTENDER DASHBOARD
 
