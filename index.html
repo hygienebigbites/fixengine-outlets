@@ -918,6 +918,8 @@ const VOICE_ALIASES={
   // acoustic mishears (a different real word entirely, not just a spelling variant):
   'when mary':'bain marie','wen mari':'bain marie','ven mari':'bain marie','van mari':'bain marie',
   'when marie':'bain marie','wen marie':'bain marie',
+  'behan meri':'bain marie','behan mary':'bain marie','behan marie':'bain marie',
+  'bhen meri':'bain marie','bhen mary':'bain marie','ben meri':'bain marie',
 
   // ══ OIL FRYER ══
   'oil fry':'deep fryer','oil fryer':'deep fryer','oil fri':'deep fryer',
@@ -1813,6 +1815,22 @@ function ensureGeneralCategory(){
 }
 
 // Log a phrase the system could not map, so the Keywords tab can be grown over time.
+function logSearchOutcome(heard,resolved,matchedSub,method){
+  // A full record of every search — not just failures — so patterns like a
+  // consistently-misheard term show up even when the app eventually still
+  // finds the right match via a lower-ranked alternative or a retry.
+  try{
+    apiAppend('Search_Log',{
+      Heard_Text:heard||'',
+      Resolved_Query:resolved||'',
+      Matched_To:matchedSub||'NO MATCH',
+      Method:method||'',
+      Outlet:(document.getElementById('lOut')?.value)||'',
+      Mobile:(document.getElementById('lPh')?.value||'').replace(/\D/g,'').slice(-10),
+      Logged_At:ts()
+    });
+  }catch(e){/* logging must never block the actual flow */}
+}
 function logUnmatched(q,action){
   if(!q)return;
   const lo=document.getElementById('lOut');
@@ -2569,23 +2587,39 @@ let subSearchSelected={cat:'',sub:''};
 let autoSuggestPending=null;
 let autoSuggestTimer=null;
 
-// Typing only manages the ✕ button and clears any stale result from a previous search —
-// it does NOT search. The user finishes their whole thought, then taps 🔍 Find (or hits
-// Enter) when ready. This matches how voice search already behaves: results only appear
-// once the user is done, never mid-thought.
-function onSubSearchAuto(){
-  const q=document.getElementById('subSearch').value.trim();
-  const bar=document.getElementById('autoSuggestBar');
-  const res=document.getElementById('subSearchResults');
-  const btn=document.getElementById('srchClearBtn');
-  const findBtn=document.getElementById('findBtn');
-  if(btn)btn.style.display=q?'block':'none';
+// Typing only manages the ✕ button and clears any stale result from a previous search —
+
+// it does NOT search. The user finishes their whole thought, then taps 🔍 Find (or hits
+
+// Enter) when ready. This matches how voice search already behaves: results only appear
+
+// once the user is done, never mid-thought.
+
+function onSubSearchAuto(){
+
+  const q=document.getElementById('subSearch').value.trim();
+
+  const bar=document.getElementById('autoSuggestBar');
+
+  const res=document.getElementById('subSearchResults');
+
+  const btn=document.getElementById('srchClearBtn');
+
+  const findBtn=document.getElementById('findBtn');
+
+  if(btn)btn.style.display=q?'block':'none';
+
   if(findBtn)findBtn.style.display=q?'block':'none';
-  showVoiceRetry(false);
-  bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();
-  if(!q)closeCatTile();
-}
-// Explicit search — runs only when the user taps Find or presses Enter.
+  showVoiceRetry(false);
+
+  bar.style.display='none';res.style.display='none';autoSuggestPending=null;clearCatHighlight();
+
+  if(!q)closeCatTile();
+
+}
+
+// Explicit search — runs only when the user taps Find or presses Enter.
+
 const MIN_QUERY_WORDS=2,MIN_QUERY_CHARS=6;
 // Known single-word problems that are already complete on their own — not blocked.
 const SINGLE_WORD_OK=new Set(['gas','leak','leakage','fire','smoke','shock','flood']);
@@ -2605,19 +2639,35 @@ function runFind(){
   const q=document.getElementById('subSearch').value.trim();
   const res=document.getElementById('subSearchResults');
   if(!q)return;
-  if(tooShort(q)){res.style.display='block';res.innerHTML=shortInputPanel();clearCatHighlight();return;}
-  const matches=fuzzySearchSubs(q);
-  if(!matches.length){
-    res.style.display='block';
-    res.innerHTML=noMatchPanel();
-    clearCatHighlight();
-    return;
-  }
-  highlightCat(matches[0].catId,q);
-  renderSuggestList(matches);
-}
-function onSearchKeydown(e){
-  if(e.key==='Enter'){e.preventDefault();runFind();}
+  if(tooShort(q)){logSearchOutcome(q,q,'TOO SHORT','typed');res.style.display='block';res.innerHTML=shortInputPanel();clearCatHighlight();return;}
+  const matches=fuzzySearchSubs(q);
+
+  if(!matches.length){
+
+    logSearchOutcome(q,q,null,'typed');
+
+    res.style.display='block';
+
+    res.innerHTML=noMatchPanel();
+
+    clearCatHighlight();
+
+    return;
+
+  }
+
+  logSearchOutcome(q,q,matches[0].sub,'typed');
+
+  highlightCat(matches[0].catId,q);
+
+  renderSuggestList(matches);
+
+}
+
+function onSearchKeydown(e){
+
+  if(e.key==='Enter'){e.preventDefault();runFind();}
+
 }
 
 function confirmSuggest(){
@@ -2830,6 +2880,7 @@ function voiceSearch(){
     // normal flow, which already has its own retry/no-match handling built in.
     revealNormalFlow(false);
     if(tooShort(txt)){
+      logSearchOutcome(rawTop,txt,'TOO SHORT','voice');
       const resEl=document.getElementById('subSearchResults');
       if(resEl){resEl.style.display='block';resEl.innerHTML=shortInputPanel();}
       showVoiceRetry(true);
@@ -2838,6 +2889,7 @@ function voiceSearch(){
       return;
     }
     if(!bestMatches||!bestMatches.length){
+      logSearchOutcome(rawTop,txt,null,'voice');
       voiceNoMatchCount++;
       const resEl=document.getElementById('subSearchResults');
       if(voiceNoMatchCount<3){
@@ -2853,6 +2905,7 @@ function voiceSearch(){
       document.getElementById('autoSuggestBar').style.display='none';
       nf('Heard','"'+txt+'"','warn');
     } else {
+      logSearchOutcome(rawTop,txt,bestMatches[0].sub,'voice');
       voiceNoMatchCount=0;
       document.getElementById('autoSuggestBar').style.display='none';
       highlightCat(bestMatches[0].catId,txt);
