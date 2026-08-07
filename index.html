@@ -662,8 +662,8 @@ function computeSLA(deadlineStr,status,closedAtStr){
   if(status==='closed'){
     if(!deadlineStr||deadlineStr==='—'||!closedAtStr)return '—';
     try{
-      const dl=new Date(deadlineStr),ct=new Date(closedAtStr);
-      if(isNaN(dl.getTime())||isNaN(ct.getTime()))return '—';
+      const dl=new Date(deadlineStr),ct=parseAnyTimestamp(closedAtStr);
+      if(isNaN(dl.getTime())||!ct)return '—';
       return ct<=dl?'✓ On-time':'✗ Late';
     }catch(e){return '—';}
   }
@@ -817,6 +817,33 @@ async function loadTicketHistoryFromSheet(){
 let USERS={};
 function ts(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})+' · '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
 function tsISO(){return new Date().toISOString();}
+function parseOldTsFormat(str,assumedYear){
+  // ts() used to produce a display string like "08:19 am · 07 Aug" — no year, and not
+  // machine-parseable via new Date(). Tickets closed before the ISO-timestamp fix have
+  // this baked permanently into their stored history. This reconstructs a real date from
+  // that specific, known pattern so those older tickets can still be evaluated, rather
+  // than being permanently stuck showing as undetermined.
+  if(!str)return null;
+  const m=String(str).trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm)\s*·\s*(\d{1,2})\s+([A-Za-z]+)$/i);
+  if(!m)return null;
+  const[,hh,mm,ampm,dd,monStr]=m;
+  const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const monIdx=months[monStr.toLowerCase().slice(0,3)];
+  if(monIdx===undefined)return null;
+  let hour=parseInt(hh,10);
+  if(hour<1||hour>12)return null;
+  if(ampm.toLowerCase()==="pm"&&hour!==12)hour+=12;
+  if(ampm.toLowerCase()==="am"&&hour===12)hour=0;
+  const year=assumedYear||new Date().getFullYear();
+  const d=new Date(year,monIdx,parseInt(dd,10),hour,parseInt(mm,10));
+  return isNaN(d.getTime())?null:d;
+}
+function parseAnyTimestamp(str){
+  if(!str)return null;
+  const direct=new Date(str);
+  if(!isNaN(direct.getTime()))return direct;
+  return parseOldTsFormat(str);
+}
 function fmtTs(isoOrAny){
   // Turns a raw ISO timestamp into the same human-readable style ts() produces,
   // for reconstructing display-friendly history entries from a stored ISO value —
@@ -1455,8 +1482,8 @@ function submitConsumablesRequest(){
   // Store item details within the Description field, as requested — a clear numbered
   // list an attender/purchaser can act on directly, no separate columns needed.
   const desc=items.map((it,i)=>(i+1)+'. '+it.name+' \u2014 Qty: '+it.qty).join('\n');
-  ensureGeneralCategory();
-  selectSubFromSearch('other','General Issue',CATS.other.label,CATS.other.pri||'medium');
+  ensureEquipmentNewCategory();
+  selectSubFromSearch('equipment_new','Others - New - Equipment',CATS.equipment_new.label,CATS.equipment_new.pri||'medium');
   const tD=document.getElementById('tD');
   if(tD)tD.value=desc;
   typedProblem=desc;
@@ -1848,6 +1875,14 @@ async function loadKeywordsFromSheet(){
 function ensureGeneralCategory(){
   if(!CATS.other)CATS.other={label:'📌 Other',subs:['General Issue'],pri:'medium',sla:12};
   else if(!CATS.other.subs.includes('General Issue'))CATS.other.subs.push('General Issue');
+}
+function ensureEquipmentNewCategory(){
+  // "New Requirement" tickets go here specifically, not the generic Other/General
+  // Issue bucket — this only creates a fallback entry if the real one isn't already
+  // loaded from the sheet (e.g. mismatched name, or category disabled), so the ticket
+  // can still be raised successfully either way.
+  if(!CATS.equipment_new)CATS.equipment_new={label:'📦 Equipment',subs:['Others - New - Equipment'],pri:'medium',sla:12};
+  else if(!CATS.equipment_new.subs.includes('Others - New - Equipment'))CATS.equipment_new.subs.push('Others - New - Equipment');
 }
 
 // Log a phrase the system could not map, so the Keywords tab can be grown over time.
@@ -3741,7 +3776,44 @@ function closeSideMenu(){
   document.getElementById('reqSideMenuOverlay').classList.remove('show');
 }
 // ===== REPORTS =====
-let reportFilters={outlets:[],categories:[],priorities:[]};
+let reportFilters={outlets:[],categories:[],priorities:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+
+function getWeekRange(offsetWeeks,refDate){
+  // Monday-to-Sunday, as specified — not the Sun-Sat convention some locales default to.
+  const now=refDate||new Date();
+  const day=now.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const diffToMonday=day===0?6:day-1;
+  const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-diffToMonday+offsetWeeks*7,0,0,0,0);
+  const sunday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+6,23,59,59,999);
+  return{start:monday,end:sunday};
+}
+function getMonthRange(offsetMonths,refDate){
+  const now=refDate||new Date();
+  const start=new Date(now.getFullYear(),now.getMonth()+offsetMonths,1,0,0,0,0);
+  const end=new Date(now.getFullYear(),now.getMonth()+offsetMonths+1,0,23,59,59,999);
+  return{start,end};
+}
+function getReportDateRange(){
+  const mode=reportFilters.dateMode;
+  if(mode==='thisWeek')return getWeekRange(0);
+  if(mode==='lastWeek')return getWeekRange(-1);
+  if(mode==='thisMonth')return getMonthRange(0);
+  if(mode==='lastMonth')return getMonthRange(-1);
+  if(mode==='custom'&&reportFilters.dateStart&&reportFilters.dateEnd){
+    const start=new Date(reportFilters.dateStart+'T00:00:00');
+    const end=new Date(reportFilters.dateEnd+'T23:59:59');
+    if(!isNaN(start.getTime())&&!isNaN(end.getTime()))return{start,end};
+  }
+  return null; // 'all' or incomplete custom range — no date filtering applied
+}
+function getTicketCreatedDate(t){
+  // The ticket's own "raised" history entry is the closest thing to a dedicated
+  // creation timestamp — reuses the same old/new-format-tolerant parser as SLA
+  // calculations, so this works consistently for both old and new tickets too.
+  const raisedEntry=(t.hist||[]).find(h=>h.s==='raised')||(t.hist||[])[0];
+  if(!raisedEntry)return null;
+  return parseAnyTimestamp(raisedEntry.iso||raisedEntry.t);
+}
 
 function isClosedWithinSLA(t){
   // null = can't determine (missing/unparseable timestamps) — kept separate from
@@ -3751,8 +3823,8 @@ function isClosedWithinSLA(t){
   if(isNaN(dl.getTime()))return null;
   const closedEntry=(t.hist||[]).find(h=>h.s==='closed');
   if(!closedEntry||!(closedEntry.iso||closedEntry.t))return null;
-  const ct=new Date(closedEntry.iso||closedEntry.t);
-  if(isNaN(ct.getTime()))return null;
+  const ct=parseAnyTimestamp(closedEntry.iso||closedEntry.t);
+  if(!ct)return null;
   return ct<=dl;
 }
 
@@ -3782,11 +3854,38 @@ function computeReportMetrics(tickets){
     closurePct,slaPct,pendingTotal:pending.length,pendingWithinSLA,pendingOutOfSLA,avgMin};
 }
 
+function ticketSearchHaystack(t){
+  // Pulls together everything a free-text search should be able to match against —
+  // built once per ticket, not recomputed per keystroke, since the filter runs on
+  // every character typed.
+  if(t.__haystack)return t.__haystack;
+  const attender=(typeof ATTS!=='undefined')?ATTS.find(a=>a.id===t.att):null;
+  const catLabel=(CATS[t.cat]&&CATS[t.cat].label)?CATS[t.cat].label:(t.cat||'');
+  const created=getTicketCreatedDate(t);
+  const dateText=created?created.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+  // The requester's name isn't stored as its own field — only their phone number is
+  // (t.by) — but the ticket's own "raised" note is written as "By <name>..." at
+  // creation, so pulling the name back out of that gets a real, searchable name
+  // without needing a schema change.
+  const raisedNote=((t.hist||[]).find(h=>h.s==='raised')||{}).n||'';
+  const nameMatch=raisedNote.match(/^By (.+?)(?:\s*\u00b7|$)/);
+  const requesterName=nameMatch?nameMatch[1]:'';
+  t.__haystack=[t.id,t.out,catLabel,t.pri,attender?attender.name:'',t.by,requesterName,dateText,t.sub,t.desc]
+    .filter(Boolean).join(' · ').toLowerCase();
+  return t.__haystack;
+}
 function applyReportFilters(all){
+  const dateRange=getReportDateRange();
+  const q=(reportFilters.search||'').trim().toLowerCase();
   return all.filter(t=>{
     if(reportFilters.outlets.length&&!reportFilters.outlets.includes(t.out))return false;
     if(reportFilters.categories.length&&!reportFilters.categories.includes(t.cat))return false;
     if(reportFilters.priorities.length&&!reportFilters.priorities.includes(t.pri))return false;
+    if(dateRange){
+      const created=getTicketCreatedDate(t);
+      if(!created||created<dateRange.start||created>dateRange.end)return false;
+    }
+    if(q&&!ticketSearchHaystack(t).includes(q))return false;
     return true;
   });
 }
@@ -3912,8 +4011,16 @@ function renderReports(){
   filtered.forEach(t=>{const k=t.cat||'Uncategorized';(byCat[k]=byCat[k]||[]).push(t);});
   const allCatIds=[...new Set([...Object.keys(CATS),...Object.keys(byCat)])];
   const catMetricsList=allCatIds.map(cid=>computeReportMetrics(byCat[cid]||[]));
-  const catRows=allCatIds.map((cid,i)=>({label:catLabel(cid),m:catMetricsList[i]}))
-    .sort((a,b)=>a.label.localeCompare(b.label));
+  const catRows=allCatIds.map((cid,i)=>{
+    // Same expand-to-see-the-next-level-down pattern already used for Priority —
+    // here it's sub-category within category, collapsed by default.
+    const catTickets=byCat[cid]||[];
+    const bySubWithinCat={};
+    catTickets.forEach(t=>{const k=t.sub||'Unspecified';(bySubWithinCat[k]=bySubWithinCat[k]||[]).push(t);});
+    const subRows=Object.keys(bySubWithinCat).sort((a,b)=>a.localeCompare(b))
+      .map(sub=>({label:sub,m:computeReportMetrics(bySubWithinCat[sub])}));
+    return{label:catLabel(cid),m:catMetricsList[i],subId:'catSub_'+cid.replace(/[^A-Za-z0-9]/g,'_'),subRows};
+  }).sort((a,b)=>a.label.localeCompare(b.label));
   html+=renderBreakdownTable('By Category',catRows,sumMetrics(catMetricsList,filtered));
 
   // By Priority — same union-safety, plus each row expands to show its own
@@ -3993,8 +4100,35 @@ function updateReportFilterButtons(){
   setBtn('reportCatBtn',reportFilters.categories,'All Categories \u25be');
   setBtn('reportPriBtn',reportFilters.priorities,'All Priorities \u25be');
 }
+function onReportSearchInput(){
+  reportFilters.search=document.getElementById('reportSearch').value;
+  renderReports();
+}
+function setReportDateMode(mode){
+  reportFilters.dateMode=mode;
+  document.querySelectorAll('.rpt-date-pill').forEach(btn=>{
+    const active=btn.dataset.mode===mode;
+    btn.style.background=active?'var(--ac)':'var(--c2)';
+    btn.style.color=active?'#fff':'var(--t2)';
+  });
+  const customRow=document.getElementById('reportCustomDateRow');
+  if(customRow)customRow.style.display=mode==='custom'?'flex':'none';
+  if(mode!=='custom')renderReports();
+  // For custom, wait until both dates are actually picked (onReportCustomDateChange
+  // handles that) rather than re-rendering against an incomplete range immediately.
+}
+function onReportCustomDateChange(){
+  reportFilters.dateStart=document.getElementById('reportDateStart').value;
+  reportFilters.dateEnd=document.getElementById('reportDateEnd').value;
+  if(reportFilters.dateStart&&reportFilters.dateEnd)renderReports();
+}
 function resetReportFilters(){
-  reportFilters={outlets:[],categories:[],priorities:[]};
+  reportFilters={outlets:[],categories:[],priorities:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+  const searchEl=document.getElementById('reportSearch');if(searchEl)searchEl.value='';
+  const startEl=document.getElementById('reportDateStart');if(startEl)startEl.value='';
+  const endEl=document.getElementById('reportDateEnd');if(endEl)endEl.value='';
+  const customRow=document.getElementById('reportCustomDateRow');if(customRow)customRow.style.display='none';
+  setReportDateMode('all');
   updateReportFilterButtons();
   renderReports();
 }
@@ -4138,8 +4272,8 @@ function avgClosureVsSLA(closedTickets){
     if(isNaN(dl.getTime()))return;
     const closedEntry=(t.hist||[]).find(h=>h.s==='closed')||(t.hist||[])[(t.hist||[]).length-1];
     if(!closedEntry||!(closedEntry.iso||closedEntry.t))return;
-    const ct=new Date(closedEntry.iso||closedEntry.t);
-    if(isNaN(ct.getTime()))return;
+    const ct=parseAnyTimestamp(closedEntry.iso||closedEntry.t);
+    if(!ct)return;
     diffsMin.push((dl-ct)/60000); // positive = closed before deadline (within SLA)
   });
   if(!diffsMin.length)return null;
@@ -4647,6 +4781,19 @@ let usersLoaded=true;
 <div id="reportsPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeReports()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:14px">📊 Report</h2>
+  <input type="text" id="reportSearch" class="fc" placeholder="🔍 Search date, attender, requester, category, outlet..." oninput="onReportSearchInput()" style="width:100%;margin-bottom:8px;box-sizing:border-box">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="reportDatePills">
+    <button type="button" onclick="setReportDateMode('all')" data-mode="all" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--ac);color:#fff;cursor:pointer">All Time</button>
+    <button type="button" onclick="setReportDateMode('thisWeek')" data-mode="thisWeek" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">This Week</button>
+    <button type="button" onclick="setReportDateMode('lastWeek')" data-mode="lastWeek" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">Last Week</button>
+    <button type="button" onclick="setReportDateMode('thisMonth')" data-mode="thisMonth" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">This Month</button>
+    <button type="button" onclick="setReportDateMode('lastMonth')" data-mode="lastMonth" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">Last Month</button>
+    <button type="button" onclick="setReportDateMode('custom')" data-mode="custom" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">Custom</button>
+  </div>
+  <div id="reportCustomDateRow" style="display:none;gap:8px;margin-bottom:8px">
+    <input type="date" id="reportDateStart" class="fc" onchange="onReportCustomDateChange()" style="flex:1">
+    <input type="date" id="reportDateEnd" class="fc" onchange="onReportCustomDateChange()" style="flex:1">
+  </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;position:relative">
     <div style="position:relative;flex:1;min-width:100px">
       <button type="button" id="reportOtBtn" onclick="toggleReportPanel('Ot')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Outlets ▾</button>
@@ -4667,7 +4814,7 @@ let usersLoaded=true;
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:2px">❓ Quick Help</h2>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v151R</div>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v155R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
