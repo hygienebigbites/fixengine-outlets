@@ -138,6 +138,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 #tourBall{position:fixed;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,rgba(124,106,240,.9),rgba(124,106,240,.3));box-shadow:0 0 0 6px rgba(124,106,240,.25);animation:tourPulse 1.2s ease-in-out infinite;pointer-events:none;z-index:501;opacity:0}
 @keyframes tourPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 @keyframes bigMicPulse{0%,100%{transform:scale(1);box-shadow:0 6px 22px rgba(124,106,240,.45)}50%{transform:scale(1.06);box-shadow:0 8px 30px rgba(124,106,240,.6)}}
+@keyframes chromeMicPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.12);opacity:.85}}
 #tourBubble{position:fixed;background:rgba(20,20,43,.92);backdrop-filter:blur(2px);color:#fff;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:12px;pointer-events:none;z-index:501;max-width:220px;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0}
 #tourBubble:after{content:"";position:absolute;width:10px;height:10px;background:var(--t);transform:rotate(45deg)}
 #tourSkip{position:fixed;bottom:calc(90px + var(--sb));left:50%;transform:translateX(-50%);background:var(--c1);border:1px solid var(--bdr);border-radius:20px;padding:8px 16px;font-size:11.5px;font-weight:700;color:var(--t2);z-index:501;pointer-events:none;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12);opacity:0}
@@ -199,11 +200,18 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div id="loadMsgSub" style="font-size:11px;color:var(--t3);margin-top:2px">Meanwhile, tap 🎤 and describe your issue!</div>
     <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:6px;cursor:pointer">Skip tips</div>
   </div>
-<div id="bigMicScreen" style="display:none;text-align:center;padding:36px 16px 20px">
-  <button type="button" id="bigMicBtn" onclick="voiceSearch()" style="width:92px;height:92px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 6px 22px rgba(124,106,240,.45);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
-  <div id="bigMicStatus" style="font-size:15px;font-weight:800;color:var(--t);margin-top:18px">Tap and speak your issue</div>
-  <div style="font-size:12.5px;color:var(--t2);margin-top:4px">e.g. “bain marie coil not heating”</div>
-  <button type="button" onclick="revealNormalFlow(true)" style="background:none;border:none;color:var(--ac2);font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;margin-top:20px">⌨️ Or type it instead</button>
+<div id="bigMicScreen" style="display:none;text-align:center;padding:18px 16px 4px">
+  <button type="button" id="bigMicBtn" onclick="voiceSearch()" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(124,106,240,.4);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
+  <div id="bigMicStatus" style="font-size:12px;font-weight:700;color:var(--t2);margin-top:10px">Tap the mic to speak your issue</div>
+</div>
+<div id="micListeningOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:400;align-items:flex-start;justify-content:center">
+  <div style="background:#fff;border-radius:12px;margin-top:64px;padding:18px 24px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;min-width:220px;font-family:Roboto,Arial,sans-serif">
+    <div style="width:48px;height:48px;border-radius:50%;background:#EA4335;display:flex;align-items:center;justify-content:center;animation:chromeMicPulse 1.4s ease-in-out infinite;margin-bottom:12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M17 11a1 1 0 0 0-2 0 3 3 0 0 1-6 0 1 1 0 0 0-2 0 5 5 0 0 0 4 4.9V18H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.1a5 5 0 0 0 4-4.9z"/></svg>
+    </div>
+    <div style="font-size:14px;color:#202124;font-weight:400;text-align:center;line-height:1.4">Fix Engine<br>wants to use your microphone</div>
+    <div id="micListeningStatus" style="font-size:12px;color:#5f6368;margin-top:8px">Listening…</div>
+  </div>
 </div>
 <div id="consumablesForm" style="display:none;padding:16px 2px 6px">
   <h3 style="margin-bottom:2px">🧾 Request Items</h3>
@@ -221,7 +229,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
   </div>
   <div class="fg">
-  <div id="searchBoxWrap" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--c1);border-top:1px solid var(--bdr);padding:8px 20px calc(8px + var(--sb));z-index:190;box-shadow:0 -3px 14px rgba(0,0,0,.08)">
+  <div id="searchBoxWrap" style="display:none;padding:4px 0 8px">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-bottom:4px">
       <span style="font-size:9px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;flex:1;text-align:left">🔍 Describe the problem *</span>
       <button type="button" id="srchClearBtn" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;display:none;padding:2px">✕</button>
@@ -233,7 +241,6 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
         <textarea id="subSearch" rows="1" placeholder="Use the mic, or type your issue here..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:24px;outline:none;color:var(--t);font-size:16px;resize:none;padding:13px 48px 13px 18px;font-family:inherit;min-height:52px;max-height:90px;box-sizing:border-box"></textarea>
         <button type="button" id="srchSendBtn" onclick="runFind()" title="Search" style="position:absolute;right:6px;bottom:6px;width:36px;height:36px;border-radius:50%;background:var(--ac);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">➤</button>
       </div>
-      <button type="button" id="srchMicBtn" class="mic-eyecatch" onclick="voiceSearch()" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(124,106,240,.55);flex-shrink:0">🎤</button>
     </div>
   </div>
   <button type="button" id="findBtn" onclick="runFind()" style="display:none;width:100%;margin-top:6px;background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:9px;font-size:13px;font-weight:700;cursor:pointer">🔍 Find</button>
@@ -380,8 +387,16 @@ async function apiRead(tab){
     const res=await fetch(API_URL+'?action=read&tab='+encodeURIComponent(tab));
     const json=await res.json();
     if(json&&json.ok)return json.data;
+    // Distinguishes "request reached the backend but it explicitly rejected the tab"
+    // from a network-level failure below — the response itself (error message, tab
+    // list, whatever the backend sent back) is the most direct clue for a tab-name
+    // mismatch specifically.
+    console.error('[FixEngine] apiRead("'+tab+'") — backend responded but did not return ok:true. Raw response:',json);
     return null;
-  }catch(e){return null;}
+  }catch(e){
+    console.error('[FixEngine] apiRead("'+tab+'") — request itself failed (network/CORS/URL issue), before any backend response was received:',e.message);
+    return null;
+  }
 }
 
 // PHASE 5: write a row to a sheet tab. Returns true on success, false on failure.
@@ -571,7 +586,10 @@ async function loadAttendersFromSheet(){
   const atts=await apiRead('Attenders');
   const skillRows=await apiRead('Skill_Mapping');
   const outRows=await apiRead('Attender_Outlets');
-  if(!atts)return false;
+  if(!atts){
+    console.error('[FixEngine] Attenders sheet read failed — apiRead("Attenders") returned null/empty. App will keep using placeholder attender data (e.g. "Raj Kumar") until this is fixed. Check: (1) the Attenders tab name matches exactly, (2) the Apps Script backend is deployed and reachable, (3) the tab has data rows.');
+    return false;
+  }
 
   // Group skills and outlets by Attender_ID (the two joins)
   const skillsBy={};
@@ -581,6 +599,10 @@ async function loadAttendersFromSheet(){
 
   const fresh=[];
   atts.forEach(a=>{
+    // Check the raw value BEFORE stringifying — String(undefined) produces the
+    // literal text "undefined", which is truthy and would otherwise slip through
+    // as if it were a real ID whenever a column name doesn't match what's expected.
+    if(a.Attender_ID===undefined||a.Attender_ID===null||a.Attender_ID==='')return;
     const id=String(a.Attender_ID).trim();
     if(!id)return;
     const active=(a.Is_Active===true||String(a.Is_Active).toUpperCase()==='TRUE');
@@ -605,6 +627,8 @@ async function loadAttendersFromSheet(){
     ATTS=fresh;
     // Recompute live load from current (still in-memory) tickets so assignment behaves
     ATTS.forEach(a=>{a.load=TKS.filter(t=>t.att===a.id&&t.status!=='closed').length});
+  } else {
+    console.error('[FixEngine] Attenders sheet read '+atts.length+' row(s), but every row was skipped (empty/missing Attender_ID). Check the Attenders tab\'s column header is spelled exactly \'Attender_ID\'. Raw first row for reference:', atts[0]);
   }
   return true;
 }
@@ -928,6 +952,7 @@ function showRaiseForm(){
   const fc2=document.getElementById('flagChk');if(fc2)fc2.checked=false;onFlagToggle();applyTicketTypeRules();
   resetTicketFlow();
   refreshCatDropdown();
+  if(raiseMode==='chat'){const cm=document.getElementById('chatMsgs');if(cm)cm.innerHTML='';chatUnlocked=false;checkChatUnlock();}
   const b=document.getElementById('raiseBack');if(b)b.style.display=role?'block':'none';
   document.getElementById('app').style.display='none';
   document.getElementById('loginP').style.display='flex';
@@ -948,6 +973,15 @@ function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySele
 function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('show')}
 
 function autoA(t){
+  // New Requirement / Replacement tickets are item or parts requests, not on-site
+  // repair visits — they route straight to the warehouse attender specifically,
+  // regardless of outlet coverage, rather than through the normal outlet-based rule.
+  if(t.action==='New Requirement'||t.action==='Replacement'){
+    const wh=ATTS.find(a=>a.active&&a.name&&a.name.toLowerCase()==='warehouse_pasha');
+    if(wh)return wh;
+    // If that specific person isn't found or isn't active, fall through to the
+    // normal rule below rather than leaving the ticket unassigned.
+  }
   // Assignment rule: outlet coverage only, no load limit
   let c=ATTS.filter(a=>a.active&&a.outs.includes(t.out));
   if(!c.length)return null;
@@ -1402,11 +1436,12 @@ function pickTicketType(opt){
     }
     return;
   }
-  // First real step of the form: once a type is picked, invite them to just speak the
-  // issue rather than dropping straight into the full picker — the full flow stays
-  // exactly as it already is, just deferred until there's something to search with.
+  // Mic, typing box, and categories now all show together immediately, rather than
+  // gating the rest of the form behind the mic first — the mic stays visible
+  // ("static") throughout instead of disappearing once something's been typed/spoken.
   const subSearchEl=document.getElementById('subSearch');
   if(bigMic&&subSearchEl&&!subSearchEl.value.trim())bigMic.style.display='block';
+  revealNormalFlow(false);
 }
 const CONSUMABLE_ITEMS=[
   {name:'2 Door Chiller',icon:'chiller_ic'},{name:'4 Door Chiller',icon:'chiller_ic'},{name:'Bain Marie',icon:'bain_marie'},{name:'Books',icon:'table'},{name:'Borwell',icon:'dot'},{name:'Bucket',icon:'utensil'},{name:'Bulb / Lights',icon:'bulb'},{name:'Burner',icon:'flame'},{name:'CCTV',icon:'camera'},{name:'Ceiling',icon:'wall'},{name:'Cello Tape',icon:'dot'},{name:'Chair',icon:'table'},{name:'Chest / Deep Freezer',icon:'fridge'},{name:'Chiller',icon:'chiller_ic'},{name:'Chopping Board',icon:'dot'},{name:'Cold Room',icon:'cold_room'},{name:'Compressor Oil',icon:'dot'},{name:'Computer Accessories',icon:'wifi'},{name:'Crates',icon:'table'},{name:'Cutting Board',icon:'utensil'},{name:'Deck Oven',icon:'oven'},{name:'Deep Freezer',icon:'fridge'},{name:'DG',icon:'backup_power'},{name:'Door',icon:'door'},{name:'Dust Pad',icon:'ppe'},{name:'Dust Pan',icon:'ppe'},{name:'Dustbin',icon:'ppe'},{name:'Duster',icon:'ppe'},{name:'DVR Box',icon:'camera'},{name:'Electrical Board',icon:'dot'},{name:'Electricity',icon:'power_panel'},{name:'Electricity Meter',icon:'meter'},{name:'Extension Box',icon:'bolt'},{name:'Fan',icon:'fan'},{name:'Fire Oil',icon:'dot'},{name:'Floor',icon:'wall'},{name:'Floor Oily',icon:'wall'},{name:'Fly Catcher',icon:'bug'},{name:'Folder File',icon:'table'},{name:'Freezer',icon:'fridge'},{name:'Fuse',icon:'bolt'},{name:'Gas',icon:'cylinder'},{name:'Gas Lighter',icon:'cylinder'},{name:'Geyser',icon:'water'},{name:'Gloves',icon:'ppe'},{name:'GN Pan',icon:'utensil'},{name:'Grinder Machine',icon:'mixer'},{name:'Handi',icon:'utensil'},{name:'Hanging Board',icon:'wall'},{name:'Induction Stove',icon:'flame'},{name:'Jug',icon:'utensil'},{name:'Key Board',icon:'wifi'},{name:'Knife',icon:'utensil'},{name:'Ladder',icon:'table'},{name:'Landline',icon:'wifi'},{name:'Lid',icon:'dot'},{name:'Lock',icon:'door'},{name:'MCB',icon:'mcb'},{name:'Micro Oven',icon:'oven'},{name:'Mixer Grinder',icon:'mixer'},{name:'Moisture Meter',icon:'meter'},{name:'Momo Steamer',icon:'cook_equip'},{name:'Motor',icon:'motor'},{name:'Mug',icon:'utensil'},{name:'Name Board',icon:'wall'},{name:'Notice Board',icon:'wall'},{name:'Oil Basket',icon:'dot'},{name:'Oil Brush',icon:'dot'},{name:'Oil Dip Tray',icon:'utensil'},{name:'Oil Fryer',icon:'cook_equip'},{name:'Oil Strainer',icon:'utensil'},{name:'Oil Tray',icon:'utensil'},{name:'Packing Machine',icon:'clean_equip'},{name:'Paining Brush',icon:'dot'},{name:'Palak Machine',icon:'cook_equip'},{name:'Panal Board',icon:'power_panel'},{name:'Paratha Lifter',icon:'cook_equip'},{name:'Pest / Rodent',icon:'bug'},{name:'Pest Control',icon:'bug'},{name:'Pillow',icon:'dot'},{name:'Plates',icon:'dot'},{name:'Plug',icon:'bolt'},{name:'Plug Point',icon:'bolt'},{name:'Power Issues',icon:'power_panel'},{name:'Printer',icon:'printer'},{name:'Pulverizer',icon:'mixer'},{name:'Rack',icon:'rack'},{name:'Rat & Cockroach',icon:'bug'},{name:'Regulator',icon:'dial'},{name:'Rice Cooker',icon:'cook_equip'},{name:'RO',icon:'water'},{name:'Scissors',icon:'scissors_ic'},{name:'Sign Board',icon:'wall'},{name:'Sink',icon:'tap'},{name:'Socket',icon:'bolt'},{name:'Spoons',icon:'utensil'},{name:'Switch',icon:'switch_brk'},{name:'Switch Board',icon:'switch_brk'},{name:'Tables',icon:'table'},{name:'Tape Dispenser',icon:'dot'},{name:'TDS Meter',icon:'meter'},{name:'Thermometer',icon:'dial'},{name:'Tiles',icon:'wall'},{name:'Toilet',icon:'toilet'},{name:'Toilet Flush Tank',icon:'toilet'},{name:'Undercounter Chiller',icon:'chiller_ic'},{name:'Visi Cooler',icon:'visi_cooler'},{name:'Wash Basin',icon:'tap'},{name:'Washing Machine',icon:'clean_equip'},{name:'Water',icon:'water'},{name:'Water Tap',icon:'tap'},{name:'Weighing Scale',icon:'weigh'},{name:'Whisk',icon:'prep_equip'},{name:'White Board',icon:'wall'},{name:'WiFi / Internet',icon:'wifi'},{name:'Wire',icon:'wire'}
@@ -1498,8 +1533,8 @@ function submitConsumablesRequest(){
 }
 function revealNormalFlow(focusInput){
   formFlowRevealed=true;
-  const bigMic=document.getElementById('bigMicScreen');
-  if(bigMic)bigMic.style.display='none';
+  // The mic is static now — it stays visible once shown, rather than being hidden
+  // here once the rest of the form appears.
   const tips=document.getElementById('tipsBanner');if(tips)tips.style.display='block';
   const content=document.getElementById('formModeContent');if(content)content.style.display='block';
   const composer=document.getElementById('searchBoxWrap');if(composer)composer.style.display='block';
@@ -2919,13 +2954,19 @@ function voiceSearch(){
   nf('\ud83c\udfa4 Get ready\u2026','','ok');
   let started=false;
   try{r.start();started=true;}catch(e){nf('Error',e.message,'warn');return;}
+  const listenOverlay=document.getElementById('micListeningOverlay');
+  const listenStatus=document.getElementById('micListeningStatus');
+  let recognitionEnded=false;
   setTimeout(()=>{
-    if(!started)return;
+    // Guards against a real race: if recognition already ended (onend/onerror already
+    // ran) before this delayed "cue the user" moment fires, showing the popup now
+    // would leave it stuck on screen with nothing left to close it.
+    if(!started||recognitionEnded)return;
     if(btn){btn.classList.add('mic-listening')}
     if(bigBtn){bigBtn.classList.add('mic-listening')}
     if(bigStatus)bigStatus.textContent='\ud83c\udfa4 Listening\u2026';
+    if(listenOverlay){listenOverlay.style.display='flex';if(listenStatus)listenStatus.textContent='Listening\u2026';}
     playReadySound();
-    nf('\ud83c\udfa4 Listening','Speak the problem now\u2026','ok');
   },350);
   r.onresult=e=>{
     const res=e.results[e.results.length-1];
@@ -2949,6 +2990,7 @@ function voiceSearch(){
     // Whatever was heard, the big-mic invitation has done its job — hand off to the
     // normal flow, which already has its own retry/no-match handling built in.
     revealNormalFlow(false);
+    if(inp){inp.scrollIntoView({behavior:'smooth',block:'center'});}
     if(tooShort(txt)){
       logSearchOutcome(rawTop,txt,'TOO SHORT','voice');
       const resEl=document.getElementById('subSearchResults');
@@ -2986,14 +3028,18 @@ function voiceSearch(){
     }
   };
   r.onend=()=>{
+    recognitionEnded=true;
     if(btn){btn.classList.remove('mic-listening')}
     if(bigBtn){bigBtn.classList.remove('mic-listening')}
     if(bigStatus)bigStatus.textContent='Tap and speak your issue';
+    if(listenOverlay)listenOverlay.style.display='none';
   };
   r.onerror=e=>{
+    recognitionEnded=true;
     if(btn){btn.classList.remove('mic-listening')}
     if(bigBtn){bigBtn.classList.remove('mic-listening')}
     if(bigStatus)bigStatus.textContent='Tap and speak your issue';
+    if(listenOverlay)listenOverlay.style.display='none';
     if(inp&&!inp.value.trim())inp.value=preExisting;
     const msg={'not-allowed':'Mic access denied \u2014 check phone settings','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet for voice \u2014 check connection','aborted':'Cancelled'}[e.error]||e.error;
     nf('\ud83c\udfa4 '+msg,'Tap the mic to retry','warn');
@@ -3102,7 +3148,7 @@ async function raiseTicket(){
   const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
   const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:''};
   if(flagOn)t.hist.push({s:'raised',t:ts(),n:'🚩 Flagged URGENT by requester: '+flagWhy});
-  await attendersReadyP; // make sure real attender/outlet-coverage data is loaded before we try to auto-assign
+  if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
   const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
   // Upload ticket photos to Google Drive
   const imgUrls=[];
@@ -3185,7 +3231,7 @@ function confirmNotResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.
   t.otpRevealed=false;
   setSt(curTkt,'in-progress','❌ Requester says NOT resolved — back to In Progress');
   setTimeout(()=>viewT(curTkt),300);nf('Not resolved','Ticket returned to In Progress','warn')}
-async function doReopen(){const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(t){t.status='raised';t.otpRevealed=false;t.issueRes=null;t.confirmStatus=null;t.reopened=true;t.hist.push({s:'raised',t:ts(),n:'🔄 Re-opened: '+r});await attendersReadyP;const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'Re-assigned → '+a.name})}}closeM('reopenM');R();viewT(curTkt)}
+function doReopen(){const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(t){t.status='raised';t.otpRevealed=false;t.issueRes=null;t.confirmStatus=null;t.reopened=true;t.hist.push({s:'raised',t:ts(),n:'🔄 Re-opened: '+r});const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'Re-assigned → '+a.name})}}closeM('reopenM');R();viewT(curTkt)}
 
 
 
@@ -3550,6 +3596,15 @@ function submitRating(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(t.ratin
 function nf(title,msg,type='ok'){const d=document.createElement('div');d.className='npop';d.innerHTML=`<div style="width:24px;height:24px;border-radius:50%;background:${type==='ok'?'var(--okb)':type==='warn'?'var(--wrb)':'var(--infb)'};color:${type==='ok'?'var(--ok)':type==='warn'?'var(--wr)':'var(--inf)'};display:flex;align-items:center;justify-content:center;font-size:10px">${type==='ok'?'✓':'⚠'}</div><div><h4>${title}</h4><p>${msg}</p></div>`;document.body.appendChild(d);setTimeout(()=>d.style.opacity='0',2500);setTimeout(()=>d.remove(),2800)}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-bg.show').forEach(m=>m.classList.remove('show'));closeSB()}});
 
+// ===== CHAT MODE — a conversational front-end over the EXACT SAME engine the form
+// uses (fuzzySearchSubs, buildTree, selectSubFromSearch, applyAutoTags, raiseTicket).
+// Nothing about matching, tagging, or submitting a ticket is reimplemented here —
+// the chat just drives the same hidden form fields the form itself would set, then
+// calls the same raiseTicket() at the end. This guarantees identical results either way.
+let raiseMode='form';
+let chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
+
+let chatUnlocked=false;
 // Loading screen: quick progress phase first (matches normal load time), then genuinely
 // useful tips on rotation if the connection is slow enough that the wait drags on.
 const LOAD_PROGRESS=[
@@ -4347,11 +4402,349 @@ function checkChatUnlock(){
   const formOverlay=document.getElementById('formLockOverlay');
   if(ready){
     if(formOverlay)formOverlay.style.display='none';
+    chatUnlocked=true;
   }else{
+    chatUnlocked=false;
     if(formOverlay)formOverlay.style.display='flex';
   }
   return ready;
 }
+function setRaiseMode(mode){
+  raiseMode=mode;
+  const chatBtn=document.getElementById('modeChatBtn'), formBtn=document.getElementById('modeFormBtn');
+  const chatC=document.getElementById('chatModeContent'), formC=document.getElementById('formModeContent');
+  if(!chatBtn||!formBtn||!chatC||!formC)return;
+  if(mode==='chat'){
+    chatC.style.display='block';formC.style.display='none';
+    chatBtn.style.background='var(--ac)';chatBtn.style.borderColor='var(--ac)';chatBtn.style.color='#fff';
+    formBtn.style.background='var(--c1)';formBtn.style.borderColor='var(--bdr)';formBtn.style.color='var(--t2)';
+    checkChatUnlock();
+  }else{
+    chatC.style.display='none';formC.style.display='block';
+    formBtn.style.background='var(--ac)';formBtn.style.borderColor='var(--ac)';formBtn.style.color='#fff';
+    chatBtn.style.background='var(--c1)';chatBtn.style.borderColor='var(--bdr)';chatBtn.style.color='var(--t2)';
+  }
+}
+
+function composeChoiceQuestion(intro,firstConnector,options){
+  const MAX_NARRATED=4;
+  const connectors=[firstConnector,'Or','Or maybe','Or perhaps'];
+  const shown=options.slice(0,MAX_NARRATED);
+  let text=intro?intro+' ':'';
+  shown.forEach((opt,i)=>{
+    const c=connectors[Math.min(i,connectors.length-1)];
+    text+=c+' <b>'+opt+'</b>? ';
+  });
+  if(options.length>MAX_NARRATED)text+='Or something else — pick below 👇';
+  return text.trim();
+}
+function addBotMsg(html){
+  const m=document.getElementById('chatMsgs');if(!m)return null;
+  const div=document.createElement('div');
+  div.className='cm r';
+  div.innerHTML='<div class="b"></div>';
+  div.querySelector('.b').innerHTML=html; // bot-authored strings only — never raw user text
+  m.appendChild(div);m.scrollTop=m.scrollHeight;
+  return div;
+}
+function addUserMsg(text){
+  const m=document.getElementById('chatMsgs');if(!m)return;
+  const div=document.createElement('div');
+  div.className='cm s';
+  div.innerHTML='<div class="b"></div>';
+  div.querySelector('.b').textContent=text; // textContent — user text is never treated as HTML
+  m.appendChild(div);m.scrollTop=m.scrollHeight;
+}
+function addQuickReplies(container,options){
+  if(!container)return;
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:6px';
+  options.forEach(o=>{
+    const b=document.createElement('button');
+    b.type='button';b.textContent=o.label;
+    b.style.cssText='background:var(--c1);border:1px solid var(--ac);color:var(--ac2);border-radius:14px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer';
+    b.onclick=()=>{wrap.querySelectorAll('button').forEach(x=>x.disabled=true);wrap.style.opacity='.5';o.fn();};
+    wrap.appendChild(b);
+  });
+  container.appendChild(wrap);
+  const m=document.getElementById('chatMsgs');if(m)m.scrollTop=m.scrollHeight;
+}
+
+function chatInit(){
+  const m=document.getElementById('chatMsgs');if(m)m.innerHTML='';
+  chatResetState();
+  addBotMsg("Hi! \ud83d\udc4b What's the problem? Type below, or tap \ud83c\udfa4 to speak.");
+  chatState.step='PROBLEM';
+}
+function chatResetState(){
+  chatState={step:null,cat:null,subFull:null,catLabel:null,pri:null,checklistQueue:[],checklistIdx:0};
+  if(typeof clearSubSelection==='function')clearSubSelection();
+  selWH='';selAction='';selWhere='';selItem='';
+  const fc=document.getElementById('flagChk');if(fc)fc.checked=false;
+  if(typeof onFlagToggle==='function')onFlagToggle();
+}
+
+function chatSend(){
+  const inp=document.getElementById('chatInput');if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';
+  chatRoute(text);
+}
+function chatRoute(text){
+  addUserMsg(text);
+  if(chatState.step==='PROBLEM'){
+    chatHandleProblem(text);
+  }else if(chatState.step==='MORE_DETAILS'){
+    const tD=document.getElementById('tD');
+    if(tD)tD.value=(tD.value?tD.value+'. ':'')+text;
+    addBotMsg('Got it — added to the description ✅');
+    chatShowSummary();
+  }else{
+    // Free text at any other step — treat as extra description detail, don't derail the flow
+    const tD=document.getElementById('tD');
+    if(tD)tD.value=(tD.value?tD.value+'. ':'')+text;
+    addBotMsg('Got it — added that to the description. Please also pick one of the options above ☝️ to continue.');
+  }
+}
+
+function chatHandleProblem(text){
+  if(typeof tooShort==='function'&&tooShort(text)){
+    addBotMsg("Could you tell me a little more \u2014 what's the item, and what happened?");
+    return;
+  }
+  const box=document.getElementById('subSearch');if(box)box.value=text;
+  const matches=fuzzySearchSubs(text);
+  if(!matches.length){
+    chatShowCategoryBrowse("I couldn't quite place that \u2014 let's pick a category:");
+    return;
+  }
+  const top=matches[0].score, second=matches[1]?matches[1].score:0;
+  const confident=top>=25&&(matches.length===1||top>second);
+  if(confident)chatConfirmSingle(matches[0]);
+  else chatShowMatchChoices(matches.slice(0,4));
+}
+
+function chatConfirmSingle(m){
+  const box=addBotMsg('I think it\u2019s <b>'+m.sub+'</b> ('+m.catLabel+'). Is that right?');
+  addQuickReplies(box,[
+    {label:'\u2705 Yes, that\u2019s it',fn:()=>chatMatchConfirmed(m)},
+    {label:'\ud83d\udd04 Not quite',fn:()=>chatShowCategoryBrowse('No problem \u2014 pick a category:')}
+  ]);
+}
+function chatShowMatchChoices(matches){
+  const box=addBotMsg(composeChoiceQuestion("","Do you mean",matches.map(m=>m.sub)));
+  const opts=matches.map(m=>({label:m.sub,fn:()=>chatMatchConfirmed(m)}));
+  opts.push({label:'\ud83e\udd14 None of these',fn:()=>chatShowCategoryBrowse('No problem \u2014 pick a category:')});
+  addQuickReplies(box,opts);
+}
+
+function chatShowCategoryBrowse(msg){
+  const box=addBotMsg(msg||'Pick a category:');
+  const opts=Object.entries(CATS).filter(([k,c])=>!c.disabled&&k!=='other').map(([k,c])=>({label:c.label,fn:()=>chatPickCategory(k)}));
+  addQuickReplies(box,opts);
+}
+function chatPickCategory(catId){
+  const cat=CATS[catId];if(!cat)return;
+  addUserMsg(cat.label);
+  const tree=buildTree(catId);
+  if(tree&&tree.useItems){
+    if(tree.order.length===1){
+      chatPickItem(catId,tree.order[0]);
+    }else{
+      const box=addBotMsg('Which item?');
+      addQuickReplies(box,tree.order.map(key=>({label:tree.items[key].item,fn:()=>chatPickItem(catId,key)})));
+    }
+  }else{
+    const box=addBotMsg(composeChoiceQuestion("What's happening with "+cat.label+"?",'Is it',cat.subs||[]));
+    addQuickReplies(box,(cat.subs||[]).map(s=>({label:s,fn:()=>chatMatchConfirmed({catId,sub:s,catLabel:cat.label,pri:UMAP[s]||cat.pri})})));
+  }
+}
+function chatPickItem(catId,key){
+  const tree=buildTree(catId);const it=tree.items[key];if(!it)return;
+  addUserMsg(it.item);
+  const useComps=it.compOrder.length>=2;
+  const opts=[];
+  it.leaves.forEach(x=>opts.push({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})}));
+  if(useComps){
+    it.compOrder.forEach(ck=>opts.push({label:it.comps[ck].comp+' \u203a',fn:()=>chatPickComponent(catId,key,ck)}));
+  }else{
+    it.compOrder.forEach(ck=>it.comps[ck].issues.forEach(x=>opts.push({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})})));
+  }
+  const introText="What's happening with the "+it.item+"?";
+  const box=addBotMsg(composeChoiceQuestion(introText,'Is it',opts.map(o=>o.label)));
+  addQuickReplies(box,opts);
+}
+function chatPickComponent(catId,itemKey,compKey){
+  const tree=buildTree(catId);const comp=tree.items[itemKey].comps[compKey];if(!comp)return;
+  addUserMsg(comp.comp);
+  const introText="What's happening with the "+comp.comp+"?";
+  const box=addBotMsg(composeChoiceQuestion(introText,'Is it',comp.issues.map(x=>x.issue)));
+  addQuickReplies(box,comp.issues.map(x=>({label:x.issue,fn:()=>chatMatchConfirmed({catId,sub:x.sub,catLabel:CATS[catId].label,pri:UMAP[x.sub]||CATS[catId].pri})})));
+}
+
+function chatMatchConfirmed(m){
+  selectSubFromSearch(m.catId,m.sub,m.catLabel,m.pri); // reuses the full existing engine
+  chatState.cat=m.catId;chatState.subFull=m.sub;chatState.catLabel=m.catLabel;chatState.pri=m.pri;
+  chatState.step='FLOW'; // match is locked in — free text from here on must not be re-matched as a new problem
+  addBotMsg('Got it \u2014 <b>'+m.sub+'</b> \u2705');
+  chatState.checklistQueue=buildChecklistQueue();
+  chatState.checklistIdx=0;
+  chatAskNextChecklist();
+}
+function buildChecklistQueue(){
+  const meta=getMeta((chatState.cat||'').toLowerCase(),chatState.subFull);
+  const q=[];
+  (meta.checklist||[]).forEach((item,i)=>q.push({type:'check',text:item,domIdx:i}));
+  (meta.probes||[]).forEach((p,i)=>q.push({type:'probe',text:p.q,opts:p.opts||[],domIdx:i}));
+  return q;
+}
+function chatAskNextChecklist(){
+  const q=chatState.checklistQueue;
+  if(chatState.checklistIdx>=q.length){chatAskActionStep();return;}
+  const item=q[chatState.checklistIdx];
+  if(item.type==='check'){
+    const box=addBotMsg('\u2611\ufe0f '+item.text);
+    addQuickReplies(box,[
+      {label:'Yes',fn:()=>{chatSetChecklistCheck(item.domIdx,true);chatState.checklistIdx++;chatAskNextChecklist();}},
+      {label:'No',fn:()=>{chatState.checklistIdx++;chatAskNextChecklist();}}
+    ]);
+  }else if(item.opts.length){
+    const box=addBotMsg('\u2753 '+item.text);
+    addQuickReplies(box,item.opts.map(o=>({label:o,fn:()=>{chatSetProbeAnswer(item.domIdx,o);chatState.checklistIdx++;chatAskNextChecklist();}})));
+  }else{
+    chatState.checklistIdx++;chatAskNextChecklist();
+  }
+}
+function chatSetChecklistCheck(idx,val){
+  const boxes=document.querySelectorAll('#probeL input[type=checkbox]');
+  if(boxes[idx])boxes[idx].checked=val;
+}
+function chatSetProbeAnswer(idx,val){
+  const sels=document.querySelectorAll('#probeL select');
+  if(sels[idx])sels[idx].value=val;
+}
+
+function chatAskActionStep(){
+  if(selAction){
+    addBotMsg('\ud83c\udfab Ticket type: '+selAction);
+    applyTicketTypeRules();
+    chatAskWhatStep();
+    return;
+  }
+  const box=addBotMsg('What kind of request is this?');
+  addQuickReplies(box,ACTION_OPTIONS.map(o=>({label:o,fn:()=>{selAction=o;applyTicketTypeRules();renderTagChips();chatAskWhatStep();}})));
+}
+function chatAskWhatStep(){
+  const hideWH=(TICKET_TYPE_RULES[selAction]||{}).hideWH;
+  if(hideWH){chatAskWhereStep();return;}
+  if(selWH){
+    addBotMsg('\u26a1 Noted: '+selWH);
+    chatAskWhereStep();
+    return;
+  }
+  const box=addBotMsg('What happened?');
+  const wh=[...WH_OPTIONS];if(wh.indexOf('Other')<0)wh.push('Other');
+  addQuickReplies(box,wh.map(o=>({label:o,fn:()=>{selWH=o;renderTagChips();updateAutoDesc();chatAskWhereStep();}})));
+}
+function chatAskWhereStep(){
+  if(selWhere){addBotMsg('\ud83d\udccd Noted: '+selWhere);chatAskPhotoStep();return;}
+  const box=addBotMsg('Where is this? (optional)');
+  const opts=WHERE_OPTIONS.map(o=>({label:o,fn:()=>{selWhere=o;renderTagChips();updateAutoDesc();chatAskPhotoStep();}}));
+  opts.push({label:'Skip',fn:chatAskPhotoStep});
+  addQuickReplies(box,opts);
+}
+
+function chatAskPhotoStep(){
+  const box=addBotMsg('Want to add a photo? \ud83d\udcf8');
+  addQuickReplies(box,[
+    {label:'\ud83d\udcf8 Take Photo',fn:()=>{const el=document.getElementById('tImgCam');if(el)el.click();chatWaitForPhoto();}},
+    {label:'\ud83d\uddbc Gallery',fn:()=>{const el=document.getElementById('tImg');if(el)el.click();chatWaitForPhoto();}},
+    {label:'Skip',fn:chatAskUrgentStep}
+  ]);
+}
+function chatWaitForPhoto(){
+  setTimeout(()=>{
+    addBotMsg(tImgFiles.length?('\u2705 '+tImgFiles.length+' photo(s) added'):'No photo added.');
+    chatAskUrgentStep();
+  },700);
+}
+
+function chatAskUrgentStep(){
+  const box=addBotMsg('Is this urgent? \ud83d\udea9');
+  addQuickReplies(box,[
+    {label:'\ud83d\udea9 Yes',fn:chatAskUrgentReason},
+    {label:'No',fn:chatAskMoreDetails}
+  ]);
+}
+function chatAskUrgentReason(){
+  const fc=document.getElementById('flagChk');if(fc)fc.checked=true;
+  if(typeof onFlagToggle==='function')onFlagToggle();
+  const box=addBotMsg('What makes it urgent?');
+  addQuickReplies(box,FLAG_REASONS.map(o=>({label:o,fn:()=>{const fr=document.getElementById('flagReason');if(fr)fr.value=o;chatAskMoreDetails();}})));
+}
+
+function chatAskMoreDetails(){
+  chatState.step='MORE_DETAILS';
+  const box=addBotMsg('Before I raise this — want to tell me a bit more? Like <b>what happened</b>, <b>since when</b>, or <b>how it happened</b>.');
+  addQuickReplies(box,[{label:'Skip, that’s all',fn:chatShowSummary}]);
+}
+function chatShowSummary(){
+  const tD=document.getElementById('tD');
+  const desc=tD?tD.value:'';
+  const urgent=document.getElementById('flagChk')&&document.getElementById('flagChk').checked;
+  const html='<b>Here\u2019s your ticket:</b><br>\ud83d\udd29 '+(selItem||'-')+'<br>\u26a1 '+(selWH||'-')+'<br>\ud83c\udfab '+(selAction||'-')+
+    '<br>\ud83d\udccd '+(selWhere||'Not specified')+'<br>\ud83d\udcdd '+desc+
+    (tImgFiles.length?'<br>\ud83d\udcf8 '+tImgFiles.length+' photo(s)':'')+(urgent?'<br>\ud83d\udea9 Urgent':'');
+  const box=addBotMsg(html);
+  addQuickReplies(box,[
+    {label:'\u2705 Raise Ticket',fn:chatDoRaise},
+    {label:'\u270f\ufe0f Start Over',fn:chatInit}
+  ]);
+}
+function chatDoRaise(){
+  addBotMsg('Raising your ticket\u2026 \ud83c\udf89');
+  raiseTicket(); // reuses the existing, fully-tested submit path (validation, sheet write, navigation)
+}
+
+// Voice input inside the chat. Same warm-up timing fix as the main search mic:
+// start() fires immediately (maximum head start for the hardware), the visual
+// "listening" cue is deliberately delayed a beat so the first word isn't lost.
+function chatVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('chatMicBtn');
+  if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return}
+  if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return}
+  const r=new SR();
+  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');
+  r.continuous=false;r.interimResults=true;r.maxAlternatives=5;
+  const inp=document.getElementById('chatInput');
+  nf('\ud83c\udfa4 Get ready\u2026','','ok');
+  let started=false;
+  try{r.start();started=true;}catch(e){nf('Error',e.message,'warn');return;}
+  setTimeout(()=>{if(started&&btn)btn.style.background='linear-gradient(135deg,var(--er),#ff8a8a)';},350);
+  r.onresult=e=>{
+    const res=e.results[e.results.length-1];
+    if(!res.isFinal){if(inp)inp.value=res[0].transcript;return;}
+    let best=null,bestScore=-1;
+    for(let i=0;i<res.length;i++){
+      const txt=res[i].transcript.toLowerCase().trim();
+      const m=(chatState.step==='PROBLEM')?fuzzySearchSubs(txt):[];
+      const score=m.length?m[0].score:0;
+      if(score>bestScore){bestScore=score;best=txt;}
+    }
+    const txt=best||res[0].transcript.toLowerCase().trim();
+    if(inp)inp.value='';
+    chatRoute(txt);
+  };
+  r.onend=()=>{if(btn)btn.style.background='linear-gradient(135deg,var(--ac),var(--inf))';};
+  r.onerror=e=>{
+    if(btn)btn.style.background='linear-gradient(135deg,var(--ac),var(--inf))';
+    const msg={'not-allowed':'Mic access denied','no-speech':'Didn\u2019t catch that \u2014 try again','network':'Needs internet'}[e.error]||e.error;
+    nf('\ud83c\udfa4 '+msg,'','warn');
+  };
+}
+
 
 // BOOT — fill dropdowns from current OL/CATS (called after sheet data loads)
 function fillBootDropdowns(){
@@ -4375,7 +4768,6 @@ fillFlagReasons();
 setTimeout(updateDemoBanner,2500);
 // PHASE 3B + 4 + 5 + 6: load all sheet data in parallel at startup
 let usersLoaded=true;
-let attendersReadyP=Promise.resolve();
 (async function bootData(){
   // TIER 0 — the ONLY thing that gates first paint: whatever the mic/text search box and the
   // category grid need to work correctly. Fired first, alone, nothing else starts until this begins.
@@ -4400,14 +4792,12 @@ let attendersReadyP=Promise.resolve();
 
   // TIER 2 — everything else (tickets, history, chat, purchasing, probing/solutions, feedback,
   // priority rules, attenders) loads quietly in the background, well after the form is usable.
-  // attendersReadyP is kept so raiseTicket()/doReopen() can await real attender/outlet-coverage
-  // data before auto-assigning, instead of racing ahead on the hardcoded demo seed in ATTS.
-  attendersReadyP=loadAttendersFromSheet();
+  window.attendersLoadPromise=loadAttendersFromSheet();
   Promise.all([
     loadPriorityRulesFromSheet(),
     loadSubMetaFromSheet(),
     loadFeedbackQuestionsFromSheet(),
-    attendersReadyP,
+    window.attendersLoadPromise,
     loadTicketsFromSheet()
   ]).then(async ()=>{
     await loadPurchaseOrdersFromSheet();
@@ -4471,7 +4861,7 @@ let attendersReadyP=Promise.resolve();
 <div id="quickHelpPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <button type="button" onclick="closeQuickHelp()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
   <h2 style="margin-bottom:2px">❓ Quick Help</h2>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v155R</div>
+  <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Last updated: 7 Aug 2026 · v160R</div>
   <div style="display:flex;flex-direction:column;gap:12px">
     <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:14px">
       <div style="font-weight:800;font-size:13.5px;color:var(--t)">🎫 1. Raise a Ticket</div>
