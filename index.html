@@ -453,11 +453,23 @@ async function apiUpdate(tab,keyCol,keyValue,changes){
   }catch(e){return false;}
 }
 // PHASE 6: Purchase Order helpers
-// Save one chat message to the Ticket_Chat tab (fire-and-forget)
+// Save one chat message to the Ticket_Chat tab (fire-and-forget from the caller's point of
+// view -- sendC()/shareOTPInChat() never await this and the UI already shows the message
+// optimistically). Previously a single failed apiAppend() (a transient network blip, a
+// Google Apps Script cold start, etc.) silently dropped the message forever -- it never
+// reached the sheet, so no amount of polling could ever detect or notify it. That is the
+// most direct explanation for "notification sometimes never arrives": the message itself
+// was never actually saved.
+// Fix: retry, but ONLY on a genuine network-level failure (fetch() itself throwing --
+// apiAppend()'s own try/catch turning into a `false` return -- meaning the request never
+// reached the backend at all, so nothing was appended and a retry cannot create a
+// duplicate row). The SAME Chat_ID and row payload are reused on every attempt, so even
+// in the unlikely case a "failed" attempt actually landed server-side, loadTicketChatFromSheet()'s
+// Chat_ID dedup (see below) guarantees it still only ever displays once.
 let chatSeq=0;
-function writeChat(ticketId,msg,isOtp){
+async function writeChat(ticketId,msg,isOtp){
   chatSeq++;
-  apiAppend('Ticket_Chat',{
+  const row={
     Chat_ID:'CHT-'+Date.now()+'-'+chatSeq,
     Ticket_ID:ticketId,
     Sender_Name:userName,
@@ -465,7 +477,14 @@ function writeChat(ticketId,msg,isOtp){
     Message:msg,
     Is_OTP:isOtp?'TRUE':'FALSE',
     Timestamp:ts()
-  });
+  };
+  const maxAttempts=3;
+  for(let attempt=1;attempt<=maxAttempts;attempt++){
+    const ok=await apiAppend('Ticket_Chat',row);
+    if(ok)return;
+    if(attempt<maxAttempts)await new Promise(res=>setTimeout(res,600*attempt));
+  }
+  console.error('[FixEngine] writeChat: message could not be saved after '+maxAttempts+' attempts (ticket '+ticketId+')');
 }
 // PHASE 5B: write one history event to the Ticket_History tab (fire-and-forget)
 let histSeq=0;
@@ -842,11 +861,23 @@ async function loadTicketChatFromSheet(){
   const rows=await apiRead('Ticket_Chat');
   if(!rows)return false;
   TKS.forEach(t=>t.chat=[]);
+  // Chat_ID already exists (used by the notification poller) and is the reliable unique
+  // identifier the same message will always carry -- reused here, per ticket, so a
+  // duplicate row (e.g. a retried write that actually landed twice -- see writeChat())
+  // can never render as two bubbles. Rows with no Chat_ID (older data) are never skipped,
+  // so nothing already in the sheet before this column existed disappears.
+  const seenPerTicket={};
   rows.forEach(r=>{
     const tid=String(r.Ticket_ID||'').trim();
     if(!tid)return;
     const t=TKS.find(x=>x.id===tid);
     if(!t)return;
+    const cid=String(r.Chat_ID||'').trim();
+    if(cid){
+      const seen=seenPerTicket[tid]||(seenPerTicket[tid]=new Set());
+      if(seen.has(cid))return; // already rendered this exact message for this ticket
+      seen.add(cid);
+    }
     t.chat.push({
       by:String(r.Sender_Name||'').trim(),
       role:String(r.Sender_Role||'').trim(),
@@ -3540,6 +3571,16 @@ async function checkForFixedTickets(){
   if(!rows)return;
   const scope=notifOutletScope();
   const newlyFixed=[];
+  // Any ticket whose Status differs at all from what this tick last saw -- accepted,
+  // reached, started, in-progress, on-hold, everything, not just a move into a Fixed
+  // status. Previously ONLY a Fixed transition (or a new chat message) triggered the
+  // refresh below, so any other attender status update sat unseen on the requester's
+  // screen until they manually pulled to refresh -- this is the direct cause of "the
+  // Requester UI does not reflect the latest ticket update immediately". Tracking this
+  // separately from newlyFixed means it can drive the same background refresh WITHOUT
+  // ever calling addFixedNotifications()/ringBell()/playNotifSound() for it, so the
+  // existing "notification + sound only for Fixed" rule is completely unchanged.
+  const changedStatusIds=[];
   const outletById={}; // Ticket_ID -> Outlet_Code, built once here and reused below for chat scoping
   rows.forEach(r=>{
     const id=String(r.Ticket_ID||'').trim();
@@ -3553,6 +3594,9 @@ async function checkForFixedTickets(){
     const wasFixedBefore=prev!==undefined&&NOTIF_FIXED_STATUSES.includes(prev);
     if(isFixedNow&&!wasFixedBefore){
       newlyFixed.push({id:id,issue:String(r.SubCat_ID||r.Description||'').trim()||id});
+    }
+    if(prev!==undefined&&status!==prev){
+      changedStatusIds.push(id); // real change on an already-seen ticket -- not the first-ever sighting of it
     }
     notifPrevStatus[id]=status;
   });
@@ -3576,24 +3620,25 @@ async function checkForFixedTickets(){
         if(senderName===userName)return; // never notify me of my own message
         const out=outletById[tid];
         if(scope&&out!==undefined&&!scope.includes(out))return; // outside this requester's visible outlets
-        newMsgs.push({id:tid,msg:String(r.Message||'').trim(),by:senderName});
+        newMsgs.push({id:tid,cid:cid,msg:String(r.Message||'').trim(),by:senderName});
       });
     }catch(e){}
   }
 
-  if(!newlyFixed.length&&!newMsgs.length)return;
+  if(!newlyFixed.length&&!newMsgs.length&&!changedStatusIds.length)return;
   if(newlyFixed.length)addFixedNotifications(newlyFixed);
   if(newMsgs.length)addChatNotifications(newMsgs);
   // Something real changed -- now (and only now) do the existing full ticket refresh so
   // the on-screen list/detail reflect the new status/chat too, instead of leaving the
-  // visible data stale under a notification popup.
+  // visible data stale under a notification popup. Runs for a plain status change too
+  // (changedStatusIds), just silently -- no bell, no badge, no sound for those.
   try{
     await loadTicketsFromSheet();
     if(typeof loadTicketChatFromSheet==='function')await loadTicketChatFromSheet();
     if(document.getElementById('app')&&document.getElementById('app').style.display!=='none')R();
     const bookingsEl=document.getElementById('myBookingsPage');
     if(bookingsEl&&bookingsEl.style.display!=='none'&&typeof renderMyBookings==='function')renderMyBookings();
-    const changedIds=newlyFixed.map(x=>x.id).concat(newMsgs.map(x=>x.id));
+    const changedIds=newlyFixed.map(x=>x.id).concat(newMsgs.map(x=>x.id)).concat(changedStatusIds);
     if(curTkt&&changedIds.includes(curTkt)&&document.getElementById('pg-detail')?.classList.contains('on'))viewT(curTkt);
   }catch(e){}
 }
@@ -3622,9 +3667,36 @@ function addChatNotifications(list){
   notifUnread=notifItems.filter(n=>!n.read).length;
   updateNotifBadge();
   renderNotifPanel();
-  showChatBanner(list);
+  // Cross-tab alert de-dup: if the same outlet login is open in more than one browser
+  // tab, each tab runs its own independent poller and would otherwise all ring/bang/
+  // sound for the exact same message. Badge + panel above still update in every tab
+  // (each tab's own unread state stays correct on its own), but the actual interruptive
+  // alert -- banner + bell-ring + sound -- is claimed by exactly one tab, keyed on
+  // Chat_ID (the same reliable unique identifier the poller already dedupes on).
+  const toAlert=list.filter(x=>claimChatAlert(x.cid));
+  if(!toAlert.length)return;
+  showChatBanner(toAlert);
   ringBell();
   playNotifSound();
+}
+
+// localStorage-backed claim: returns true the FIRST time this Chat_ID is seen by ANY tab
+// of this browser (this tab wins the alert), false every time after (some tab -- maybe
+// this one on a later tick, maybe another -- already claimed it). Bounded so it can never
+// grow without limit across a long-running session. Fails open (returns true) if
+// localStorage is unavailable/blocked, so a single tab still always alerts normally.
+const CHAT_ALERT_LS_KEY='fixEngineChatAlerted';
+function claimChatAlert(chatId){
+  if(!chatId)return true;
+  try{
+    const raw=localStorage.getItem(CHAT_ALERT_LS_KEY);
+    const ids=raw?JSON.parse(raw):[];
+    if(ids.includes(chatId))return false;
+    ids.push(chatId);
+    while(ids.length>300)ids.shift();
+    localStorage.setItem(CHAT_ALERT_LS_KEY,JSON.stringify(ids));
+    return true;
+  }catch(e){return true;}
 }
 
 function showNotifBell(){const b=document.getElementById('notifBellBtn');if(b)b.style.display='flex';}
