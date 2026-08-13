@@ -160,6 +160,19 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 #fbM .fg label{font-size:14px;text-transform:none;letter-spacing:0;color:var(--t)}
 #fbM textarea.fc{font-size:15px}
 #fbM .modal-ft .btn{font-size:14px;padding:10px 18px}
+
+/* ===== INLINE MIC BUTTON (Describe the problem) -- Claude-style composer ===== */
+#subSearch:focus{border-color:var(--ac) !important;background:var(--c1) !important}
+#descMicBtn:active{transform:scale(.93)}
+#descMicBtn.mic-listening{background:var(--er) !important;border-color:transparent !important;color:#fff !important}
+
+/* ===== FIXED-TICKET NOTIFICATIONS ===== */
+#notifBellBtn:active{transform:scale(.93)}
+#notifBellBtn.notif-ring{animation:bellRing .5s ease-in-out}
+@keyframes bellRing{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-6deg)}}
+@keyframes notifSlideDown{0%{opacity:0;transform:translate(-50%,-14px)}100%{opacity:1;transform:translate(-50%,0)}}
+@keyframes notifSlideUp{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-14px)}}
+#fixedNotifBanner:active{opacity:.92}
 </style>
 </head>
 <body>
@@ -178,7 +191,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
   <div class="fg" id="lPhWrap"><label>Mobile *</label><input class="fc" id="lPh" type="tel" placeholder="Number" maxlength="10"></div>
   <div class="fg" id="lNmWrap"><label>Name *</label><input class="fc" id="lNm" placeholder="Name" maxlength="40" autocomplete="off"></div>
-  <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Search..." autocomplete="off" oninput="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"></div></div></div>
+  <div class="fg" id="lOutWrap"><label>Outlet *</label><div style="position:relative"><input class="fc" id="lOutSearch" placeholder="Search or tap to browse all outlets..." autocomplete="off" oninput="filterOutlets()" onfocus="filterOutlets()"><input type="hidden" id="lOut"><div id="lOutResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"></div></div></div>
   <button type="button" class="btn-big purple" onclick="continueFromIdentity()" style="margin-top:16px">Continue →</button>
 </div>
 <div id="loginP" class="login"><div class="login-card">
@@ -200,10 +213,11 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     <div id="loadMsgSub" style="font-size:11px;color:var(--t3);margin-top:2px">Meanwhile, tap 🎤 and describe your issue!</div>
     <div id="loadSkipBtn" onclick="skipLoadTips()" style="font-size:10px;color:var(--t3);text-decoration:underline;margin-top:6px;cursor:pointer">Skip tips</div>
   </div>
-<div id="bigMicScreen" style="display:none;text-align:center;padding:18px 16px 4px">
-  <button type="button" id="bigMicBtn" onclick="voiceSearch()" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--inf));border:none;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(124,106,240,.4);animation:bigMicPulse 1.8s ease-in-out infinite">🎤</button>
-  <div id="bigMicStatus" style="font-size:12px;font-weight:700;color:var(--t2);margin-top:10px">Tap the mic to speak your issue</div>
-</div>
+<!-- Permanent big-mic screen removed. Microphone is now an inline #descMicBtn inside
+     the description box itself (visible once there is text), Claude-composer style.
+     bigMicBtn/bigMicStatus no longer exist in the DOM; downstream code that referenced
+     them (voiceSearch(), pickTicketType(), resetTicketFlow()) already null-checks them
+     and degrades harmlessly. -->
 <div id="micListeningOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:400;align-items:flex-start;justify-content:center">
   <div style="background:#fff;border-radius:12px;margin-top:64px;padding:18px 24px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;min-width:220px;font-family:Roboto,Arial,sans-serif">
     <div style="width:48px;height:48px;border-radius:50%;background:#EA4335;display:flex;align-items:center;justify-content:center;animation:chromeMicPulse 1.4s ease-in-out infinite;margin-bottom:12px">
@@ -238,8 +252,11 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
     <div style="display:flex;align-items:flex-end;gap:6px">
       <div style="flex:1;position:relative">
-        <textarea id="subSearch" rows="1" placeholder="Use the mic, or type your issue here..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:24px;outline:none;color:var(--t);font-size:16px;resize:none;padding:13px 48px 13px 18px;font-family:inherit;min-height:52px;max-height:90px;box-sizing:border-box"></textarea>
-        <button type="button" id="srchSendBtn" onclick="runFind()" title="Search" style="position:absolute;right:6px;bottom:6px;width:36px;height:36px;border-radius:50%;background:var(--ac);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">➤</button>
+        <textarea id="subSearch" rows="1" placeholder="Type your issue here, or tap for mic options..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1.5px solid #C7CBDA;border-radius:18px;outline:none;color:var(--t);font-size:clamp(16px,4.2vw,17px);line-height:1.45;resize:none;padding:16px 50px 16px 18px;font-family:inherit;min-height:118px;max-height:210px;box-sizing:border-box;transition:border-color .15s,padding-right .15s"></textarea>
+        <button type="button" id="descMicBtn" onclick="toggleDescMic()" title="Voice input" style="display:none;position:absolute;right:54px;bottom:8px;width:38px;height:38px;border-radius:50%;background:var(--c1);border:1px solid var(--bdr);color:var(--t2);cursor:pointer;align-items:center;justify-content:center;font-size:15px;transition:background .15s,color .15s,border-color .15s">🎙️</button>
+        <button type="button" id="srchSendBtn" onclick="runFind()" title="Search" style="position:absolute;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;background:var(--ac);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -462,18 +479,41 @@ function writeHistory(ticketId,status,note,actionBy){
 // PHASE 4: load Outlets from the sheet and rebuild OL + OUTPHONES
 async function loadOutletsFromSheet(){
   const rows=await apiRead('Outlets');
-  if(!rows)return false;
-  const codes=[];const phones={};const contacts={};
+  if(!rows){
+    console.warn('[FixEngine] loadOutletsFromSheet: apiRead("Outlets") returned no data -- keeping the previous/default outlet list. Check API_URL and the "Outlets" tab name in the sheet.');
+    return false;
+  }
+  const codes=[];const phones={};const contacts={};const seen=new Set();
   rows.forEach(o=>{
-    const code=String(o.Outlet_Code).trim();
-    if(!code)return;
-    const active=(o.Is_Active===true||String(o.Is_Active).toUpperCase()==='TRUE');
-    if(!active)return;                       // skip disabled outlets
+    // Column is normally Outlet_Code -- tolerate a couple of likely header variants so a
+    // slightly-renamed column doesn't silently drop every row in the sheet.
+    const rawCode=o.Outlet_Code??o.OutletCode??o.Outlet_ID??o.Code;
+    if(rawCode===undefined||rawCode===null)return;  // row genuinely has no code -- skip it
+    const code=String(rawCode).trim();
+    if(!code)return;                                 // blank cell -- skip it, don't stop the loop
+    // Is_Active is opt-OUT, not opt-in: a blank/missing cell (the normal state for a
+    // freshly added outlet row nobody has touched yet) must count as ACTIVE, otherwise
+    // every newly added outlet silently disappears until someone remembers to type TRUE
+    // into that column. Only an explicit false/no/inactive value excludes it.
+    const rawActive=o.Is_Active;
+    const activeStr=(rawActive===undefined||rawActive===null)?'':String(rawActive).trim().toUpperCase();
+    const explicitlyInactive=['FALSE','NO','N','0','INACTIVE','DISABLED'].includes(activeStr);
+    if(explicitlyInactive)return;                     // skip only explicitly disabled outlets
+    const key=code.toUpperCase();
+    if(seen.has(key))return;                          // guard against an accidental duplicate row only
+    seen.add(key);
     codes.push(code);
     if(o.Phone)phones[code]=String(o.Phone).trim();
     contacts[code]={shift:String(o.Shift_Manager_Phone||'').trim(),cluster:String(o.Cluster_Manager_Phone||'').trim(),ops:String(o.Ops_Head_Phone||'').trim()};
   });
-  if(codes.length){OL=codes;OUTPHONES=phones;OUTCONTACTS=contacts;}
+  if(codes.length){
+    OL=codes;OUTPHONES=phones;OUTCONTACTS=contacts;
+  }else{
+    // The sheet responded but nothing survived the filters -- almost always a header/
+    // column-name mismatch rather than a genuinely empty sheet. Flag it loudly instead of
+    // silently keeping the old hard-coded fallback list forever.
+    console.warn('[FixEngine] loadOutletsFromSheet: "Outlets" tab returned '+rows.length+' row(s) but 0 usable outlets -- check the Outlet_Code column name and that rows aren\'t all marked inactive.');
+  }
   return true;
 }
 
@@ -908,24 +948,27 @@ function filterOutlets() {
 
     const search = input.value.trim().toLowerCase();
     document.getElementById('lOut').value = '';
+
+    let matches;
     if (!search) {
-        results.innerHTML = '';
-        results.style.display = 'none';
-        return;
+        // Empty search -> browse the FULL current outlet list (everything in OL, which
+        // loadOutletsFromSheet() keeps in sync with the Outlets sheet) instead of hiding
+        // the dropdown. This is what lets anyone visually confirm every outlet in the
+        // sheet is present, and lets a newly added outlet be found without knowing its
+        // exact code up front.
+        matches = OL.slice().sort((a, b) => a.localeCompare(b));
+    } else {
+        // Best matches (starts with)
+        const startsWith = OL.filter(o =>
+            o.toLowerCase().startsWith(search)
+        );
+        // Other matches (contains)
+        const contains = OL.filter(o =>
+            o.toLowerCase().includes(search) &&
+            !o.toLowerCase().startsWith(search)
+        );
+        matches = [...startsWith, ...contains];
     }
-
-    // Best matches (starts with)
-    const startsWith = OL.filter(o =>
-        o.toLowerCase().startsWith(search)
-    );
-
-    // Other matches (contains)
-    const contains = OL.filter(o =>
-        o.toLowerCase().includes(search) &&
-        !o.toLowerCase().startsWith(search)
-    );
-
-    const matches = [...startsWith, ...contains];
 
     results.innerHTML = matches.length ? matches.map(outlet => `
         <div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--bdr);font-size:12px"
@@ -935,6 +978,15 @@ function filterOutlets() {
     `).join('') : '<div style="padding:10px;font-size:10px;color:var(--t3);text-align:center">No outlet found</div>';
     results.style.display = 'block';
 }
+
+// Close the outlet browse/search dropdown when tapping elsewhere, same pattern already
+// used for the consumables item search results below.
+document.addEventListener('click', function(e){
+    const results = document.getElementById('lOutResults');
+    if (!results || results.style.display === 'none') return;
+    if (e.target.closest && e.target.closest('#lOutWrap')) return;
+    results.style.display = 'none';
+});
 
 function selectOutlet(outlet) {
     document.getElementById('lOutSearch').value = outlet;
@@ -964,6 +1016,8 @@ function hideRaiseForm(){
 function logout(){role='';phone='';userName='';userIni='';userOutlet='';selectedOutlets=[];
   ['lPh','lNm','lOutSearch','lOut'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});
   const b=document.getElementById('raiseBack');if(b)b.style.display='none';
+  if(typeof stopFixedNotificationPolling==='function')stopFixedNotificationPolling();
+  if(typeof hideNotifBell==='function')hideNotifBell();
   document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
 async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
@@ -2786,6 +2840,10 @@ let autoSuggestTimer=null;
 
 function onSubSearchAuto(){
 
+  // Keep the inline mic button in sync with whatever's typed -- appears the instant
+  // there's text, disappears again if the box is fully cleared by hand.
+  if(typeof syncDescMicBtn==='function')syncDescMicBtn();
+
   const q=document.getElementById('subSearch').value.trim();
 
   const bar=document.getElementById('autoSuggestBar');
@@ -2921,6 +2979,7 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
   document.getElementById('subSearchResults').style.display='none';
   document.getElementById('autoSuggestBar').style.display='none';
   document.getElementById('subSearch').value=sub;
+  if(typeof syncDescMicBtn==='function')syncDescMicBtn();
   const btn=document.getElementById('srchClearBtn');if(btn)btn.style.display='block';
   const selEl=document.getElementById('subSelected');
   selEl.style.display='block';
@@ -2942,7 +3001,9 @@ function clearSubSelection(){
   const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
+  if(typeof micActive!=='undefined'&&micActive&&typeof stopContinuousMic==='function')stopContinuousMic(); // don't leave the mic running once the box is wiped
   document.getElementById('subSearch').value='';
+  if(typeof syncDescMicBtn==='function')syncDescMicBtn();
   document.getElementById('subSelected').style.display='none';
   document.getElementById('subSearchResults').style.display='none';
   document.getElementById('autoSuggestBar').style.display='none';
@@ -2979,6 +3040,7 @@ function onSubVisible(){
   tS.value=s;
   subSearchSelected={cat:c,sub:s};
   document.getElementById('subSearch').value=s;
+  if(typeof syncDescMicBtn==='function')syncDescMicBtn();
   const btn=document.getElementById('srchClearBtn');if(btn)btn.style.display='block';
   const selEl=document.getElementById('subSelected');
   selEl.style.display='block';
@@ -3152,6 +3214,381 @@ function showVoiceRetry(show){
   if(b)b.style.display=show?'flex':'none';
 }
 
+// ===== INLINE MIC BUTTON (Describe the problem) -- Claude-style composer =====
+// The box now behaves like Claude's composer: empty -> only the Send arrow; as soon as
+// there is ANY text (typed, spoken, or set programmatically e.g. by picking a category)
+// a compact mic button appears next to it. Tapping it toggles continuous listening on/off
+// in place -- no separate popup is needed. The continuous-recognition engine itself
+// (startContinuousMic/launchRecognitionSession/stopContinuousMic) is unchanged from the
+// previous update; only how it's triggered and how its state is shown has been simplified.
+let micActive=false;        // true only while a continuous mic session should be running
+let micRec=null;            // current SpeechRecognition instance
+let micBaseText='';         // text already in the box when this mic session began
+let micFinalText='';        // speech finalized so far THIS mic session (survives auto-restarts)
+
+// Shows/hides #descMicBtn based on whether the box currently has any text, and keeps the
+// textarea's right padding in sync so typed text never runs under the button. Call this
+// any time subSearch's value changes -- typing (onSubSearchAuto) or programmatically
+// (category pick / clear) -- see selectSubFromSearch(), onSubVisible(), clearSubSelection().
+function syncDescMicBtn(){
+  const ta=document.getElementById('subSearch');
+  const btn=document.getElementById('descMicBtn');
+  if(!ta||!btn)return;
+  if(micActive){btn.style.display='flex';ta.style.paddingRight='92px';return;}
+  const hasText=!!ta.value.trim();
+  btn.style.display=hasText?'flex':'none';
+  ta.style.paddingRight=hasText?'92px':'50px';
+}
+
+function toggleDescMic(){
+  if(micActive)stopContinuousMic();else startContinuousMic();
+}
+
+function setDescMicVisualListening(){
+  const btn=document.getElementById('descMicBtn');
+  if(!btn)return;
+  btn.classList.add('mic-listening');
+  btn.textContent='⏹';
+  btn.title='Stop listening';
+  btn.style.display='flex';
+}
+
+function setDescMicVisualIdle(){
+  const btn=document.getElementById('descMicBtn');
+  if(!btn)return;
+  btn.classList.remove('mic-listening');
+  btn.textContent='🎙️';
+  btn.title='Voice input';
+  syncDescMicBtn(); // re-evaluate visibility now that listening has ended
+}
+
+function startContinuousMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const ta=document.getElementById('subSearch');
+  if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return;}
+  if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return;}
+  // Capture whatever is already in the box (typed earlier, or spoken in a previous mic
+  // session) as a fixed base -- every newly recognized word is appended AFTER this, so
+  // existing text is never lost or overwritten (Type -> Mic -> Stop -> Type -> Mic again).
+  micBaseText=ta?ta.value:'';
+  if(micBaseText&&!/\s$/.test(micBaseText))micBaseText+=' ';
+  micFinalText='';
+  micActive=true;
+  setDescMicVisualListening();
+  launchRecognitionSession();
+}
+
+function launchRecognitionSession(startAttempt){
+  if(!micActive)return;
+  startAttempt=startAttempt||1;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const r=new SR();
+  micRec=r;
+  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');  // follows whatever the requester picked via the EN/हिं toggle
+  r.continuous=true;      // keep listening across pauses, where the browser supports it
+  r.interimResults=true;  // show live text while the user is still mid-sentence
+  r.maxAlternatives=1;
+
+  // How many of THIS session's results have already been folded into micFinalText.
+  // Tracked ourselves instead of trusting e.resultIndex -- some Chrome/Android builds
+  // report resultIndex unreliably (it can point at an already-finalized entry), which is
+  // exactly what caused words to sometimes be duplicated or dropped after a restart.
+  // Counting finals by our own pointer over the full e.results list every time sidesteps
+  // that regardless of what resultIndex says.
+  let sessionFinalCount=0;
+
+  r.onresult=function(e){
+    const taEl=document.getElementById('subSearch');
+    let interim='';
+    for(let i=0;i<e.results.length;i++){
+      const res=e.results[i];
+      if(res.isFinal){
+        if(i>=sessionFinalCount){ // not committed yet -- fold it in exactly once
+          const t=res[0].transcript.trim();
+          if(t)micFinalText+=(micFinalText&&!/\s$/.test(micFinalText)?' ':'')+t;
+          sessionFinalCount=i+1;
+        }
+      }else{
+        interim+=res[0].transcript;
+      }
+    }
+    if(taEl){
+      let combined=micBaseText;
+      if(micFinalText)combined+=(combined&&!/\s$/.test(combined)?' ':'')+micFinalText;
+      if(interim)combined+=(combined&&!/\s$/.test(combined)?' ':'')+interim;
+      taEl.value=combined;
+    }
+  };
+
+  r.onerror=function(e){
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      micActive=false; // hard stop -- retrying would just fail again in a loop
+      micRec=null;
+      setDescMicVisualIdle();
+      nf('🎙️ Mic access denied','Check phone settings','warn');
+      return;
+    }
+    // 'no-speech' / 'network' / 'aborted' / others: swallow here -- onend always fires
+    // right after and is where the restart-or-stop decision is made, so nothing is lost.
+  };
+
+  r.onend=function(){
+    // The heart of "continuous" mode: the browser ends a recognition session on its own
+    // after a stretch of silence, but that must NOT be mistaken for the user wanting to
+    // stop. As long as micActive is still true (the user hasn't tapped Stop), silently
+    // start a fresh session and keep going -- micFinalText/micBaseText already carry the
+    // transcript so far and are untouched by this restart, so nothing is lost/repeated.
+    if(micActive){
+      try{launchRecognitionSession(1);}
+      catch(err){micActive=false;micRec=null;setDescMicVisualIdle();}
+    }
+  };
+
+  try{
+    r.start();
+  }catch(err){
+    // Chrome can briefly throw "recognition has already started" for an instant right
+    // after the previous session ends -- a known timing race, not a real failure. Retry
+    // a couple of times with a short backoff before giving up, so a transient hiccup
+    // doesn't silently end continuous mode and force the user to tap Mic again.
+    if(micActive&&startAttempt<3){
+      setTimeout(()=>{if(micActive)launchRecognitionSession(startAttempt+1);},150*startAttempt);
+    }else{
+      micActive=false;micRec=null;setDescMicVisualIdle();
+      nf('Error',err.message,'warn');
+    }
+  }
+}
+
+function stopContinuousMic(){
+  // Order matters: flip micActive to false BEFORE calling stop(), otherwise the onend
+  // handler above would still see it true and immediately launch a new session right
+  // after this one ends.
+  micActive=false;
+  if(micRec){
+    micRec.onend=null; // this stop is intentional -- don't let a stray onend restart it
+    try{micRec.stop();}catch(e){}
+  }
+  micRec=null;
+  setDescMicVisualIdle();
+  const ta=document.getElementById('subSearch');
+  if(ta)ta.focus();
+}
+
+// ===== FIXED-TICKET NOTIFICATIONS (requester only) =====
+// Goal: let the requester know the moment an attender marks their ticket Fixed --
+// status moves to 'requester-confirm' / 'awaiting-resolution', the SAME states that
+// already trigger the existing "The attender has requested closure /
+// HAS THE ISSUE BEEN RESOLVED?" banner in the ticket detail view (see viewT()) --
+// without them having to manually refresh. Every other status change (accepted,
+// reached, started, in-progress, on-hold, ...) stays deliberately silent.
+const NOTIF_FIXED_STATUSES=['requester-confirm','awaiting-resolution'];
+let notifPrevStatus={};    // ticket id -> last status seen -- only a NEW transition into a Fixed status notifies, never a repeat
+let notifItems=[];         // {notifId, ticketId, issue, iso, read}
+let notifUnread=0;
+let notifPollTimer=null;   // the ONE interval handle for this feature -- start is idempotent so this can never be duplicated
+
+// Which outlets this requester can currently see -- mirrors the exact same scoping
+// resetF()/rList() already use for "my tickets", so a notification never fires for a
+// ticket the requester wouldn't otherwise see in their own list.
+function notifOutletScope(){
+  if(typeof selectedOutlets!=='undefined'&&selectedOutlets&&selectedOutlets.length)return selectedOutlets;
+  if(typeof userOutlet!=='undefined'&&userOutlet)return [userOutlet];
+  return null; // not known yet -- watch everything rather than silently watch nothing
+}
+
+function startFixedNotificationPolling(){
+  if(role!=='requester')return;
+  stopFixedNotificationPolling(); // idempotent -- guarantees only one interval is ever running, however many times/places this gets called from
+  // Seed the baseline quietly so tickets already Fixed before this page opened don't
+  // fire a notification the first time the checker runs -- only a change witnessed
+  // AFTER this point counts (spec: no repeat notification for an already-Fixed ticket).
+  const seed=(TKS&&TKS.length)?Promise.resolve(TKS):apiRead('Tickets').then(rows=>(rows||[]).map(r=>({id:String(r.Ticket_ID||'').trim(),status:String(r.Status||'').trim()})));
+  seed.then(list=>{(list||[]).forEach(t=>{if(t&&t.id)notifPrevStatus[t.id]=t.status;});}).catch(()=>{});
+  showNotifBell();
+  notifPollTimer=setInterval(checkForFixedTickets,4000);
+}
+
+function stopFixedNotificationPolling(){
+  if(notifPollTimer){clearInterval(notifPollTimer);notifPollTimer=null;}
+}
+
+// Lightweight tick: reads the Tickets tab directly (same apiRead() everything else uses)
+// and only compares statuses -- it deliberately does NOT touch the global TKS array or
+// re-render anything, so it never disturbs whatever the requester currently has open
+// (loadTicketsFromSheet() resets each ticket's costs/chat/history arrays, which would be
+// wrong to do on every routine 4s tick). Only when something newly became Fixed do we
+// call the real, existing refresh so the visible list/detail actually update too.
+async function checkForFixedTickets(){
+  if(role!=='requester')return;
+  let rows;
+  try{rows=await apiRead('Tickets');}catch(e){return;}
+  if(!rows)return;
+  const scope=notifOutletScope();
+  const newlyFixed=[];
+  rows.forEach(r=>{
+    const id=String(r.Ticket_ID||'').trim();
+    if(!id)return;
+    const out=String(r.Outlet_Code||'').trim();
+    if(scope&&!scope.includes(out))return; // outside this requester's visible outlets
+    const status=String(r.Status||'').trim();
+    const prev=notifPrevStatus[id];
+    const isFixedNow=NOTIF_FIXED_STATUSES.includes(status);
+    const wasFixedBefore=prev!==undefined&&NOTIF_FIXED_STATUSES.includes(prev);
+    if(isFixedNow&&!wasFixedBefore){
+      newlyFixed.push({id:id,issue:String(r.SubCat_ID||r.Description||'').trim()||id});
+    }
+    notifPrevStatus[id]=status;
+  });
+  if(!newlyFixed.length)return;
+  addFixedNotifications(newlyFixed);
+  // Something real changed -- now (and only now) do the existing full ticket refresh so
+  // the on-screen list/detail reflect the new status too, instead of leaving the visible
+  // data stale under a notification popup.
+  try{
+    await loadTicketsFromSheet();
+    if(document.getElementById('app')&&document.getElementById('app').style.display!=='none')R();
+    const bookingsEl=document.getElementById('myBookingsPage');
+    if(bookingsEl&&bookingsEl.style.display!=='none'&&typeof renderMyBookings==='function')renderMyBookings();
+    if(curTkt&&newlyFixed.some(x=>x.id===curTkt)&&document.getElementById('pg-detail')?.classList.contains('on'))viewT(curTkt);
+  }catch(e){}
+}
+
+function addFixedNotifications(list){
+  const nowIso=new Date().toISOString();
+  list.forEach(x=>{
+    notifItems.unshift({notifId:'N-'+Date.now()+'-'+Math.floor(Math.random()*1000),ticketId:x.id,issue:x.issue,iso:nowIso,read:false});
+  });
+  notifUnread=notifItems.filter(n=>!n.read).length;
+  updateNotifBadge();
+  renderNotifPanel();
+  showFixedBanner(list);
+  ringBell();
+  playNotifSound();
+}
+
+function showNotifBell(){const b=document.getElementById('notifBellBtn');if(b)b.style.display='flex';}
+function hideNotifBell(){
+  const b=document.getElementById('notifBellBtn');if(b)b.style.display='none';
+  const p=document.getElementById('notifPanel');if(p)p.style.display='none';
+  dismissFixedBanner();
+}
+
+function ringBell(){
+  const b=document.getElementById('notifBellBtn');
+  if(!b)return;
+  b.classList.remove('notif-ring');
+  void b.offsetWidth; // restart the animation even if it's already mid-ring
+  b.classList.add('notif-ring');
+}
+
+function updateNotifBadge(){
+  const b=document.getElementById('notifBadge');
+  if(!b)return;
+  if(notifUnread>0){b.textContent=notifUnread>99?'99+':String(notifUnread);b.style.display='flex';}
+  else{b.style.display='none';}
+}
+
+function toggleNotifPanel(){
+  const p=document.getElementById('notifPanel');
+  if(!p)return;
+  const open=p.style.display!=='none';
+  if(open){p.style.display='none';return;}
+  renderNotifPanel();
+  p.style.display='block';
+}
+
+// Close the notification panel when tapping elsewhere, same pattern used for the outlet
+// search / consumables search dropdowns elsewhere in the app.
+document.addEventListener('click',function(e){
+  const p=document.getElementById('notifPanel');
+  if(!p||p.style.display==='none')return;
+  if(e.target.closest&&(e.target.closest('#notifPanel')||e.target.closest('#notifBellBtn')))return;
+  p.style.display='none';
+});
+
+function renderNotifPanel(){
+  const list=document.getElementById('notifPanelList');
+  if(!list)return;
+  if(!notifItems.length){
+    list.innerHTML='<div style="padding:18px 12px;text-align:center;font-size:11px;color:var(--t3)">No notifications yet</div>';
+    return;
+  }
+  list.innerHTML=notifItems.map(n=>`
+    <div onclick="openNotifTicket('${n.ticketId}','${n.notifId}')" style="display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;${n.read?'':'background:rgba(124,106,240,.07)'}">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:4px;visibility:${n.read?'hidden':'visible'}"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11.5px;font-weight:700;color:var(--t)">✅ ${n.ticketId} has been fixed</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.issue||''}</div>
+        <div style="font-size:9px;color:var(--t3);margin-top:2px">Tap to view the update</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function markNotifRead(notifId){
+  const n=notifItems.find(x=>x.notifId===notifId);
+  if(n&&!n.read){n.read=true;notifUnread=notifItems.filter(x=>!x.read).length;updateNotifBadge();}
+}
+
+function markAllNotifsRead(){
+  notifItems.forEach(n=>n.read=true);
+  notifUnread=0;
+  updateNotifBadge();
+  renderNotifPanel();
+}
+
+function openNotifTicket(ticketId,notifId){
+  markNotifRead(notifId);
+  renderNotifPanel();
+  const panel=document.getElementById('notifPanel');if(panel)panel.style.display='none';
+  dismissFixedBanner();
+  openTicketDetail(ticketId); // reuses the app's own existing ticket-navigation function
+}
+
+function dismissFixedBanner(){
+  const banner=document.getElementById('fixedNotifBanner');
+  if(banner)banner.remove();
+}
+
+function showFixedBanner(list){
+  dismissFixedBanner();
+  const banner=document.createElement('div');
+  banner.id='fixedNotifBanner';
+  banner.style.cssText='position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:270;width:calc(100% - 24px);max-width:380px;background:var(--c1);border:1px solid var(--ac);border-radius:var(--r);box-shadow:0 10px 28px rgba(20,20,43,.22);padding:12px 14px;cursor:pointer;animation:notifSlideDown .22s ease-out';
+  const title=list.length>1?('🔔 '+list.length+' Ticket Updates'):'🔔 Ticket Updated';
+  const body=list.length>1
+    ?list.map(x=>'• Ticket '+x.id+' has been fixed').join('<br>')
+    :'Your ticket has been fixed. Tap to view the update.';
+  banner.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--t)">'+title+'</div><div style="font-size:11.5px;color:var(--t2);margin-top:3px;line-height:1.4">'+body+'</div></div><button type="button" onclick="event.stopPropagation();dismissFixedBanner()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;flex-shrink:0;padding:0 2px">✕</button></div>';
+  banner.onclick=function(){openNotifTicket(list[0].id,null);};
+  document.body.appendChild(banner);
+  setTimeout(()=>{
+    const el=document.getElementById('fixedNotifBanner');
+    if(!el)return;
+    el.style.animation='notifSlideUp .22s ease-in forwards';
+    setTimeout(()=>{const el2=document.getElementById('fixedNotifBanner');if(el2)el2.remove();},220);
+  },7000);
+}
+
+function playNotifSound(){
+  // Same synthesized-tone approach already used by playReadySound() elsewhere in this
+  // file -- no audio file, no permission prompt. If the browser's autoplay policy blocks
+  // it (no prior user gesture on the page yet), this silently does nothing -- the visual
+  // banner + badge are what actually matter, sound is a bonus.
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    const ctx=new Ctx();
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type='sine';osc.frequency.value=1046.5; // short, subtle single chime
+    gain.gain.setValueAtTime(0,ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.25,ctx.currentTime+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start();osc.stop(ctx.currentTime+0.35);
+  }catch(e){/* autoplay blocked or Web Audio unavailable -- visual notification still works */}
+}
+
 function onCat(){const c=document.getElementById('tC').value,s=document.getElementById('tS');s.innerHTML='<option value="">—</option>';if(CATS[c])CATS[c].subs.forEach(x=>s.innerHTML+=`<option>${x}</option>`);document.getElementById('probeW').style.display='none';uPri()}
 
 function onSub(){uPri();const c=document.getElementById('tC').value,s=document.getElementById('tS').value,w=document.getElementById('probeW'),l=document.getElementById('probeL');const m=getMeta(c,s);const hasAny=m.checklist.length||m.probes.length;if(hasAny){w.style.display='block';let h='';m.checklist.forEach(q=>{h+=`<label class="chk"><input type="checkbox"><span>${q}</span></label>`});m.probes.forEach(p=>{h+=`<div style="margin:4px 0"><div style="font-size:10px;color:var(--t2);margin-bottom:2px">${p.q}</div><select class="fc" style="font-size:11px;padding:4px 6px"><option value="">—</option>${(p.opts||[]).map(o=>`<option>${o}</option>`).join('')}</select></div>`});l.innerHTML=h}else w.style.display='none'}
@@ -3239,6 +3676,7 @@ async function raiseTicket(){
   role='requester';phone=ph;userName=nm;
   userIni=(nm.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||ph.slice(-2);
   userOutlet=o;selectedOutlets=[o];
+  if(typeof startFixedNotificationPolling==='function')startFixedNotificationPolling();
   document.getElementById('uN').textContent=userName;document.getElementById('uR').textContent='requester · '+phone;document.getElementById('uAv').textContent=userIni;
   tCnt++;const id=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'-0'+tCnt;let u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');if(flagOn)u='critical';const sla=SLAH[u]||CATS[c]?.sla||24;
   const probes=[];
@@ -4485,6 +4923,7 @@ function continueFromIdentity(){
   updateIdentitySummary();
   checkChatUnlock();
   startOnboardingTour();
+  if(typeof startFixedNotificationPolling==='function')startFixedNotificationPolling();
 }
 function checkChatUnlock(){
   const ph=(document.getElementById('lPh')?document.getElementById('lPh').value:'').replace(/\D/g,'');
@@ -4659,6 +5098,23 @@ let usersLoaded=true;
   </div>
   <button type="button" onclick="resetMyBookingsFilters()" style="background:none;border:none;color:var(--ac2);font-size:10.5px;text-decoration:underline;cursor:pointer;margin-bottom:10px">↻ Reset filters</button>
   <div id="myBookingsList"></div>
+</div>
+<!-- ===== FIXED-TICKET NOTIFICATIONS ===== -->
+<!-- Fixed-position so it floats over whichever page (dashboard, My Tickets, ticket
+     detail...) is currently showing, without needing to be threaded into each of the
+     app's several separate page headers. Hidden until the requester's identity is known
+     (shown/hidden by showNotifBell()/hideNotifBell(), called from continueFromIdentity(),
+     raiseTicket() and logout()). -->
+<button type="button" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifications" style="display:none;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:260;width:38px;height:38px;border-radius:50%;background:var(--c1);border:1px solid var(--bdr);box-shadow:0 2px 10px rgba(20,20,43,.15);cursor:pointer;align-items:center;justify-content:center;font-size:16px">
+  🔔
+  <span id="notifBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:var(--er);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:9px;align-items:center;justify-content:center;padding:0 3px;line-height:1;border:2px solid var(--bg)">0</span>
+</button>
+<div id="notifPanel" style="display:none;position:fixed;top:calc(54px + env(safe-area-inset-top,0px));right:10px;z-index:260;width:290px;max-width:calc(100vw - 20px);max-height:60vh;overflow-y:auto;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:0 10px 28px rgba(20,20,43,.2)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--bdr)">
+    <span style="font-size:12px;font-weight:700">🔔 Notifications</span>
+    <button type="button" onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--ac2);font-size:10px;cursor:pointer">Mark all read</button>
+  </div>
+  <div id="notifPanelList"></div>
 </div>
 </body>
 </html>
