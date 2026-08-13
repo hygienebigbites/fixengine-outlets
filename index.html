@@ -164,7 +164,22 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 /* ===== INLINE MIC BUTTON (Describe the problem) -- Claude-style composer ===== */
 #subSearch:focus{border-color:var(--ac) !important;background:var(--c1) !important}
 #descMicBtn:active{transform:scale(.93)}
-#descMicBtn.mic-listening{background:var(--er) !important;border-color:transparent !important;color:#fff !important}
+#descMicBtn:hover{background:rgba(124,106,240,.22)}
+
+/* ===== VOICE RECORDING OVERLAY (X / waveform / checkmark) ===== */
+#voiceRecordBar{animation:voiceBarPop .16s ease-out}
+@keyframes voiceBarPop{0%{opacity:0;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+#voiceRecordBar button:active{transform:scale(.92)}
+.voice-wave{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;height:32px}
+.voice-wave span{display:inline-block;width:4px;height:8px;border-radius:3px;background:linear-gradient(180deg,var(--ac),var(--inf));animation:voiceWaveBar 1.1s ease-in-out infinite}
+.voice-wave span:nth-child(1){animation-delay:0s}
+.voice-wave span:nth-child(2){animation-delay:.12s}
+.voice-wave span:nth-child(3){animation-delay:.24s}
+.voice-wave span:nth-child(4){animation-delay:.12s}
+.voice-wave span:nth-child(5){animation-delay:0s}
+@keyframes voiceWaveBar{0%,100%{height:8px;opacity:.5}50%{height:26px;opacity:1}}
+.voice-wave.active span{animation-duration:.5s}
+#voiceReviewCard{animation:voiceBarPop .18s ease-out}
 
 /* ===== FIXED-TICKET NOTIFICATIONS ===== */
 #notifBellBtn:active{transform:scale(.93)}
@@ -250,13 +265,25 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
       <button type="button" id="voiceLangBtn" onclick="toggleVoiceLang()" title="Voice language" style="background:var(--c2);border:1px solid var(--bdr);border-radius:9px;color:var(--t2);font-size:8.5px;font-weight:700;cursor:pointer;padding:2px 6px">EN</button>
       <button type="button" id="voiceRetryBtn" onclick="voiceSearch()" title="Try voice again" style="display:none;background:var(--c2);border:1px solid var(--ac);border-radius:50%;width:24px;height:24px;color:var(--ac2);font-size:11px;cursor:pointer;align-items:center;justify-content:center">🔁</button>
     </div>
+    <div id="voiceReviewCard" style="display:none;background:rgba(124,106,240,.08);border:1px solid rgba(124,106,240,.22);border-radius:12px;padding:8px 26px 8px 10px;margin-bottom:6px;position:relative">
+      <div style="font-size:9px;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🎙️ Voice input added</div>
+      <div class="voice-review-text" style="font-size:11.5px;color:var(--t);line-height:1.4"></div>
+      <button type="button" onclick="dismissVoiceReview()" title="Dismiss" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--t3);font-size:12px;cursor:pointer;padding:2px">✕</button>
+    </div>
     <div style="display:flex;align-items:flex-end;gap:6px">
       <div style="flex:1;position:relative">
-        <textarea id="subSearch" rows="1" placeholder="Type your issue here, or tap for mic options..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c2);border:1.5px solid #C7CBDA;border-radius:18px;outline:none;color:var(--t);font-size:clamp(16px,4.2vw,17px);line-height:1.45;resize:none;padding:16px 50px 16px 18px;font-family:inherit;min-height:118px;max-height:210px;box-sizing:border-box;transition:border-color .15s,padding-right .15s"></textarea>
-        <button type="button" id="descMicBtn" onclick="toggleDescMic()" title="Voice input" style="display:none;position:absolute;right:54px;bottom:8px;width:38px;height:38px;border-radius:50%;background:var(--c1);border:1px solid var(--bdr);color:var(--t2);cursor:pointer;align-items:center;justify-content:center;font-size:15px;transition:background .15s,color .15s,border-color .15s">🎙️</button>
+        <textarea id="subSearch" rows="1" placeholder="Type your issue here, or tap for mic options..." oninput="onSubSearchAuto()" onkeydown="onSearchKeydown(event)" style="width:100%;background:var(--c1);border:1.5px solid #C7CBDA;border-radius:18px;outline:none;color:var(--t);font-size:clamp(16px,4.2vw,17px);line-height:1.45;resize:none;padding:16px 50px 16px 18px;font-family:inherit;min-height:118px;max-height:210px;box-sizing:border-box;transition:border-color .15s,padding-right .15s"></textarea>
+        <button type="button" id="descMicBtn" onclick="toggleDescMic()" title="Voice input" style="display:none;position:absolute;right:54px;bottom:8px;width:38px;height:38px;border-radius:50%;background:var(--acg);border:1px solid rgba(124,106,240,.35);color:var(--ac2);cursor:pointer;align-items:center;justify-content:center;transition:background .15s,color .15s,border-color .15s">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
         <button type="button" id="srchSendBtn" onclick="runFind()" title="Search" style="position:absolute;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;background:var(--ac);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
         </button>
+        <div id="voiceRecordBar" style="display:none;position:absolute;inset:0;background:var(--c1);border:1.5px solid var(--ac);border-radius:18px;align-items:center;justify-content:space-between;padding:0 16px;box-sizing:border-box">
+          <button type="button" onclick="cancelVoiceInput()" title="Cancel" style="width:40px;height:40px;border-radius:50%;background:var(--c2);border:1px solid var(--bdr);color:var(--er);font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
+          <div class="voice-wave" id="voiceWave"><span></span><span></span><span></span><span></span><span></span></div>
+          <button type="button" onclick="confirmVoiceDone()" title="Done" style="width:40px;height:40px;border-radius:50%;background:var(--ac);border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)">✓</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3001,7 +3028,7 @@ function clearSubSelection(){
   const tDa=document.getElementById('tD');if(tDa&&tDa.value===autoDesc)tDa.value='';autoDesc='';typedProblem='';selItem='';selAction='';renderTagChips();
   subSearchSelected={cat:'',sub:''};
   autoSuggestPending=null;
-  if(typeof micActive!=='undefined'&&micActive&&typeof stopContinuousMic==='function')stopContinuousMic(); // don't leave the mic running once the box is wiped
+  if(typeof isListening!=='undefined'&&isListening){cancelVoiceInput();} // don't leave the mic running once the box is wiped
   document.getElementById('subSearch').value='';
   if(typeof syncDescMicBtn==='function')syncDescMicBtn();
   document.getElementById('subSelected').style.display='none';
@@ -3214,117 +3241,130 @@ function showVoiceRetry(show){
   if(b)b.style.display=show?'flex':'none';
 }
 
-// ===== INLINE MIC BUTTON (Describe the problem) -- Claude-style composer =====
-// The box now behaves like Claude's composer: empty -> only the Send arrow; as soon as
-// there is ANY text (typed, spoken, or set programmatically e.g. by picking a category)
-// a compact mic button appears next to it. Tapping it toggles continuous listening on/off
-// in place -- no separate popup is needed. The continuous-recognition engine itself
-// (startContinuousMic/launchRecognitionSession/stopContinuousMic) is unchanged from the
-// previous update; only how it's triggered and how its state is shown has been simplified.
-let micActive=false;        // true only while a continuous mic session should be running
-let micRec=null;            // current SpeechRecognition instance
-let micBaseText='';         // text already in the box when this mic session began
-let micFinalText='';        // speech finalized so far THIS mic session (survives auto-restarts)
+// ===== CLAUDE-STYLE VOICE INPUT (Describe the problem) =====
+// Composer has two modes: idle (typing, Mic+Arrow visible per syncDescMicBtn) and
+// recording (the whole control row is replaced by a Cancel / waveform / Done bar --
+// see #voiceRecordBar). While recording, speech is accumulated purely in JS state and
+// is NEVER written into the visible textarea -- that is deliberate, and is what actually
+// fixes the "AC is not cooling AC is not cooling..." repetition bug reported earlier.
+// The old design re-painted textarea.value on every single onresult event (interim AND
+// final); each repaint is a full re-render of the combined text, so any restart, timing
+// glitch, or lingering event from a just-ended recognition session showed up as visibly
+// repeated text. Now the textarea is only ever written to ONCE, when the user presses
+// Done -- there is nothing left running that can paint it a second time.
+//
+// State (kept separate on purpose, per spec):
+let isListening=false;      // true only while a continuous mic session should be running
+let isStoppingManually=false; // set just before we call stop() ourselves, so onend can tell
+                               // "the user ended this" apart from "the browser ended this"
+let micRec=null;            // the ONE active SpeechRecognition instance (never more than one)
+let micBaseText='';         // text already in the box when this recording session began
+let finalTranscript='';     // speech finalized so far THIS session (survives auto-restarts) -- appended to exactly once per result
+let interimTranscript='';   // most recent not-yet-final chunk -- overwritten, never appended, never shown as text (the waveform IS the "still listening" feedback)
 
 // Shows/hides #descMicBtn based on whether the box currently has any text, and keeps the
-// textarea's right padding in sync so typed text never runs under the button. Call this
-// any time subSearch's value changes -- typing (onSubSearchAuto) or programmatically
-// (category pick / clear) -- see selectSubFromSearch(), onSubVisible(), clearSubSelection().
+// textarea's right padding in sync so typed text never runs under the button. Only
+// relevant in idle mode -- enterVoiceMode()/exitVoiceMode() own visibility while recording.
 function syncDescMicBtn(){
+  if(isListening)return;
   const ta=document.getElementById('subSearch');
   const btn=document.getElementById('descMicBtn');
   if(!ta||!btn)return;
-  if(micActive){btn.style.display='flex';ta.style.paddingRight='92px';return;}
   const hasText=!!ta.value.trim();
   btn.style.display=hasText?'flex':'none';
   ta.style.paddingRight=hasText?'92px':'50px';
 }
 
 function toggleDescMic(){
-  if(micActive)stopContinuousMic();else startContinuousMic();
+  if(!isListening)startVoiceMode();
 }
 
-function setDescMicVisualListening(){
-  const btn=document.getElementById('descMicBtn');
-  if(!btn)return;
-  btn.classList.add('mic-listening');
-  btn.textContent='⏹';
-  btn.title='Stop listening';
-  btn.style.display='flex';
+// Swaps the composer into recording mode: textarea keeps its layout size (visibility:
+// hidden, not display:none) so the overlay bar -- absolutely positioned, inset:0 -- lines
+// up exactly over the same rounded box, and Mic/Arrow are hidden underneath it.
+function enterVoiceMode(){
+  const ta=document.getElementById('subSearch');
+  const bar=document.getElementById('voiceRecordBar');
+  const micBtn=document.getElementById('descMicBtn');
+  const sendBtn=document.getElementById('srchSendBtn');
+  if(ta)ta.style.visibility='hidden';
+  if(micBtn)micBtn.style.display='none';
+  if(sendBtn)sendBtn.style.display='none';
+  if(bar)bar.style.display='flex';
+}
+function exitVoiceMode(){
+  const ta=document.getElementById('subSearch');
+  const bar=document.getElementById('voiceRecordBar');
+  const sendBtn=document.getElementById('srchSendBtn');
+  if(ta)ta.style.visibility='visible';
+  if(sendBtn)sendBtn.style.display='flex';
+  if(bar)bar.style.display='none';
+  syncDescMicBtn(); // restore Mic/Arrow visibility based on whatever text is now in the box
 }
 
-function setDescMicVisualIdle(){
-  const btn=document.getElementById('descMicBtn');
-  if(!btn)return;
-  btn.classList.remove('mic-listening');
-  btn.textContent='🎙️';
-  btn.title='Voice input';
-  syncDescMicBtn(); // re-evaluate visibility now that listening has ended
-}
-
-function startContinuousMic(){
+function startVoiceMode(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const ta=document.getElementById('subSearch');
   if(!SR){nf('Not supported','Voice needs Chrome on Android','warn');return;}
   if(location.protocol==='file:'){nf('HTTPS required','Deploy to GitHub first','warn');return;}
-  // Capture whatever is already in the box (typed earlier, or spoken in a previous mic
-  // session) as a fixed base -- every newly recognized word is appended AFTER this, so
-  // existing text is never lost or overwritten (Type -> Mic -> Stop -> Type -> Mic again).
+  // Capture whatever is already in the box (typed earlier, or kept from a previous voice
+  // session) as a fixed base -- Done appends the new transcript AFTER this; existing text
+  // is never lost, overwritten, or duplicated (Type -> Mic -> Done -> Type -> Mic again).
   micBaseText=ta?ta.value:'';
   if(micBaseText&&!/\s$/.test(micBaseText))micBaseText+=' ';
-  micFinalText='';
-  micActive=true;
-  setDescMicVisualListening();
+  finalTranscript='';
+  interimTranscript='';
+  isListening=true;
+  isStoppingManually=false;
+  enterVoiceMode();
   launchRecognitionSession();
 }
 
 function launchRecognitionSession(startAttempt){
-  if(!micActive)return;
+  if(!isListening)return;
   startAttempt=startAttempt||1;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const r=new SR();
   micRec=r;
-  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');  // follows whatever the requester picked via the EN/हिं toggle
+  r.lang=(typeof voiceLang!=='undefined'?voiceLang:'en-IN');  // follows whatever the requester picked via the EN/हिं toggle -- never hard-coded to English
   r.continuous=true;      // keep listening across pauses, where the browser supports it
-  r.interimResults=true;  // show live text while the user is still mid-sentence
+  r.interimResults=true;  // lets us pulse the waveform the instant speech is detected
   r.maxAlternatives=1;
 
-  // How many of THIS session's results have already been folded into micFinalText.
-  // Tracked ourselves instead of trusting e.resultIndex -- some Chrome/Android builds
-  // report resultIndex unreliably (it can point at an already-finalized entry), which is
-  // exactly what caused words to sometimes be duplicated or dropped after a restart.
-  // Counting finals by our own pointer over the full e.results list every time sidesteps
-  // that regardless of what resultIndex says.
+  // How many of THIS session's results have already been folded into finalTranscript.
+  // Tracked with our own counter rather than trusting e.resultIndex -- some Chrome/
+  // Android builds report resultIndex unreliably. Every final result is walked exactly
+  // once, ever, by index -- this is the ONLY place finalTranscript is written to.
   let sessionFinalCount=0;
 
   r.onresult=function(e){
-    const taEl=document.getElementById('subSearch');
-    let interim='';
+    let sawNew=false;
     for(let i=0;i<e.results.length;i++){
       const res=e.results[i];
       if(res.isFinal){
-        if(i>=sessionFinalCount){ // not committed yet -- fold it in exactly once
+        if(i>=sessionFinalCount){ // not committed yet -- fold it in exactly once, ever
           const t=res[0].transcript.trim();
-          if(t)micFinalText+=(micFinalText&&!/\s$/.test(micFinalText)?' ':'')+t;
+          if(t)finalTranscript+=(finalTranscript&&!/\s$/.test(finalTranscript)?' ':'')+t;
           sessionFinalCount=i+1;
+          sawNew=true;
         }
-      }else{
-        interim+=res[0].transcript;
+      }else if(i===e.results.length-1){
+        // Only the trailing (currently-being-spoken) entry is kept as "interim" -- it is
+        // OVERWRITTEN every event, never appended to finalTranscript, and never painted
+        // into the textarea. It exists purely so the waveform can visibly react while
+        // the user is still mid-sentence; it is discarded the moment this callback ends.
+        interimTranscript=res[0].transcript;
+        sawNew=true;
       }
     }
-    if(taEl){
-      let combined=micBaseText;
-      if(micFinalText)combined+=(combined&&!/\s$/.test(combined)?' ':'')+micFinalText;
-      if(interim)combined+=(combined&&!/\s$/.test(combined)?' ':'')+interim;
-      taEl.value=combined;
-    }
+    if(sawNew)pulseVoiceWave();
   };
 
   r.onerror=function(e){
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){
-      micActive=false; // hard stop -- retrying would just fail again in a loop
+      isListening=false; // hard stop -- retrying would just fail again in a loop
       micRec=null;
-      setDescMicVisualIdle();
+      exitVoiceMode();
       nf('🎙️ Mic access denied','Check phone settings','warn');
       return;
     }
@@ -3335,12 +3375,13 @@ function launchRecognitionSession(startAttempt){
   r.onend=function(){
     // The heart of "continuous" mode: the browser ends a recognition session on its own
     // after a stretch of silence, but that must NOT be mistaken for the user wanting to
-    // stop. As long as micActive is still true (the user hasn't tapped Stop), silently
-    // start a fresh session and keep going -- micFinalText/micBaseText already carry the
-    // transcript so far and are untouched by this restart, so nothing is lost/repeated.
-    if(micActive){
+    // stop. Only restart when isListening is still true AND this wasn't a stop WE asked
+    // for (isStoppingManually) -- finalTranscript/micBaseText already carry the transcript
+    // so far and are untouched by a restart, so nothing already captured is ever lost or
+    // repeated by starting a fresh session.
+    if(isListening&&!isStoppingManually){
       try{launchRecognitionSession(1);}
-      catch(err){micActive=false;micRec=null;setDescMicVisualIdle();}
+      catch(err){isListening=false;micRec=null;exitVoiceMode();}
     }
   };
 
@@ -3351,28 +3392,82 @@ function launchRecognitionSession(startAttempt){
     // after the previous session ends -- a known timing race, not a real failure. Retry
     // a couple of times with a short backoff before giving up, so a transient hiccup
     // doesn't silently end continuous mode and force the user to tap Mic again.
-    if(micActive&&startAttempt<3){
-      setTimeout(()=>{if(micActive)launchRecognitionSession(startAttempt+1);},150*startAttempt);
+    if(isListening&&startAttempt<3){
+      setTimeout(()=>{if(isListening)launchRecognitionSession(startAttempt+1);},150*startAttempt);
     }else{
-      micActive=false;micRec=null;setDescMicVisualIdle();
+      isListening=false;micRec=null;exitVoiceMode();
       nf('Error',err.message,'warn');
     }
   }
 }
 
-function stopContinuousMic(){
-  // Order matters: flip micActive to false BEFORE calling stop(), otherwise the onend
-  // handler above would still see it true and immediately launch a new session right
-  // after this one ends.
-  micActive=false;
+// Brief visual "I heard that" pulse on the waveform bars -- purely cosmetic, driven by
+// interimTranscript/finalTranscript activity, never touches any text.
+function pulseVoiceWave(){
+  const w=document.getElementById('voiceWave');
+  if(!w)return;
+  w.classList.add('active');
+  clearTimeout(w.__pulseT);
+  w.__pulseT=setTimeout(()=>w.classList.remove('active'),450);
+}
+
+// Stops recognition the same careful way in both Done and Cancel: flip isListening (and
+// isStoppingManually) to false/true BEFORE calling stop(), otherwise onend would still
+// see isListening true and immediately launch a new session right after this one ends.
+function haltRecognition(){
+  isListening=false;
+  isStoppingManually=true;
   if(micRec){
-    micRec.onend=null; // this stop is intentional -- don't let a stray onend restart it
+    micRec.onend=null; // belt-and-suspenders -- this stop is intentional either way
     try{micRec.stop();}catch(e){}
   }
   micRec=null;
-  setDescMicVisualIdle();
+}
+
+// ✓ Done -- commit whatever was captured (existing text + this session's transcript,
+// appended exactly once) and show it for review above the box.
+function confirmVoiceDone(){
+  haltRecognition();
+  const ta=document.getElementById('subSearch');
+  const captured=finalTranscript.trim();
+  if(ta){
+    let combined=micBaseText;
+    if(captured)combined+=(combined&&!/\s$/.test(combined)?' ':'')+captured;
+    ta.value=combined;
+  }
+  exitVoiceMode();
+  if(captured)showVoiceReview(captured);
+  if(ta)ta.focus();
+}
+
+// ✕ Cancel -- discard this session's transcript entirely. The textarea's value was never
+// touched while recording, so the requester's previously typed/captured text is already
+// exactly as it was; nothing needs to be restored.
+function cancelVoiceInput(){
+  haltRecognition();
+  finalTranscript='';
+  interimTranscript='';
+  exitVoiceMode();
   const ta=document.getElementById('subSearch');
   if(ta)ta.focus();
+}
+
+// Small dismissible "here's what your voice input added" card shown above the box after
+// Done -- purely a review aid; the textarea (already updated by confirmVoiceDone) remains
+// the one editable source of truth that search/category-matching/submission all read.
+function showVoiceReview(text){
+  const card=document.getElementById('voiceReviewCard');
+  if(!card)return;
+  const textEl=card.querySelector('.voice-review-text');
+  if(textEl)textEl.textContent='"'+text+'"';
+  card.style.display='block';
+  clearTimeout(window.__voiceReviewTimer);
+  window.__voiceReviewTimer=setTimeout(()=>{if(card)card.style.display='none';},8000);
+}
+function dismissVoiceReview(){
+  const card=document.getElementById('voiceReviewCard');
+  if(card)card.style.display='none';
+  clearTimeout(window.__voiceReviewTimer);
 }
 
 // ===== FIXED-TICKET NOTIFICATIONS (requester only) =====
@@ -3575,17 +3670,24 @@ function playNotifSound(){
   // Same synthesized-tone approach already used by playReadySound() elsewhere in this
   // file -- no audio file, no permission prompt. If the browser's autoplay policy blocks
   // it (no prior user gesture on the page yet), this silently does nothing -- the visual
-  // banner + badge are what actually matter, sound is a bonus.
+  // banner + badge are what actually matter, sound is a bonus. Only ever called from
+  // addFixedNotifications() -- i.e. only for the Fixed transition, never for Accept/
+  // Reached/Start/In Progress.
+  // Louder + more noticeable than before (peak gain close to 1.0, two quick rising notes)
+  // while still short and single-shot -- not a looping/continuous alarm.
   try{
     const Ctx=window.AudioContext||window.webkitAudioContext;
     const ctx=new Ctx();
-    const osc=ctx.createOscillator(),gain=ctx.createGain();
-    osc.type='sine';osc.frequency.value=1046.5; // short, subtle single chime
-    gain.gain.setValueAtTime(0,ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.25,ctx.currentTime+0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.start();osc.stop(ctx.currentTime+0.35);
+    [[880,0],[1318.5,0.11]].forEach(([freq,startOffset])=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      const start=ctx.currentTime+startOffset;
+      gain.gain.setValueAtTime(0,start);
+      gain.gain.linearRampToValueAtTime(0.9,start+0.015); // close to full volume, clearly audible
+      gain.gain.exponentialRampToValueAtTime(0.001,start+0.32);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(start);osc.stop(start+0.33);
+    });
   }catch(e){/* autoplay blocked or Web Audio unavailable -- visual notification still works */}
 }
 
