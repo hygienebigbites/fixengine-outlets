@@ -58,8 +58,13 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 .tli{position:relative;padding-bottom:14px}.tli:last-child{padding-bottom:0}.tl-d{position:absolute;left:-16px;top:3px;width:8px;height:8px;border-radius:50%;border:2px solid var(--bdr);background:var(--bg)}.tli.dn .tl-d{background:var(--ok);border-color:var(--ok)}.tli.nw .tl-d{background:var(--ac);border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
 .tlc{background:var(--c2);border-radius:var(--rs);padding:6px 10px}.tlc .tt{font-size:8px;color:var(--t3);font-family:var(--m)}.tlc .th{font-size:10px;font-weight:600;margin:1px 0}.tlc .td{font-size:9px;color:var(--t2)}
 .cht{display:flex;flex-direction:column;height:240px;background:var(--c2);border-radius:var(--r);overflow:hidden}
-.cht-m{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
-.cm{max-width:80%}.cm.s{align-self:flex-end}.cm .b{padding:7px 10px;border-radius:var(--r) var(--r) 3px var(--r);font-size:11px;line-height:1.3;background:var(--c1)}.cm.s .b{background:var(--ac);color:#fff;border-radius:var(--r) var(--r) var(--r) 3px}.cm .mt{font-size:7px;color:var(--t3);margin-top:2px;display:flex;gap:4px}.cm.s .mt{justify-content:flex-end}
+.cht-m{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+/* .cm.s (mine/requester) already right-aligned via align-self:flex-end -- .cm.r (attender)
+   previously had NO align-self at all, so it defaulted to the flex container's stretch
+   behavior (full-width box anchored left) instead of a compact left bubble, which is why
+   the two sides were hard to visually tell apart. max-width/line-height/padding bumped
+   for readability per spec; word-wrap so a long URL/word can't break the layout. */
+.cm{max-width:82%;word-wrap:break-word;overflow-wrap:break-word}.cm.s{align-self:flex-end}.cm.r{align-self:flex-start}.cm .b{padding:9px 12px;border-radius:var(--r) var(--r) 3px var(--r);font-size:13px;line-height:1.45;background:var(--c1)}.cm.s .b{background:var(--ac);color:#fff;border-radius:var(--r) var(--r) var(--r) 3px}.cm .mt{font-size:9px;color:var(--t3);margin-top:3px;display:flex;gap:4px}.cm.s .mt{justify-content:flex-end}
 .cht-in{display:flex;gap:4px;padding:8px;border-top:1px solid var(--bdr)}.cht-in input{flex:1;background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:6px 12px;color:var(--t);font-size:12px;outline:none}.cht-in .snd{width:28px;height:28px;border-radius:50%;background:var(--ac);color:#fff;border:none;cursor:pointer;font-size:11px}
 .otp-reveal{background:linear-gradient(135deg,rgba(124,106,240,.12),rgba(66,201,190,.08));border:1px solid var(--ac);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:10px}.otp-reveal .otp-num{font-size:28px;font-family:var(--m);font-weight:700;letter-spacing:6px;color:var(--ac2);margin:10px 0}
 .stars{display:flex;gap:3px;justify-content:center}.stars .star{font-size:18px;cursor:pointer;color:var(--bdr)}.stars .star.on{color:var(--wr)}
@@ -407,6 +412,15 @@ let ATTS=[
 const SF=['raised','assigned','accepted','on-the-way','reached-outlet','job-started','in-progress','vendor-pending','ready-closure','requester-confirm','closed'];
 const SL={'raised':'Raised','assigned':'Assigned','accepted':'Accepted','on-the-way':'On the Way','reached-outlet':'Reached Outlet','job-started':'Job Started','in-progress':'In Progress','vendor-pending':'Vendor Working','awaiting-resolution':'Awaiting Resolution Reply','ready-closure':'Ready to Close','requester-confirm':'Awaiting Confirmation','closed':'Closed','on-hold':'On Hold','rejected':'Rejected'};
 const SBC={'raised':'raised','assigned':'assigned','accepted':'accepted','on-the-way':'otw','reached-outlet':'reached','job-started':'started','in-progress':'progress','vendor-pending':'vendor','awaiting-resolution':'ready','ready-closure':'ready','requester-confirm':'ready','closed':'closed','on-hold':'hold','rejected':'rejected'};
+// Requester-facing display override ONLY: the backend status 'awaiting-resolution'
+// (raw label 'Awaiting Resolution Reply' in SL, used by the Attender side / history
+// notes / API) is shown to requesters as "Ready to Close". This does NOT change SL,
+// the stored ticket status, or anything written back to the sheet — it's purely a
+// display-label lookup used wherever the Requester UI shows a ticket's status text.
+function requesterStatusLabel(status){
+  if(status==='awaiting-resolution')return 'Ready to Close';
+  return SL[status]||status||'Open';
+}
 
 // ===== PHASE 3: Google Sheets API connection =====
 const API_URL='https://script.google.com/macros/s/AKfycbyEzjgUsWL0Q_p2Pe4-pOqprxxiT3JjhXbIWWXCjCUOESGwzT8a-Ehp4SVU7C57vmu-/exec';// Reads a tab from the sheet, returns array of row-objects. Returns null on failure.
@@ -771,6 +785,27 @@ function computeSLA(deadlineStr,status,closedAtStr){
     const sign=diffMs<0?'-':'+';
     return sign+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
   }catch(e){return deadlineStr;}
+}
+// Formats an absolute minute count as "Xh Ym" / "Xd Xh" / "Xm" — display-only helper,
+// takes numbers already derived from the existing SLA calculations above, never
+// computes a deadline or timestamp itself.
+function fmtDurationParts(minAbs){
+  const totalMin=Math.max(0,Math.round(minAbs||0));
+  const d=Math.floor(totalMin/1440);
+  const h=Math.floor((totalMin%1440)/60);
+  const m=totalMin%60;
+  if(d>0)return d+'d '+h+'h';
+  if(h>0)return h+'h '+m+'m';
+  return m+'m';
+}
+// Parses the existing computeSLA() open-ticket output format (sign + HH:MM, e.g.
+// "-02:15") back into signed total minutes, so the sign/HH:MM math computeSLA already
+// did doesn't need to be redone — just reformatted for the "Late By" wording.
+function parseSlaHM(slaStr){
+  const m=/^([+-])(\d+):(\d{2})$/.exec(slaStr||'');
+  if(!m)return null;
+  const sign=m[1]==='-'?-1:1;
+  return sign*(parseInt(m[2],10)*60+parseInt(m[3],10));
 }
 function sheetRowToTicket(r){
   const tf=v=>(v===true||String(v).toUpperCase()==='TRUE');
@@ -3639,7 +3674,14 @@ async function checkForFixedTickets(){
     const bookingsEl=document.getElementById('myBookingsPage');
     if(bookingsEl&&bookingsEl.style.display!=='none'&&typeof renderMyBookings==='function')renderMyBookings();
     const changedIds=newlyFixed.map(x=>x.id).concat(newMsgs.map(x=>x.id)).concat(changedStatusIds);
-    if(curTkt&&changedIds.includes(curTkt)&&document.getElementById('pg-detail')?.classList.contains('on'))viewT(curTkt);
+    if(curTkt&&changedIds.includes(curTkt)&&document.getElementById('pg-detail')?.classList.contains('on')){
+      viewT(curTkt);
+      // Keep the full-screen chat overlay live too, if the requester happens to have it
+      // open right now -- this is exactly the "already sitting inside the chat" case the
+      // reliability fix targets. Auto-scrolls only if they were already near the bottom.
+      const fco=document.getElementById('fullChatOverlay');
+      if(fco&&fco.style.display==='flex'&&typeof updateFullChatAfterPoll==='function')updateFullChatAfterPoll();
+    }
   }catch(e){}
 }
 
@@ -4135,7 +4177,7 @@ function rDash(){const op=TKS.filter(t=>t.status!=='closed').length,cl=TKS.filte
   const dc=document.getElementById('dCards');if(dc){const r=TKS.slice(0,5);dc.innerHTML=r.length?r.map(t=>renderTcard(t)).join(''):'<div style="text-align:center;color:var(--t3);padding:16px;font-size:10px">No tickets</div>'}}
 
 function renderTcard(t){const a=t.att?gA(t.att):null;const sc=t.sla?.startsWith('-')?'breach':parseFloat(t.sla)<=2?'warn':'safe';const tot=t.costs.reduce((s,c)=>s+c.amt,0);const isReop=t.reopened&&t.status!=='closed';const otpReady=t.otpRevealed&&t.status!=='closed';const confirmNeeded=role==='requester'&&t.status==='requester-confirm';
-  return`<div class="tcard" onclick="viewT('${t.id}')" ${confirmNeeded||otpReady?'style="border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)"':''}><div style="display:flex;justify-content:space-between"><span class="tid">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span></div><div style="font-size:12px;font-weight:600;margin:3px 0">${t.issue}${isReop?' <span class="badge reopen">🔄</span>':''}${t.vendor?' <span class="badge vendor">🤝</span>':''}</div>${confirmNeeded?'<div style="background:var(--ok);color:#000;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;margin:4px 0;text-align:center">✅ CONFIRM RESOLUTION</div>':otpReady?'<div style="background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;margin:4px 0;text-align:center">🔐 OTP READY</div>':''}<div style="display:flex;justify-content:space-between;align-items:center;font-size:8px;color:var(--t3);gap:4px;flex-wrap:wrap"><span>🏪 ${t.out}${a?' · 🔧 '+a.name:''}</span><span class="sla ${sc}" style="font-size:8px;padding:1px 3px">⏱${t.sla||'—'}</span></div>${tot>0?`<div style="margin-top:4px;font-size:9px;color:var(--ac2);font-weight:600">💰 ₹${tot.toLocaleString('en-IN')}</div>`:''}</div>`}
+  return`<div class="tcard" onclick="viewT('${t.id}')" ${confirmNeeded||otpReady?'style="border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)"':''}><div style="display:flex;justify-content:space-between"><span class="tid">${t.id}</span><span class="badge ${SBC[t.status]}">${requesterStatusLabel(t.status)}</span></div><div style="font-size:12px;font-weight:600;margin:3px 0">${t.issue}${isReop?' <span class="badge reopen">🔄</span>':''}${t.vendor?' <span class="badge vendor">🤝</span>':''}</div>${confirmNeeded?'<div style="background:var(--ok);color:#000;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;margin:4px 0;text-align:center">✅ CONFIRM RESOLUTION</div>':otpReady?'<div style="background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;margin:4px 0;text-align:center">🔐 OTP READY</div>':''}<div style="display:flex;justify-content:space-between;align-items:center;font-size:8px;color:var(--t3);gap:4px;flex-wrap:wrap"><span>🏪 ${t.out}${a?' · 🔧 '+a.name:''}</span><span class="sla ${sc}" style="font-size:8px;padding:1px 3px">⏱${t.sla||'—'}</span></div>${tot>0?`<div style="margin-top:4px;font-size:9px;color:var(--ac2);font-weight:600">💰 ₹${tot.toLocaleString('en-IN')}</div>`:''}</div>`}
 
 function rList(){const el=document.getElementById('tCards');if(!el)return;let f=TKS;
   const fs=document.getElementById('fSt')?.value,fc=document.getElementById('fCt')?.value?.toLowerCase(),fo=document.getElementById('fOt')?.value,fp=document.getElementById('fPr')?.value;
@@ -4274,13 +4316,13 @@ function viewT(id){curTkt=id;const t=TKS.find(x=>x.id===id);if(!t)return;const p
   const reqPhone=t.by;const outPhone=OUTPHONES[t.out]||reqPhone;
 
   // Status card
-  let stH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Current Status</div><div style="font-size:14px;font-weight:700">${SL[t.status]}</div><div style="font-size:8px;color:var(--t3)">${lH?.t||''} ${lH?.n?'· '+lH.n:''}</div></div>${a?`<div style="display:flex;align-items:center;gap:4px"><div class="av" style="width:24px;height:24px;font-size:8px">${a.ini}</div><div style="line-height:1"><div style="font-size:9px;font-weight:600">${a.name}</div><div style="font-size:7px;color:var(--t3)">⭐${a.rating}</div></div><a href="tel:+91${a.phone}" style="font-size:13px;text-decoration:none">📞</a></div>`:''}</div>`;
+  let stH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Current Status</div><div style="font-size:14px;font-weight:700">${requesterStatusLabel(t.status)}</div><div style="font-size:8px;color:var(--t3)">${lH?.t||''} ${lH?.n?'· '+lH.n:''}</div></div>${a?`<div style="display:flex;align-items:center;gap:4px"><div class="av" style="width:24px;height:24px;font-size:8px">${a.ini}</div><div style="line-height:1"><div style="font-size:9px;font-weight:600">${a.name}</div><div style="font-size:7px;color:var(--t3)">⭐${a.rating}</div></div><a href="tel:+91${a.phone}" style="font-size:13px;text-decoration:none">📞</a></div>`:''}</div>`;
   
   // Requester confirms
   if(isR&&(t.status==='awaiting-resolution'||t.status==='requester-confirm')){stH+=`<div style="margin-top:8px"><div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:4px">The attender has requested closure.</div><button class="btn-big green" onclick="curTkt='${t.id}';openM('confirmM')">❓ HAS THE ISSUE BEEN RESOLVED?</button></div>`}
   // Log toggle
   stH+=`<div style="margin-top:6px"><button class="btn btn-s btn-o btn-full" onclick="toggleLog('${t.id}')" style="font-size:9px">📜 ${logOpen[t.id]?'Hide':'View'} Log (${t.hist.length})</button></div>`;
-  if(logOpen[t.id]){stH+='<div class="tl" style="margin-top:8px">';t.hist.forEach((h,i)=>{stH+=`<div class="tli ${i===t.hist.length-1?'nw':'dn'}"><div class="tl-d"></div><div class="tlc"><div class="tt">${h.t}</div><div class="th">${SL[h.s]||h.s}</div>${h.n?`<div class="td">${h.n}</div>`:''}</div></div>`});stH+='</div>'}
+  if(logOpen[t.id]){stH+='<div class="tl" style="margin-top:8px">';t.hist.forEach((h,i)=>{stH+=`<div class="tli ${i===t.hist.length-1?'nw':'dn'}"><div class="tl-d"></div><div class="tlc"><div class="tt">${h.t}</div><div class="th">${requesterStatusLabel(h.s)}</div>${h.n?`<div class="td">${h.n}</div>`:''}</div></div>`});stH+='</div>'}
   stH+='</div>';
 
 // Ticket photos uploaded by requester
@@ -4367,17 +4409,125 @@ let workMetaH='';
 
   // Chat
   let cMsgs=`<div class="cm r"><div class="b">Ticket ${t.id} created</div><div class="mt"><span>System</span><span>${ct}</span></div></div>`;
-  if(t.chat)t.chat.forEach(m=>{const isMe=m.by===userName;cMsgs+=`<div class="cm ${isMe?'s':'r'}"><div class="b" ${m.isOtp?'style="background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;font-family:var(--m);font-weight:700;letter-spacing:2px"':''}>${m.msg}</div><div class="mt"><span>${m.by}</span><span>${m.time}</span></div></div>`});
-  const chatH=`<div class="card" style="padding:0;overflow:hidden"><div style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:600">💬 Chat</div><div class="cht"><div class="cht-m" id="chMs">${cMsgs}</div><div class="cht-in"><input placeholder="Type..." id="chI" onkeydown="if(event.key==='Enter')sendC()"><button class="snd" onclick="sendC()">➤</button></div></div></div>`;
+  if(t.chat)t.chat.forEach(m=>{cMsgs+=`<div class="cm ${chatMsgIsRequester(m)?'s':'r'}"><div class="b" ${m.isOtp?'style="background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;font-family:var(--m);font-weight:700;letter-spacing:2px"':''}>${m.msg}</div><div class="mt"><span>${m.by}</span><span>${m.time}</span></div></div>`});
+  const chatH=`<div class="card" style="padding:0;overflow:hidden"><div onclick="openFullChat()" style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer">💬 Chat<span style="font-size:9px;color:var(--ac2);font-weight:700">⤢ Full screen</span></div><div class="cht"><div class="cht-m" id="chMs">${cMsgs}</div><div class="cht-in"><input placeholder="Type..." id="chI" onkeydown="if(event.key==='Enter')sendC()"><button class="snd" onclick="sendC()">➤</button></div></div></div>`;
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
   pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="closeTicketDetail()" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${SL[t.status]}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate'+(t.escalationCount?' - '+t.escalationCount:'')+'</button></div>':''}</div>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${requesterStatusLabel(t.status)}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate'+(t.escalationCount?' - '+t.escalationCount:'')+'</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
 
-function sendC(){const i=document.getElementById('chI');if(!i||!i.value.trim())return;const t=TKS.find(x=>x.id===curTkt);if(!t)return;if(!t.chat)t.chat=[];const m=i.value;t.chat.push({by:userName,role,msg:m,time:ts()});writeChat(curTkt,m,false);i.value='';viewT(curTkt)}
+// Which side a chat bubble belongs on. Prefers the message's own stored Sender_Role
+// (m.role, read from the Ticket_Chat sheet's existing Sender_Role column via
+// loadTicketChatFromSheet()) over name-matching -- per spec, never assume "sent by the
+// logged-in user's name" is equivalent to "is the requester" without checking the actual
+// stored field first. Falls back to the name check only for older rows with no role saved.
+function chatMsgIsRequester(m){
+  if(m&&m.role)return m.role==='requester';
+  return m&&m.by===userName;
+}
+function sendC(){const i=document.getElementById('chI');if(!i||!i.value.trim())return;const t=TKS.find(x=>x.id===curTkt);if(!t)return;if(!t.chat)t.chat=[];const m=i.value;t.chat.push({by:userName,role,msg:m,time:ts()});writeChat(curTkt,m,false);i.value='';viewT(curTkt);if(document.getElementById('fullChatOverlay')&&document.getElementById('fullChatOverlay').style.display==='flex'){renderFullChatMsgs();scrollFullChatToBottom(false)}}
+
+// ===== FULL-SCREEN CHAT (Requester) =====
+// A separate, additive overlay -- does not replace or restructure the existing embedded
+// chat card above (still fully functional on its own), so nothing already working could
+// regress. Opened from the embedded card's header ("⤢ Full screen"), reads/writes the
+// exact same t.chat data and writeChat()/loadTicketChatFromSheet() plumbing. Exiting just
+// hides the overlay -- pg-detail/curTkt were never touched, so the requester lands back
+// on the exact same ticket detail page underneath.
+let fullChatUserScrolledUp=false;
+function openFullChat(){
+  const ov=document.getElementById('fullChatOverlay');
+  if(!ov)return;
+  renderFullChatMsgs();
+  ov.style.display='flex';
+  fullChatUserScrolledUp=false;
+  scrollFullChatToBottom(false);
+  const inp=document.getElementById('fullChatInput');
+  if(inp)setTimeout(()=>inp.focus(),150);
+}
+function exitFullChat(){
+  const ov=document.getElementById('fullChatOverlay');
+  if(ov)ov.style.display='none';
+}
+function renderFullChatMsgs(){
+  const wrap=document.getElementById('fullChatMsgs');
+  const t=TKS.find(x=>x.id===curTkt);
+  if(!wrap||!t)return;
+  const ct=t.hist[0]?.t||'';
+  let html=`<div class="cm r"><div class="b">Ticket ${t.id} created</div><div class="mt"><span>System</span><span>${ct}</span></div></div>`;
+  if(t.chat)t.chat.forEach(m=>{html+=`<div class="cm ${chatMsgIsRequester(m)?'s':'r'}"><div class="b" ${m.isOtp?'style="background:linear-gradient(135deg,var(--ac),var(--inf));color:#fff;font-family:var(--m);font-weight:700;letter-spacing:2px"':''}>${m.msg}</div><div class="mt"><span>${m.by}</span><span>${m.time}</span></div></div>`});
+  wrap.innerHTML=html;
+}
+// Auto-scroll rule: if the requester is already near the bottom, follow new messages
+// down automatically; if they've deliberately scrolled up to read older messages, don't
+// yank them back down -- show a small "New message" pill instead (see
+// updateFullChatAfterPoll below), same idea as most standard chat apps.
+function onFullChatScroll(){
+  const wrap=document.getElementById('fullChatMsgs');
+  if(!wrap)return;
+  const distanceFromBottom=wrap.scrollHeight-wrap.scrollTop-wrap.clientHeight;
+  fullChatUserScrolledUp=distanceFromBottom>80;
+  if(!fullChatUserScrolledUp){
+    const pill=document.getElementById('fullChatNewMsgPill');
+    if(pill)pill.style.display='none';
+  }
+}
+function scrollFullChatToBottom(){
+  const wrap=document.getElementById('fullChatMsgs');
+  if(!wrap)return;
+  wrap.scrollTop=wrap.scrollHeight;
+  fullChatUserScrolledUp=false;
+  const pill=document.getElementById('fullChatNewMsgPill');
+  if(pill)pill.style.display='none';
+}
+// Called from the background poller (checkForFixedTickets) whenever curTkt's chat
+// changed while this overlay happens to be open -- keeps the full-screen view live
+// without the requester ever needing to refresh or reopen the chat.
+function updateFullChatAfterPoll(){
+  const wasNearBottom=!fullChatUserScrolledUp;
+  renderFullChatMsgs();
+  if(wasNearBottom){
+    scrollFullChatToBottom();
+  }else{
+    const pill=document.getElementById('fullChatNewMsgPill');
+    if(pill)pill.style.display='block';
+  }
+}
+function sendFullChat(){
+  const inp=document.getElementById('fullChatInput');
+  if(!inp||!inp.value.trim())return;
+  const t=TKS.find(x=>x.id===curTkt);
+  if(!t)return;
+  if(!t.chat)t.chat=[];
+  const m=inp.value;
+  t.chat.push({by:userName,role,msg:m,time:ts()});
+  writeChat(curTkt,m,false);
+  inp.value='';
+  viewT(curTkt); // keeps the embedded card underneath in sync too -- pure local re-render, no extra fetch
+  renderFullChatMsgs();
+  scrollFullChatToBottom();
+}
+// Chat-only refresh: fetches ONLY Ticket_Chat (not tickets/categories/outlets/reports/
+// attenders/anything else), then re-renders just the chat views from that. Manual
+// fallback alongside the existing automatic background polling -- does not replace it.
+async function refreshChatOnly(){
+  const btn=document.getElementById('chatRefreshBtn');
+  const orig=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Refreshing…';}
+  try{
+    await loadTicketChatFromSheet();
+    renderFullChatMsgs();
+    scrollFullChatToBottom();
+    if(curTkt&&document.getElementById('pg-detail')&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);
+  }catch(e){
+    console.error('[FixEngine] refreshChatOnly failed:',e);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=orig||'🔄 Refresh';}
+  }
+}
 function shareOTPInChat(id){const t=TKS.find(x=>x.id===id);if(!t)return;if(!t.chat)t.chat=[];t.chat.push({by:userName,role,msg:'🔐 OTP: '+t.otp,time:ts(),isOtp:true});writeChat(id,'🔐 OTP: '+t.otp,true);viewT(id)}
 
 function openM(id){document.getElementById(id).classList.add('show')}
@@ -4517,6 +4667,14 @@ function closeTicketDetail(){
   const bookings=document.getElementById('myBookingsPage');
   if(bookings)bookings.style.display='block';
   const footer=document.getElementById('footerNav');if(footer)footer.style.display='flex';
+  // ROOT CAUSE of "My Tickets card shows an old status while Ticket Detail shows the
+  // latest one": this is the ONLY path back from Ticket Detail to My Tickets, and it
+  // only ever toggled visibility -- it never re-rendered the card grid. viewT() always
+  // does a fresh TKS.find() so Detail is never wrong, but the card grid kept showing
+  // whatever HTML was last built (possibly before a background status change landed
+  // while the requester was inside that ticket, or from before they even opened it).
+  // Same TKS array both read from -- this was a stale-render gap, not a stale-data one.
+  if(typeof renderMyBookings==='function')renderMyBookings();
 }
 function showQuickHelp(){
   const p=document.getElementById('quickHelpPage');if(p)p.style.display='block';
@@ -4611,7 +4769,7 @@ function closeSideMenu(){
   document.getElementById('reqSideMenuOverlay').classList.remove('show');
 }
 // ===== REPORTS =====
-let reportFilters={outlets:[],categories:[],priorities:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+let reportFilters={outlets:[],categories:[],priorities:[],attenders:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
 
 function getWeekRange(offsetWeeks,refDate){
   // Monday-to-Sunday, as specified — not the Sun-Sat convention some locales default to.
@@ -4661,6 +4819,20 @@ function isClosedWithinSLA(t){
   const ct=parseAnyTimestamp(closedEntry.iso||closedEntry.t);
   if(!ct)return null;
   return ct<=dl;
+}
+// Same lookup as isClosedWithinSLA above, but returns the signed minute difference
+// instead of a boolean — positive = closed before deadline (early/on-time), negative
+// = closed after deadline (late), null = undeterminable. Reused for "Closed On Time"/
+// "Delayed by" wording so no new deadline-vs-timestamp math is introduced.
+function getClosedSlaDurationMin(t){
+  if(!t.slaDeadline)return null;
+  const dl=new Date(t.slaDeadline);
+  if(isNaN(dl.getTime()))return null;
+  const closedEntry=(t.hist||[]).find(h=>h.s==='closed');
+  if(!closedEntry||!(closedEntry.iso||closedEntry.t))return null;
+  const ct=parseAnyTimestamp(closedEntry.iso||closedEntry.t);
+  if(!ct)return null;
+  return (dl-ct)/60000;
 }
 
 function computeReportMetrics(tickets){
@@ -4716,6 +4888,10 @@ function applyReportFilters(all){
     if(reportFilters.outlets.length&&!reportFilters.outlets.includes(t.out))return false;
     if(reportFilters.categories.length&&!reportFilters.categories.includes(t.cat))return false;
     if(reportFilters.priorities.length&&!reportFilters.priorities.includes(t.pri))return false;
+    // '' represents "Unassigned" (t.att not set), same convention used everywhere else
+    // an attender ID is looked up on a ticket -- combines with every other filter above
+    // via the same AND logic (Outlet + Attender + Status etc. all narrow together).
+    if(reportFilters.attenders.length&&!reportFilters.attenders.includes(t.att||''))return false;
     if(dateRange){
       const created=getTicketCreatedDate(t);
       if(!created||created<dateRange.start||created>dateRange.end)return false;
@@ -4735,7 +4911,7 @@ function fmtAvgMin(min){
 }
 function renderOverallTable(m){
   return `<div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:14px;overflow:hidden">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px">
       <thead><tr style="background:var(--c2)">
         <th style="text-align:left;padding:9px 10px;font-weight:800;color:var(--t)">Overall</th>
         <th style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">Total</th>
@@ -4748,7 +4924,7 @@ function renderOverallTable(m){
         <tr style="border-top:1px solid var(--bdr)"><td style="padding:9px 10px;font-weight:700;color:var(--t)">Pending</td><td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--t)">${m.pendingTotal}</td><td style="text-align:center;padding:9px 6px;color:var(--ok);font-weight:700">${m.pendingWithinSLA}</td><td style="text-align:center;padding:9px 6px;color:var(--er);font-weight:700">${m.pendingOutOfSLA}</td></tr>
       </tbody>
     </table>
-    <div style="display:flex;gap:16px;padding:9px 10px;background:var(--c2);font-size:11.5px;color:var(--t2);flex-wrap:wrap">
+    <div style="display:flex;gap:16px;padding:9px 10px;background:var(--c2);font-size:12.5px;color:var(--t2);flex-wrap:wrap">
       <span>Closure %: <b style="color:var(--t)">${m.closurePct}%</b></span>
       <span>SLA %: <b style="color:var(--t)">${m.slaPct}%</b></span>
       <span>Avg SLA Closure: <b style="color:${m.avgMin>=0?'var(--ok)':'var(--er)'}">${fmtAvgMin(m.avgMin)}</b></span>
@@ -4782,40 +4958,52 @@ function sumMetrics(list,allTicketsForAvg){
 function renderMetricRow(label,m,opts){
   opts=opts||{};
   return `<tr style="border-top:1px solid var(--bdr)${opts.totalRow?';background:var(--c2)':''}">
-    <td style="padding:8px 10px;font-weight:${opts.totalRow?800:700};color:var(--t);white-space:nowrap">${opts.toggleId?`<button type="button" onclick="event.stopPropagation();toggleReportSub('${opts.toggleId}')" style="background:none;border:1px solid var(--bdr);border-radius:4px;width:16px;height:16px;line-height:1;font-size:11px;cursor:pointer;color:var(--t2);margin-right:5px;padding:0">+</button>`:''}${label}</td>
-    <td style="text-align:center;padding:8px 4px;color:var(--t);font-weight:${opts.totalRow?800:400}">${m.total}</td>
-    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.closedTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.closedWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.closedOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
-    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.closurePct}%</td>
-    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.slaPct}%</td>
-    <td style="text-align:center;padding:8px 4px;color:var(--t)">${m.pendingTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.pendingWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.pendingOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
-    <td style="text-align:center;padding:8px 4px;color:${m.avgMin>=0?'var(--ok)':m.avgMin<0?'var(--er)':'var(--t)'};white-space:nowrap">${fmtAvgMin(m.avgMin)}</td>
+    <td style="padding:9px 10px;font-weight:${opts.totalRow?800:700};color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${opts.toggleId?`<button type="button" onclick="event.stopPropagation();toggleReportSub('${opts.toggleId}')" style="background:none;border:1px solid var(--bdr);border-radius:4px;width:18px;height:18px;line-height:1;font-size:12px;cursor:pointer;color:var(--t2);margin-right:5px;padding:0">+</button>`:''}${label}</td>
+    <td style="text-align:center;padding:9px 4px;color:var(--t);font-weight:${opts.totalRow?800:400}">${m.total}</td>
+    <td style="text-align:center;padding:9px 4px;color:var(--t)">${m.closedTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.closedWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.closedOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
+    <td style="text-align:center;padding:9px 4px;color:var(--t)">${m.closurePct}%</td>
+    <td style="text-align:center;padding:9px 4px;color:var(--t)">${m.slaPct}%</td>
+    <td style="text-align:center;padding:9px 4px;color:var(--t)">${m.pendingTotal}<span style="color:var(--t3)"> (</span><span style="color:var(--ok)">${m.pendingWithinSLA}</span><span style="color:var(--t3)">/</span><span style="color:var(--er)">${m.pendingOutOfSLA}</span><span style="color:var(--t3)">)</span></td>
+    <td style="text-align:center;padding:9px 4px;color:${m.avgMin>=0?'var(--ok)':m.avgMin<0?'var(--er)':'var(--t)'};white-space:nowrap">${fmtAvgMin(m.avgMin)}</td>
   </tr>`;
 }
 
+// Shared by every breakdown card (Category / Priority / Outlet) -- fixing the column
+// widths ONCE here, with an explicit <colgroup> + table-layout:fixed, is what makes
+// Created/Closed/Closure%/SLA%/Pending/Avg SLA line up at identical positions across
+// every card, instead of each table's columns auto-sizing independently based on that
+// table's own content (which is what caused the misalignment between cards before).
+const RPT_COLS='<colgroup><col style="width:26%"><col style="width:10%"><col style="width:18%"><col style="width:10%"><col style="width:9%"><col style="width:18%"><col style="width:9%"></colgroup>';
 function renderBreakdownTable(title,rows,totalMetrics){
   const body=rows.map(r=>{
-    let rowHtml=renderMetricRow(r.label,r.m,{toggleId:r.subId});
-    if(r.subRows){
-      rowHtml+=`<tr id="${r.subId}" style="display:none"><td colspan="6" style="padding:0 0 0 20px;background:var(--bg)">
-        <table style="width:100%;border-collapse:collapse;font-size:10.5px">
-          <tbody>${r.subRows.map(sr=>renderMetricRow(sr.label,sr.m)).join('')}</tbody>
+    // Same Created=0 → hide rule, now also applied one level down (e.g. a category with
+    // no tickets AT THIS particular outlet/priority shouldn't appear once expanded either).
+    const visibleSubRows=r.subRows?r.subRows.filter(sr=>sr.m.total>0):null;
+    const hasSub=!!(visibleSubRows&&visibleSubRows.length);
+    let rowHtml=renderMetricRow(r.label,r.m,{toggleId:hasSub?r.subId:null});
+    if(hasSub){
+      rowHtml+=`<tr id="${r.subId}" style="display:none"><td colspan="7" style="padding:0 0 0 20px;background:var(--bg)">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+          ${RPT_COLS}
+          <tbody>${visibleSubRows.map(sr=>renderMetricRow(sr.label,sr.m)).join('')}</tbody>
         </table>
       </td></tr>`;
     }
     return rowHtml;
   }).join('');
   const totalRow=totalMetrics?renderMetricRow('Total',totalMetrics,{totalRow:true}):'';
-  return `<div style="font-weight:800;font-size:13px;color:var(--t);margin:14px 0 6px">${title}</div>
+  return `<div style="font-weight:800;font-size:15px;color:var(--t);margin:16px 0 7px">${title}</div>
   <div class="card" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:0;margin-bottom:10px;overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:560px">
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px;table-layout:fixed">
+      ${RPT_COLS}
       <thead><tr style="background:var(--c2)">
-        <th style="text-align:left;padding:8px 10px;font-weight:800;color:var(--t)"></th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Created</th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Closed (SLA/Out)</th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Closure%</th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">SLA%</th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t)">Pending (SLA/Out)</th>
-        <th style="text-align:center;padding:8px 4px;font-weight:800;color:var(--t);white-space:nowrap">Avg SLA</th>
+        <th style="text-align:left;padding:9px 10px;font-weight:800;color:var(--t)"></th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t)">Created</th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t)">Closed (SLA/Out)</th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t)">Closure%</th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t)">SLA%</th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t)">Pending (SLA/Out)</th>
+        <th style="text-align:center;padding:9px 4px;font-weight:800;color:var(--t);white-space:nowrap">Avg SLA</th>
       </tr></thead>
       <tbody>${body}${totalRow}</tbody>
     </table>
@@ -4835,6 +5023,10 @@ function renderReports(){
   const filtered=applyReportFilters(all);
   const catLabel=cid=>(CATS[cid]&&CATS[cid].label)?CATS[cid].label:cid;
   const priLabel={critical:'\ud83d\udd34 Critical',high:'\ud83d\udfe0 High',medium:'\ud83d\udfe1 Medium',low:'\ud83d\udfe2 Low'};
+  // Spec: a row with Created=0 is hidden entirely from a breakdown (Closed=0 alone is
+  // NOT a reason to hide it) -- applied uniformly to Category/Priority/Outlet below via
+  // this one shared filter, right before each list is handed to renderBreakdownTable.
+  const hideEmptyCreated=rows=>rows.filter(r=>r.m.total>0);
 
   let html='';
   html+=renderOverallTable(computeReportMetrics(filtered));
@@ -4856,7 +5048,7 @@ function renderReports(){
       .map(sub=>({label:sub,m:computeReportMetrics(bySubWithinCat[sub])}));
     return{label:catLabel(cid),m:catMetricsList[i],subId:'catSub_'+cid.replace(/[^A-Za-z0-9]/g,'_'),subRows};
   }).sort((a,b)=>a.label.localeCompare(b.label));
-  html+=renderBreakdownTable('By Category',catRows,sumMetrics(catMetricsList,filtered));
+  html+=renderBreakdownTable('By Category',hideEmptyCreated(catRows),sumMetrics(catMetricsList,filtered));
 
   // By Priority — same union-safety, plus each row expands to show its own
   // category breakdown for extra clarity without cluttering the default view.
@@ -4872,13 +5064,32 @@ function renderReports(){
       .map(cid=>({label:catLabel(cid),m:computeReportMetrics(byCatWithinPri[cid])}));
     return {label:priLabel[pid]||pid,m:priMetricsList[i],subId:'priSub_'+pid,subRows};
   });
-  html+=renderBreakdownTable('By Priority',priRows,sumMetrics(priMetricsList,filtered));
+  html+=renderBreakdownTable('By Priority',hideEmptyCreated(priRows),sumMetrics(priMetricsList,filtered));
+
+  // By Outlets — same template/pattern as Category and Priority above, grouped by the
+  // ticket's own Outlet_Code (t.out). Outlet names come straight from the data (OL /
+  // whatever outlets actually appear), never hard-coded. Each row expands (same
+  // collapsible "+" pattern as Category/Priority) to show the Category breakdown for
+  // that specific outlet, collapsed by default.
+  const byOut={};
+  filtered.forEach(t=>{const k=t.out||'Unspecified';(byOut[k]=byOut[k]||[]).push(t);});
+  const allOutIds=[...new Set([...(typeof OL!=='undefined'?OL:[]),...Object.keys(byOut)])];
+  const outMetricsList=allOutIds.map(oid=>computeReportMetrics(byOut[oid]||[]));
+  const outRows=allOutIds.map((oid,i)=>{
+    const outTickets=byOut[oid]||[];
+    const byCatWithinOut={};
+    outTickets.forEach(t=>{const k=t.cat||'Uncategorized';(byCatWithinOut[k]=byCatWithinOut[k]||[]).push(t);});
+    const subRows=Object.keys(byCatWithinOut).sort((a,b)=>catLabel(a).localeCompare(catLabel(b)))
+      .map(cid=>({label:catLabel(cid),m:computeReportMetrics(byCatWithinOut[cid])}));
+    return {label:oid,m:outMetricsList[i],subId:'outSub_'+oid.replace(/[^A-Za-z0-9]/g,'_'),subRows};
+  }).sort((a,b)=>(b.m.total-a.m.total)||a.label.localeCompare(b.label)); // Created count high→low; ties fall back to the existing alphabetical order
+  html+=renderBreakdownTable('By Outlets',hideEmptyCreated(outRows),sumMetrics(outMetricsList,filtered));
 
   body.innerHTML=html;
 }
 
 function toggleReportPanel(kind){
-  ['reportOtPanel','reportCatPanel','reportPriPanel'].forEach(id=>{
+  ['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&id!=='report'+kind+'Panel')el.style.display='none';
   });
@@ -4886,6 +5097,25 @@ function toggleReportPanel(kind){
   if(!panel)return;
   panel.style.display=panel.style.display==='block'?'none':'block';
 }
+// ROOT CAUSE of the filter panel getting "stuck open": there was no outside-click
+// handler for these four panels at all -- toggleReportPanel() above only closes a panel
+// when you tap ITS OWN toggle button again (or open a different filter). Tapping
+// anywhere else on the page (a checkbox inside is fine and correctly ignored, but the
+// report body, search box, etc.) previously did nothing, leaving the panel sitting open
+// on top of the report. Same pattern already used elsewhere in this app for the
+// notification panel (#notifPanel/#notifBellBtn) -- one listener, added once, that
+// explicitly ignores clicks on the panels themselves and on their own toggle buttons so
+// it never fights toggleReportPanel()'s own open/close logic or double-closes/reopens.
+document.addEventListener('click',function(e){
+  const panelIds=['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel'];
+  const btnIds=['reportOtBtn','reportCatBtn','reportPriBtn','reportAttBtn'];
+  const anyOpen=panelIds.some(id=>{const p=document.getElementById(id);return p&&p.style.display==='block';});
+  if(!anyOpen)return;
+  if(!e.target||!e.target.closest)return;
+  const hit=panelIds.concat(btnIds).some(id=>e.target.closest('#'+id));
+  if(hit)return;
+  panelIds.forEach(id=>{const p=document.getElementById(id);if(p)p.style.display='none';});
+});
 function buildReportOtPanel(){
   const list=document.getElementById('reportOtList');
   if(!list)return;
@@ -4917,6 +5147,20 @@ function buildReportPriPanel(){
       <span>${label}</span></label>`;
   }).join('');
 }
+// Same pattern as the other three filter panels above -- uses the existing ATTS list
+// (no separate data source), plus an explicit "Unassigned" option using the same ''
+// convention applyReportFilters() checks against.
+function buildReportAttPanel(){
+  const list=document.getElementById('reportAttList');
+  if(!list)return;
+  const opts=[['', 'Unassigned'],...ATTS.map(a=>[a.id,a.name])];
+  list.innerHTML=opts.map(([v,label])=>{
+    const checked=reportFilters.attenders.includes(v)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
+      <input type="checkbox" value="${v}" ${checked} onchange="onReportFilterCheck('attenders',this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
+      <span>${label}</span></label>`;
+  }).join('');
+}
 function onReportFilterCheck(kind,el){
   if(el.checked){if(!reportFilters[kind].includes(el.value))reportFilters[kind].push(el.value);}
   else reportFilters[kind]=reportFilters[kind].filter(v=>v!==el.value);
@@ -4934,6 +5178,7 @@ function updateReportFilterButtons(){
   setBtn('reportOtBtn',reportFilters.outlets,'All Outlets \u25be');
   setBtn('reportCatBtn',reportFilters.categories,'All Categories \u25be');
   setBtn('reportPriBtn',reportFilters.priorities,'All Priorities \u25be');
+  setBtn('reportAttBtn',reportFilters.attenders,'All Attenders \u25be');
 }
 function onReportSearchInput(){
   reportFilters.search=document.getElementById('reportSearch').value;
@@ -4958,7 +5203,7 @@ function onReportCustomDateChange(){
   if(reportFilters.dateStart&&reportFilters.dateEnd)renderReports();
 }
 function resetReportFilters(){
-  reportFilters={outlets:[],categories:[],priorities:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+  reportFilters={outlets:[],categories:[],priorities:[],attenders:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
   const searchEl=document.getElementById('reportSearch');if(searchEl)searchEl.value='';
   const startEl=document.getElementById('reportDateStart');if(startEl)startEl.value='';
   const endEl=document.getElementById('reportDateEnd');if(endEl)endEl.value='';
@@ -4972,13 +5217,33 @@ function showReports(){
   document.getElementById('myBookingsPage').style.display='none';
   const qh=document.getElementById('quickHelpPage');if(qh)qh.style.display='none';
   document.getElementById('reportsPage').style.display='block';
-  buildReportOtPanel();buildReportCatPanel();buildReportPriPanel();
+  buildReportOtPanel();buildReportCatPanel();buildReportPriPanel();buildReportAttPanel();
   updateReportFilterButtons();
   renderReports();
 }
 function closeReports(){
   document.getElementById('reportsPage').style.display='none';
   document.getElementById('loginP').style.display='flex';
+}
+// Reports page is its own full-screen overlay and covers the topbar's existing global
+// 🔄 refreshBtn, so it had no manual refresh at all -- this is a lightweight, Reports-
+// scoped fallback alongside the automatic background poller (which keeps running
+// unaffected either way): only reloads what the report actually reads (tickets, their
+// history, and attenders for the filter labels), then re-renders in place. No full page
+// reload, no unrelated data (categories/outlets/purchase orders/etc. untouched).
+async function refreshReportsData(){
+  const btn=document.getElementById('reportRefreshBtn');
+  const orig=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Refreshing…';}
+  try{
+    await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet()]);
+    buildReportAttPanel();
+    renderReports();
+  }catch(e){
+    console.error('[FixEngine] refreshReportsData failed:',e);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=orig||'🔄 Refresh';}
+  }
 }
 function sideMenuGo(dest){
   closeSideMenu();
@@ -5024,17 +5289,30 @@ function toggleMbOutletPanel(){
   if(!open){buildMbOutletPanel();panel.style.display='block';}
   else panel.style.display='none';
 }
-function buildMbOutletPanel(){
+// Renders just the checkbox list inside the outlet panel (not the search box itself,
+// so typing doesn't lose focus each keystroke) — filtered by whatever's currently in
+// the search input, case-insensitive substring match against the outlet name.
+function renderMbOutletList(){
   const list=document.getElementById('mbFOtList');
   if(!list)return;
   const all=(typeof OL!=='undefined')?OL:[];
-  list.innerHTML=all.map(o=>{
+  const term=(document.getElementById('mbFOtSearch')?.value||'').trim().toLowerCase();
+  const visible=term?all.filter(o=>o.toLowerCase().includes(term)):all;
+  list.innerHTML=visible.length?visible.map(o=>{
     const checked=mbSelectedOutlets.includes(o)?'checked':'';
     return`<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
       <input type="checkbox" value="${o}" ${checked} onchange="onMbOutletCheck(this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
       <span>${o}</span>
     </label>`;
-  }).join('');
+  }).join(''):'<div style="padding:10px 12px;font-size:11px;color:var(--t3);text-align:center">No outlets match</div>';
+}
+function onMbOutletSearchInput(){
+  renderMbOutletList();
+}
+function buildMbOutletPanel(){
+  const search=document.getElementById('mbFOtSearch');
+  if(search)search.value=''; // fresh search each time the panel opens; selections themselves are untouched
+  renderMbOutletList();
 }
 function onMbOutletCheck(el){
   if(el.checked){if(!mbSelectedOutlets.includes(el.value))mbSelectedOutlets.push(el.value);}
@@ -5042,10 +5320,29 @@ function onMbOutletCheck(el){
   updateMbOutletBtnText();
   renderMyBookings();
 }
+// Selects only the outlets currently visible (i.e. matching the active search, or all
+// outlets if the search is empty) — outlets hidden by a search stay exactly as they
+// were, so a prior selection outside the current search never gets silently dropped.
+function selectAllMbOutlets(){
+  const all=(typeof OL!=='undefined')?OL:[];
+  const term=(document.getElementById('mbFOtSearch')?.value||'').trim().toLowerCase();
+  const visible=term?all.filter(o=>o.toLowerCase().includes(term)):all;
+  visible.forEach(o=>{if(!mbSelectedOutlets.includes(o))mbSelectedOutlets.push(o);});
+  updateMbOutletBtnText();
+  renderMbOutletList();
+  renderMyBookings();
+}
+function unselectAllMbOutlets(){
+  mbSelectedOutlets=[];
+  updateMbOutletBtnText();
+  renderMbOutletList();
+  renderMyBookings();
+}
 function resetMyBookingsFilters(){
   ['mbFSt','mbFPr','mbFCt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const myOutlet=document.getElementById('lOut')?.value;
   mbSelectedOutlets=myOutlet?[myOutlet]:[];
+  mbStatusCardFilter=null;
   updateMbOutletBtnText();
   renderMyBookings();
 }
@@ -5069,20 +5366,53 @@ function renderMyBookings(){
   else if(fs==='breach')mine=mine.filter(t=>t.sla?.startsWith('-'));
   else if(fs==='hold')mine=mine.filter(t=>t.status==='on-hold');
   else if(fs==='rejected')mine=mine.filter(t=>t.status==='rejected');
+  else if(fs==='readyToClose')mine=mine.filter(t=>t.status==='awaiting-resolution');
   if(fp)mine=mine.filter(t=>t.pri===fp);
   if(fc)mine=mine.filter(t=>(t.cat||'').toLowerCase()===fc.toLowerCase());
   if(mbSelectedOutlets&&mbSelectedOutlets.length)mine=mine.filter(t=>mbSelectedOutlets.includes(t.out));
 
-  renderTicketsSummary(mine);
+  // Snapshot BEFORE the clickable-summary-card filter is applied — the summary chips
+  // are computed from this so that clicking e.g. "Closed" doesn't also collapse the
+  // Total/Pending/Out of SLA/Ready to Close numbers down to the Closed-only count.
+  // The card filter itself is then ANDed on top for the actual ticket list below.
+  const base=mine;
+  renderTicketsSummary(base);
+  if(mbStatusCardFilter==='closed')mine=mine.filter(t=>t.status==='closed');
+  else if(mbStatusCardFilter==='pending')mine=mine.filter(t=>t.status!=='closed');
+  else if(mbStatusCardFilter==='outOfSla')mine=mine.filter(t=>t.status!=='closed'&&t.sla&&t.sla.startsWith('-'));
+  else if(mbStatusCardFilter==='readyToClose')mine=mine.filter(t=>t.status==='awaiting-resolution');
+
   if(!mine.length){
     wrap.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">📭</div>No tickets match — try Reset filters, or raise one from Home</div>';
     return;
   }
   wrap.innerHTML=mine.map(t=>{
-    const label=SL[t.status]||t.status||'Open';
-    const breached=t.sla&&t.sla.startsWith('-');
-    const slaText=t.sla?(breached?'⚠ Overdue '+t.sla.replace('-','')+'':'⏱ '+t.sla+' left'):'';
-    const slaColor=breached?'var(--er)':'var(--ok)';
+    const label=requesterStatusLabel(t.status);
+    // SLA/timing wording — reuses the existing computeSLA()/isClosedWithinSLA() outputs
+    // and only reformats the text shown; no new deadline-vs-now or deadline-vs-closed
+    // math is introduced here.
+    let slaText='',slaColor='var(--ok)';
+    if(t.status==='closed'){
+      const within=isClosedWithinSLA(t);
+      if(within===true){
+        slaText='✓ Closed On Time';
+        slaColor='var(--ok)';
+      }else if(within===false){
+        const durMin=getClosedSlaDurationMin(t);
+        slaText='⚠ Delayed by '+(durMin!==null?fmtDurationParts(Math.abs(durMin)):'');
+        slaColor='var(--er)';
+      }
+    }else{
+      const breached=t.sla&&t.sla.startsWith('-');
+      if(breached){
+        const lateMin=parseSlaHM(t.sla);
+        slaText='⚠ Late By '+(lateMin!==null?fmtDurationParts(Math.abs(lateMin)):t.sla.replace('-',''));
+        slaColor='var(--er)';
+      }else if(t.sla){
+        slaText='⏱ '+t.sla+' left';
+        slaColor='var(--ok)';
+      }
+    }
     return `<div onclick="openTicketDetail('${t.id}')" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.05);cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="font-weight:800;font-size:13px;color:var(--t)">${t.id||''}</div>
@@ -5116,6 +5446,15 @@ function avgClosureVsSLA(closedTickets){
   if(!diffsMin.length)return null;
   return diffsMin.reduce((a,b)=>a+b,0)/diffsMin.length;
 }
+// Which summary card (Total/Closed/Pending/Out of SLA/Ready to Close) is currently
+// acting as an extra filter on the My Tickets list — null means no card is active
+// (equivalent to "Total"). ANDed with the existing status-dropdown/priority/category/
+// outlet filters inside renderMyBookings(), never replaces them.
+let mbStatusCardFilter=null;
+function setMbStatusCardFilter(v){
+  mbStatusCardFilter=(v===null||mbStatusCardFilter===v)?null:v; // clicking Total, or the already-active card again, clears it
+  renderMyBookings();
+}
 function renderTicketsSummary(mine){
   const row=document.getElementById('ticketsSummaryRow');
   if(!row)return;
@@ -5124,6 +5463,7 @@ function renderTicketsSummary(mine){
   const closed=closedList.length;
   const pending=mine.filter(t=>t.status!=='closed').length;
   const pendingOutOfSLA=mine.filter(t=>t.status!=='closed'&&t.sla&&t.sla.startsWith('-')).length;
+  const readyToClose=mine.filter(t=>t.status==='awaiting-resolution').length;
   const avgMin=avgClosureVsSLA(closedList);
   let avgText='—',avgColor='var(--t3)';
   if(avgMin!==null){
@@ -5131,9 +5471,17 @@ function renderTicketsSummary(mine){
     avgText=(avgMin>=0?'':'-')+h+'h '+m+'m';
     avgColor=avgMin>=0?'var(--ok)':'var(--er)';
   }
-  const chip=(n,label,color)=>`<div style="background:var(--c1);border:1px solid var(--bdr);border-radius:12px;padding:10px 6px;text-align:center"><div style="font-size:9.5px;color:var(--t3);font-weight:700;text-transform:uppercase">${label}</div><div style="font-size:17px;font-weight:800;color:${color};margin-top:3px">${n}</div></div>`;
-  row.innerHTML=chip(total,'Total','var(--t)')+chip(closed,'Closed','var(--ok)')+chip(pending,'Pending','var(--ac2)')
-    +chip(pendingOutOfSLA,'Out of SLA','var(--er)')+chip(avgText,'Avg SLA Closure',avgColor);
+  // key=null → this is the "Total" card (clears the card filter); key=undefined → not
+  // clickable at all (Avg SLA isn't a status filter); any other key → clickable card
+  // that toggles mbStatusCardFilter to that value.
+  const chip=(n,label,color,key)=>{
+    const clickable=key!==undefined;
+    const active=clickable&&((key===null&&!mbStatusCardFilter)||key===mbStatusCardFilter);
+    const activeCss=active?`border-color:${color};box-shadow:0 0 0 1.5px ${color};background:var(--c2)`:'';
+    return `<div ${clickable?`onclick="setMbStatusCardFilter(${key===null?'null':`'${key}'`})"`:''} style="background:var(--c1);border:1px solid var(--bdr);border-radius:12px;padding:11px 6px;text-align:center${clickable?';cursor:pointer':''}${active?';'+activeCss:''}"><div style="font-size:11px;color:var(--t2);font-weight:800;text-transform:uppercase;letter-spacing:.3px">${label}</div><div style="font-size:22px;font-weight:800;color:${color};margin-top:4px;line-height:1.1">${n}</div></div>`;
+  };
+  row.innerHTML=chip(total,'Total','var(--t)',null)+chip(closed,'Closed','var(--ok)','closed')+chip(pending,'Pending','var(--ac2)','pending')
+    +chip(pendingOutOfSLA,'Out of SLA','var(--er)','outOfSla')+chip(avgText,'Avg SLA Closure',avgColor)+chip(readyToClose,'Ready to Close','var(--pk)','readyToClose');
 }
 const IDENTITY_KEY='fixEngineIdentity_v1';
 function updateIdentitySummary(){
@@ -5216,6 +5564,22 @@ setTimeout(()=>{
     const scr=document.getElementById('identityScreen');
     if(scr)scr.style.display='none';
     updateIdentitySummary();
+    // ROOT CAUSE of chat/notifications silently never arriving for a RETURNING user:
+    // loadIdentityLocal() above only pre-fills the identity form fields and hides the
+    // overlay -- it never set role/userName/phone/userOutlet/selectedOutlets, and
+    // continueFromIdentity() (the only other place that does) is never called on this
+    // path. Without role==='requester' set, checkForFixedTickets() early-returns every
+    // tick, and startFixedNotificationPolling() was never even called in the first
+    // place -- so a returning requester had NO background poller running at all, even
+    // while actively sitting inside a ticket's chat. This mirrors exactly what
+    // continueFromIdentity() does for a fresh submit.
+    role='requester';
+    phone=document.getElementById('lPh').value.replace(/\D/g,'');
+    userName=document.getElementById('lNm').value.trim();
+    userOutlet=document.getElementById('lOut').value;
+    userIni=(userName.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||phone.slice(-2);
+    selectedOutlets=userOutlet?[userOutlet]:[];
+    if(typeof startFixedNotificationPolling==='function')startFixedNotificationPolling();
   }
   checkChatUnlock();startHeroTips();renderTicketTypeIcons();
 },50);
@@ -5281,10 +5645,31 @@ let usersLoaded=true;
   <div class="rsm-item" onclick="sideMenuGo('reports')"><span class="rsm-icon">📊</span>Report</div>
   <div class="rsm-item" onclick="sideMenuGo('profile')"><span class="rsm-icon">👤</span>Profile</div>
 </div>
+<div id="fullChatOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:220;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-top,0px)) 14px;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--c1)">
+    <button type="button" onclick="exitFullChat()" style="background:none;border:none;color:var(--ac2);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 2px">← Exit Chat</button>
+    <div style="font-size:13px;font-weight:800;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💬 In-House Chat</div>
+    <span style="width:74px;flex-shrink:0"></span>
+  </div>
+  <div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
+    <div id="fullChatMsgs" onscroll="onFullChatScroll()" style="flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px"></div>
+    <button type="button" id="fullChatNewMsgPill" onclick="scrollFullChatToBottom()" style="display:none;position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;font-size:11.5px;font-weight:700;padding:7px 16px;border-radius:20px;cursor:pointer;border:none;box-shadow:0 4px 14px rgba(0,0,0,.22)">🔴 New message</button>
+  </div>
+  <div style="flex-shrink:0;border-top:1px solid var(--bdr);background:var(--c1);padding:10px 12px calc(8px + env(safe-area-inset-bottom,0px)) 12px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="fullChatInput" placeholder="Type your message..." onkeydown="if(event.key==='Enter')sendFullChat()" style="flex:1;background:var(--c2);border:1px solid var(--bdr);border-radius:22px;padding:12px 16px;color:var(--t);font-size:14.5px;outline:none">
+      <button type="button" onclick="sendFullChat()" title="Send" style="width:44px;height:44px;border-radius:50%;background:var(--ac);border:none;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.15)">➤</button>
+    </div>
+    <button type="button" id="chatRefreshBtn" onclick="refreshChatOnly()" style="margin-top:7px;background:none;border:none;color:var(--t3);font-size:11px;font-weight:600;cursor:pointer;padding:2px">🔄 Refresh</button>
+  </div>
+</div>
 <div id="reportsPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
-  <button type="button" onclick="closeReports()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:12px">← Back</button>
-  <h2 style="margin-bottom:14px">📊 Report</h2>
-  <input type="text" id="reportSearch" class="fc" placeholder="🔍 Search date, attender, requester, category, outlet..." oninput="onReportSearchInput()" style="width:100%;margin-bottom:8px;box-sizing:border-box">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <button type="button" onclick="closeReports()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer">← Back</button>
+    <button type="button" id="reportRefreshBtn" onclick="refreshReportsData()" title="Refresh report data" style="background:none;border:1px solid var(--bdr);border-radius:8px;color:var(--t2);font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 10px">🔄 Refresh</button>
+  </div>
+  <h2 style="margin-bottom:14px;font-size:19px">📊 Report</h2>
+  <input type="text" id="reportSearch" class="fc" placeholder="🔍 Search date, attender, requester, category, outlet..." oninput="onReportSearchInput()" style="width:100%;margin-bottom:8px;box-sizing:border-box;font-size:13px">
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="reportDatePills">
     <button type="button" onclick="setReportDateMode('all')" data-mode="all" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--ac);color:#fff;cursor:pointer">All Time</button>
     <button type="button" onclick="setReportDateMode('thisWeek')" data-mode="thisWeek" class="rpt-date-pill" style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:var(--c2);color:var(--t2);cursor:pointer">This Week</button>
@@ -5309,6 +5694,10 @@ let usersLoaded=true;
     <div style="position:relative;flex:1;min-width:100px">
       <button type="button" id="reportPriBtn" onclick="toggleReportPanel('Pri')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Priorities ▾</button>
       <div id="reportPriPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportPriList"></div></div>
+    </div>
+    <div style="position:relative;flex:1;min-width:100px">
+      <button type="button" id="reportAttBtn" onclick="toggleReportPanel('Att')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Attenders ▾</button>
+      <div id="reportAttPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportAttList"></div></div>
     </div>
   </div>
   <button type="button" onclick="resetReportFilters()" style="background:none;border:none;color:var(--ac2);font-size:11px;text-decoration:underline;cursor:pointer;margin-bottom:14px">↺ Reset filters</button>
@@ -5347,12 +5736,19 @@ let usersLoaded=true;
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><button type="button" class="req-hamburger" onclick="openSideMenu()">☰</button><h2 style="margin-bottom:0">📋 My Tickets</h2><div style="width:38px"></div></div>
   <div id="ticketsSummaryRow" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-    <select class="fc" id="mbFSt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Status</option><option value="pending">⏳ Pending</option><option value="open">🟢 Open</option><option value="closed">⚫ Closed</option><option value="breach">⚠ Breached</option><option value="hold">⏸ On Hold</option><option value="rejected">✕ Rejected</option></select>
+    <select class="fc" id="mbFSt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Status</option><option value="pending">⏳ Pending</option><option value="open">🟢 Open</option><option value="readyToClose">🔔 Ready to Close</option><option value="closed">⚫ Closed</option><option value="breach">⚠ Breached</option><option value="hold">⏸ On Hold</option><option value="rejected">✕ Rejected</option></select>
     <select class="fc" id="mbFPr" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Priority</option><option value="critical">🔴 Critical</option><option value="high">🟠 High</option><option value="medium">🟡 Medium</option><option value="low">🟢 Low</option></select>
     <select class="fc" id="mbFCt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Categories</option></select>
     <div style="position:relative">
       <button type="button" id="mbFOtBtn" onclick="toggleMbOutletPanel()" class="fc" style="font-size:11px;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between"><span id="mbFOtBtnText">Outlets</span><span>▾</span></button>
-      <div id="mbFOtPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+      <div id="mbFOtPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:270px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+        <div style="padding:8px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--c1)">
+          <input type="text" id="mbFOtSearch" oninput="onMbOutletSearchInput()" placeholder="🔍 Search outlets" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:var(--c2);color:var(--t);margin-bottom:6px">
+          <div style="display:flex;gap:6px">
+            <button type="button" onclick="selectAllMbOutlets()" style="flex:1;font-size:10px;font-weight:700;padding:5px;border:1px solid var(--bdr);border-radius:6px;background:var(--c1);color:var(--ac2);cursor:pointer">Select All</button>
+            <button type="button" onclick="unselectAllMbOutlets()" style="flex:1;font-size:10px;font-weight:700;padding:5px;border:1px solid var(--bdr);border-radius:6px;background:var(--c1);color:var(--t2);cursor:pointer">Unselect All</button>
+          </div>
+        </div>
         <div id="mbFOtList" style="padding:4px 0"></div>
       </div>
     </div>
