@@ -3549,6 +3549,14 @@ let notifPrevStatus={};    // ticket id -> last status seen -- only a NEW transi
 let notifItems=[];         // {notifId, ticketId, issue, iso, read, type:'fixed'|'chat'}
 let notifUnread=0;
 let notifPollTimer=null;   // the ONE interval handle for this feature -- start is idempotent so this can never be duplicated
+// Guards against two overlapping runs of checkForFixedTickets() -- setInterval fires
+// every 4s regardless of whether the previous (async) run has finished. Each run awaits
+// a Google Apps Script Web App, which typically processes requests one at a time and can
+// take a couple of seconds; without this guard a slow run can still be in flight when the
+// next one starts, and the two can race on the same shared state (notifPrevStatus,
+// notifSeenChatIds, TKS) -- a known source of "notification fired but the UI didn't
+// update" symptoms. Plain boolean is enough since this poller is single-threaded JS.
+let chatPollBusy=false;
 let notifSeenChatIds=null; // Set of Chat_IDs already accounted for -- stays null (chat-checking
                             // paused) until seedChatNotifBaseline() below finishes reading the
                             // FULL existing chat history, so old messages never notify on login
@@ -3601,6 +3609,9 @@ function stopFixedNotificationPolling(){
 // call the real, existing refresh so the visible list/detail actually update too.
 async function checkForFixedTickets(){
   if(role!=='requester')return;
+  if(chatPollBusy)return; // a previous tick is still awaiting the backend -- skip this one rather than run two at once
+  chatPollBusy=true;
+  try{
   let rows;
   try{rows=await apiRead('Tickets');}catch(e){return;}
   if(!rows)return;
@@ -3641,10 +3652,14 @@ async function checkForFixedTickets(){
   // currently logged-in user, on any ticket within this requester's outlet scope -- so
   // an attender's reply notifies every requester logged in for that outlet, and so does
   // a message from a different requester login at the same outlet, per spec.
+  // chatRows is kept (not just consumed here) so the refresh step below can reuse this
+  // SAME successful read to rebuild each ticket's chat, instead of re-fetching Ticket_Chat
+  // a second, independent time -- see the comment on the refresh step for why that mattered.
   const newMsgs=[];
+  let chatRows=null;
   if(notifSeenChatIds!==null){
     try{
-      const chatRows=await apiRead('Ticket_Chat');
+      chatRows=await apiRead('Ticket_Chat');
       (chatRows||[]).forEach(r=>{
         const cid=String(r.Chat_ID||'').trim();
         if(!cid||notifSeenChatIds.has(cid))return; // already accounted for -- never re-notify the same message
@@ -3657,19 +3672,56 @@ async function checkForFixedTickets(){
         if(scope&&out!==undefined&&!scope.includes(out))return; // outside this requester's visible outlets
         newMsgs.push({id:tid,cid:cid,msg:String(r.Message||'').trim(),by:senderName});
       });
-    }catch(e){}
+    }catch(e){chatRows=null;}
   }
 
   if(!newlyFixed.length&&!newMsgs.length&&!changedStatusIds.length)return;
   if(newlyFixed.length)addFixedNotifications(newlyFixed);
   if(newMsgs.length)addChatNotifications(newMsgs);
-  // Something real changed -- now (and only now) do the existing full ticket refresh so
-  // the on-screen list/detail reflect the new status/chat too, instead of leaving the
-  // visible data stale under a notification popup. Runs for a plain status change too
-  // (changedStatusIds), just silently -- no bell, no badge, no sound for those.
+  // Something real changed -- now (and only now) refresh the on-screen list/detail so they
+  // reflect the new status/chat too, instead of leaving the visible data stale under a
+  // notification popup. Runs for a plain status change too (changedStatusIds), just
+  // silently -- no bell, no badge, no sound for those.
+  //
+  // ROOT CAUSE FIX: this used to call loadTicketsFromSheet()+loadTicketChatFromSheet(),
+  // which each re-fetch Tickets/Ticket_Chat a SECOND time from scratch -- on top of the
+  // Tickets/Ticket_Chat reads already just done above for detection, that's up to 4
+  // sequential round-trips to the same Apps Script backend in one 4s tick. Apps Script web
+  // apps generally process requests one at a time and can take a couple of seconds each, so
+  // this redundant second pair of reads was slow and, since apiRead() fails by returning
+  // null rather than throwing, any hiccup on THIS pair silently left TKS/chat stale while
+  // the notification above (already built from the FIRST, successful pair of reads) had
+  // already fired -- exactly the "sound plays, but the message/visual update never lands"
+  // symptom. Rebuilding directly from `rows`/`chatRows` already fetched above removes the
+  // redundant reads entirely, so the on-screen refresh can no longer fail independently of
+  // the notification that just succeeded from the same data.
   try{
-    await loadTicketsFromSheet();
-    if(typeof loadTicketChatFromSheet==='function')await loadTicketChatFromSheet();
+    const fresh=rows.filter(r=>String(r.Ticket_ID||'').trim()).map(sheetRowToTicket);
+    TKS=fresh;
+    if(typeof ATTS!=='undefined')ATTS.forEach(a=>{a.load=TKS.filter(t=>t.att===a.id&&t.status!=='closed').length});
+    if(chatRows){
+      TKS.forEach(t=>t.chat=[]);
+      const seenPerTicket={};
+      chatRows.forEach(r=>{
+        const tid=String(r.Ticket_ID||'').trim();
+        if(!tid)return;
+        const t=TKS.find(x=>x.id===tid);
+        if(!t)return;
+        const cid=String(r.Chat_ID||'').trim();
+        if(cid){
+          const seen=seenPerTicket[tid]||(seenPerTicket[tid]=new Set());
+          if(seen.has(cid))return; // already rendered this exact message for this ticket
+          seen.add(cid);
+        }
+        t.chat.push({
+          by:String(r.Sender_Name||'').trim(),
+          role:String(r.Sender_Role||'').trim(),
+          msg:String(r.Message||'').trim(),
+          time:String(r.Timestamp||'').trim(),
+          isOtp:(r.Is_OTP===true||String(r.Is_OTP).toUpperCase()==='TRUE')
+        });
+      });
+    }
     if(document.getElementById('app')&&document.getElementById('app').style.display!=='none')R();
     const bookingsEl=document.getElementById('myBookingsPage');
     if(bookingsEl&&bookingsEl.style.display!=='none'&&typeof renderMyBookings==='function')renderMyBookings();
@@ -3683,6 +3735,9 @@ async function checkForFixedTickets(){
       if(fco&&fco.style.display==='flex'&&typeof updateFullChatAfterPoll==='function')updateFullChatAfterPoll();
     }
   }catch(e){}
+  }finally{
+    chatPollBusy=false;
+  }
 }
 
 function addFixedNotifications(list){
