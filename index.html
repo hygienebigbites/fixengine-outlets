@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F7F7FA">
 <title>Fix Engine — Cloud Kitchen R&M</title>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;700&display=swap');
 :root{--bg:#F7F7FA;--c1:#FFFFFF;--c2:#F2F3F7;--c3:#E9EBF2;--bdr:#E3E5EC;--t:#14142B;--t2:#525A6B;--t3:#656C7C;--ac:#695ACC;--ac2:#6552E0;--acg:rgba(124,106,240,.14);--ok:#0B7C56;--okb:rgba(11,124,86,.10);--wr:#A35905;--wrb:rgba(163,89,5,.10);--er:#D02020;--erb:rgba(208,32,32,.09);--inf:#0B796F;--infb:rgba(11,121,111,.10);--or:#BF480A;--orb:rgba(191,72,10,.10);--pk:#CA246E;--r:10px;--rs:7px;--f:'DM Sans',system-ui,-apple-system,sans-serif;--m:'JetBrains Mono',monospace;--sb:env(safe-area-inset-bottom,0px)}
@@ -255,6 +256,14 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
     </div>
   </div>
   <div class="fg">
+  <div id="scanDeviceWrap" style="display:none;margin-bottom:10px">
+    <button type="button" id="scanDeviceBtn" onclick="openScanModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--acg);border:1.5px solid var(--ac);border-radius:14px;padding:13px;font-size:14px;font-weight:800;color:var(--ac2);cursor:pointer;font-family:inherit">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+      Scan Device Barcode
+    </button>
+    <div style="text-align:center;font-size:10.5px;color:var(--t3);margin-top:5px">Fastest way — scan the sticker on the equipment for an instant match</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0"><div style="flex:1;height:1px;background:var(--bdr)"></div><span style="font-size:9.5px;color:var(--t3);font-weight:700">OR DESCRIBE THE ISSUE</span><div style="flex:1;height:1px;background:var(--bdr)"></div></div>
+  </div>
   <div id="searchBoxWrap" style="display:none;padding:4px 0 8px">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-bottom:4px">
       <span style="font-size:9px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;flex:1;text-align:left">🔍 Describe the problem *</span>
@@ -297,6 +306,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
         <div style="flex:1;min-width:0"><div id="subSelectedName" style="font-size:12px;font-weight:700;color:var(--ac2)"></div><div id="subSelectedCat" style="font-size:9px;color:var(--t3);margin-top:1px"></div></div>
         <button type="button" onclick="clearSubSelection()" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;flex-shrink:0">✕ Change</button>
       </div>
+      <div id="deviceInfoChip" style="display:none;margin-top:8px"></div>
       <div id="subSelectedConfirm" style="display:none;font-size:10.5px;color:var(--t3);margin-top:6px">📸 Does this match what you’re looking at?</div>
       <button type="button" id="subSelectedContinueBtn" onclick="proceedToTicketDetails()" class="btn-big purple" style="margin-top:10px;padding:10px">Continue →</button>
     </div>
@@ -369,6 +379,26 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <div class="modal-bg" id="purchM"><div class="modal"><div class="modal-hd"><h3>🛒 Purchases</h3><button class="modal-x" onclick="closeM('purchM')">✕</button></div><div class="modal-bd" id="purchMBody"></div></div></div>
 
 <div class="modal-bg" id="docM"><div class="modal"><div class="modal-hd"><h3>📎 Documents</h3><button class="modal-x" onclick="closeM('docM')">✕</button></div><div class="modal-bd" id="docMBody"></div></div></div>
+
+<div class="modal-bg" id="scanM" onclick="if(event.target===this)closeScanModal()"><div class="modal"><div class="modal-hd"><h3>📷 Scan Device Barcode</h3><button class="modal-x" onclick="closeScanModal()">✕</button></div><div class="modal-bd">
+  <div id="scanReaderRegion" style="width:100%;max-width:340px;margin:0 auto;border-radius:var(--r);overflow:hidden;background:#000;min-height:240px"></div>
+  <div id="scanStatusMsg" style="text-align:center;font-size:11.5px;color:var(--t2);margin-top:10px">Point the camera at the barcode or QR sticker on the equipment.</div>
+  <div style="display:flex;align-items:center;gap:8px;margin:14px 0"><div style="flex:1;height:1px;background:var(--bdr)"></div><span style="font-size:9.5px;color:var(--t3);font-weight:700">OR ENTER CODE MANUALLY</span><div style="flex:1;height:1px;background:var(--bdr)"></div></div>
+  <div style="display:flex;gap:6px">
+    <input class="fc" id="manualDeviceCode" placeholder="e.g. OVEN-HSR01-01" style="flex:1;text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupScannedCodeManual();}">
+    <button type="button" class="btn btn-p" onclick="lookupScannedCodeManual()" style="flex-shrink:0">Look Up</button>
+  </div>
+</div></div></div>
+
+<div class="modal-bg" id="scanRequiredM" onclick="if(event.target===this)closeM('scanRequiredM')"><div class="modal"><div class="modal-hd"><h3>🔒 Scan Required</h3><button class="modal-x" onclick="closeM('scanRequiredM')">✕</button></div><div class="modal-bd">
+  <div style="text-align:center;padding:6px 0 14px">
+    <div style="font-size:34px">🏷️</div>
+    <p id="scanRequiredMsg" style="font-size:13px;font-weight:600;margin-top:8px"></p>
+    <p style="font-size:11px;color:var(--t2);margin-top:6px">Scanning links this ticket to the exact unit, so its repair history can be tracked over time.</p>
+  </div>
+  <button type="button" class="btn-big purple" onclick="closeM('scanRequiredM');openScanModal();">📷 Scan Barcode</button>
+  <button type="button" onclick="proceedWithoutScan()" style="width:100%;background:none;border:none;color:var(--t3);font-size:11px;text-decoration:underline;cursor:pointer;margin-top:10px;padding:6px">No barcode on this unit? Continue without scanning</button>
+</div></div></div>
 
 <div class="modal-bg" id="fbM"><div class="modal"><div class="modal-hd"><h3 style="font-size:16px">💬 Quick Feedback</h3><button class="modal-x" onclick="closeM('fbM')">✕</button></div><div id="fbProgress" style="text-align:center;font-size:12px;color:var(--t3);font-weight:700;padding-top:4px"></div><div class="modal-bd" id="fbBody" style="font-size:15px"></div><div class="modal-ft" id="fbFooter"></div></div></div>
 <div class="modal-bg" id="confirmM"><div class="modal"><div class="modal-hd"><h3>✅ Confirm Resolution</h3><button class="modal-x" onclick="closeM('confirmM')">✕</button></div><div class="modal-bd">
@@ -465,6 +495,215 @@ async function apiUpdate(tab,keyCol,keyValue,changes){
     const json=await res.json();
     return !!(json&&json.ok);
   }catch(e){return false;}
+}
+
+// ===== DEVICE BARCODE SCANNING =====
+// A "Devices" tab in the same sheet maps a physical barcode/QR sticker on one specific
+// piece of equipment (e.g. one particular micro oven at one outlet) to the Category /
+// Sub-Category it should raise a ticket under. This is deliberately generic — any
+// equipment type can be registered, not just micro ovens — so scanning slots straight
+// into the existing selectSubFromSearch() flow (same priority/SLA/checklist logic,
+// nothing duplicated) instead of being a parallel path.
+let DEVICES={}; // keyed by uppercased barcode value
+let html5QrScanner=null;
+let scanResultHandled=false;
+
+async function loadDevicesFromSheet(){
+  const rows=await apiRead('Devices');
+  if(!rows)return false;
+  const fresh={};
+  rows.forEach(r=>{
+    const code=String(r.Barcode_Value||r.Device_ID||'').trim();
+    if(!code)return;
+    // Is_Active left blank is treated as active — most rows won't bother setting it.
+    const activeRaw=String(r.Is_Active===undefined?'':r.Is_Active).trim();
+    const active=(r.Is_Active===true||activeRaw===''||activeRaw.toUpperCase()==='TRUE');
+    if(!active)return;
+    // A barcode identifies the EQUIPMENT, not one fixed problem — the same physical
+    // microwave can be "Not Working" today and "Sparking Inside" next month. The exact
+    // issue is resolved at scan time by matching this equipment name against every
+    // "<Category Label> - <Equipment> - <Issue>" sub-category row under Category_ID
+    // (see findSubsForEquipment below), never stored fixed on the device row.
+    fresh[code.toUpperCase()]={
+      id:String(r.Device_ID||code).trim(),
+      barcode:code,
+      outlet:String(r.Outlet_Code||'').trim(),
+      catId:String(r.Category_ID||'').trim(),
+      equipmentName:String(r.Equipment_Name||'').trim(),
+      model:String(r.Model||'').trim(),
+      notes:String(r.Notes||'').trim()
+    };
+  });
+  if(Object.keys(fresh).length)DEVICES=fresh;
+  return true;
+}
+
+function openScanModal(){
+  scanResultHandled=false;
+  const mi=document.getElementById('manualDeviceCode');if(mi)mi.value='';
+  const status=document.getElementById('scanStatusMsg');if(status)status.textContent='Point the camera at the barcode or QR sticker on the equipment.';
+  openM('scanM');
+  if(html5QrScanner)return; // camera already running from a prior open — don't re-init
+  if(location.protocol==='file:'){
+    if(status)status.textContent='Camera scanning needs HTTPS — enter the code manually below.';
+    return;
+  }
+  if(typeof Html5Qrcode==='undefined'){
+    if(status)status.textContent='Scanner failed to load — enter the code manually below.';
+    return;
+  }
+  try{
+    html5QrScanner=new Html5Qrcode('scanReaderRegion',{formatsToSupport:[
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E
+    ]});
+    html5QrScanner.start(
+      {facingMode:'environment'},
+      {fps:10,qrbox:{width:230,height:230}},
+      (decodedText)=>{handleDeviceScan(decodedText);},
+      ()=>{/* per-frame decode miss while aiming — expected, ignore */}
+    ).catch(err=>{
+      console.error('[FixEngine] Camera scan failed to start:',err);
+      html5QrScanner=null;
+      if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:'permission denied')+') — enter the code manually below.';
+    });
+  }catch(e){
+    console.error('[FixEngine] Html5Qrcode init failed:',e);
+    html5QrScanner=null;
+    if(status)status.textContent='Scanner failed to start — enter the code manually below.';
+  }
+}
+function closeScanModal(){closeM('scanM');}
+// Stops the camera on EVERY path the modal can close through (✕ button, backdrop tap,
+// Escape key) rather than duplicating a stop() call at each call site — those all just
+// remove the .show class, so watching the class is the one place that catches all of them.
+(function(){
+  const scanModalEl=document.getElementById('scanM');
+  if(!scanModalEl)return;
+  new MutationObserver(()=>{
+    if(!scanModalEl.classList.contains('show')&&html5QrScanner){
+      const s=html5QrScanner;html5QrScanner=null;
+      s.stop().then(()=>s.clear()).catch(()=>{});
+    }
+  }).observe(scanModalEl,{attributes:true,attributeFilter:['class']});
+})();
+
+function lookupScannedCodeManual(){
+  const mi=document.getElementById('manualDeviceCode');
+  if(!mi)return;
+  const code=mi.value.trim();
+  if(!code){nf('Enter a code','Type the code printed on the device sticker','warn');return;}
+  handleDeviceScan(code);
+}
+
+// Sub-category rows follow "<Category Label> - <Equipment> - <Issue>" (confirmed against
+// the live Sub_Categories tab, e.g. "Heating Equipments - Microwave - Not Working"). This
+// pulls every issue variant registered for one equipment name under one category — the
+// set of problems THIS scanned unit could actually have — by matching the middle segment,
+// not a blunt substring search that could false-match an unrelated sub-category.
+function findSubsForEquipment(catId,equipmentName){
+  const cat=CATS[catId];
+  if(!cat)return[];
+  const target=String(equipmentName||'').trim().toLowerCase();
+  if(!target)return[];
+  const matches=[];
+  (cat.subs||[]).forEach(sub=>{
+    const parts=sub.split(' - ');
+    const seg=(parts[1]||'').trim().toLowerCase();
+    if(seg===target){
+      matches.push({catId,catLabel:cat.label,sub,pri:UMAP[sub]||cat.pri||'medium'});
+    }
+  });
+  return matches;
+}
+
+// Equipment types listed here CANNOT be raised without scanning first — the requester
+// gets stopped and pointed at "Scan Device Barcode" instead of being allowed to type/
+// browse to one of these issues directly. Add more names here (e.g. 'refrigerator')
+// only once you've actually stuck barcodes on most/all real-world units of that type —
+// adding one too early blocks anyone with an as-yet-untagged unit from raising a ticket
+// at all. That exact gap is why "Continue without scanning" exists below as an escape
+// hatch (it leaves Device_ID blank, which doubles as a worklist of untagged units) —
+// it is not meant to be normal usage once coverage is actually complete.
+const MANDATORY_SCAN_EQUIPMENT=new Set(['microwave']);
+function equipmentSegmentOf(sub){
+  const parts=String(sub||'').split(' - ');
+  return parts.length>=2?parts[1].trim().toLowerCase():'';
+}
+let pendingMandatoryScan=null; // {catId,sub,catLabel,pri} — held while the Scan Required modal is open
+function proceedWithoutScan(){
+  closeM('scanRequiredM');
+  if(!pendingMandatoryScan)return;
+  const p=pendingMandatoryScan;pendingMandatoryScan=null;
+  window.scannedDevice=null; // explicit: this ticket goes out with no Device_ID
+  selectSubFromSearch(p.catId,p.sub,p.catLabel,p.pri,true);
+}
+
+function handleDeviceScan(rawCode){
+  const code=String(rawCode||'').trim();
+  if(!code||scanResultHandled)return;
+  const device=DEVICES[code.toUpperCase()];
+  if(!device){
+    // Camera keeps firing near-misses every frame while aiming — throttle the toast
+    // instead of spamming it, and leave the scanner running so they can keep trying.
+    const now=Date.now();
+    if(!window._lastNoMatchToast||now-window._lastNoMatchToast>2500){
+      window._lastNoMatchToast=now;
+      nf('Not recognized','No device found for that code — keep scanning or enter it manually','warn');
+    }
+    return;
+  }
+  if(!device.catId||!device.equipmentName||!CATS[device.catId]){
+    nf('Device found, but not linked to a category',device.id+' needs a valid Category_ID/Equipment_Name in the Devices sheet — contact admin','warn');
+    return;
+  }
+  const matches=findSubsForEquipment(device.catId,device.equipmentName);
+  if(!matches.length){
+    nf('No issue types found',device.equipmentName+' has no matching sub-categories under '+device.catId+' — contact admin','warn');
+    return;
+  }
+  scanResultHandled=true;
+  // candidateSubs is what selectSubFromSearch() checks to decide whether this device tag
+  // still applies once a specific issue is chosen — any of these is a valid outcome for
+  // this physical unit, so the device stays linked no matter which one gets picked.
+  window.scannedDevice={...device,candidateSubs:matches.map(m=>m.sub)};
+  closeScanModal();
+  if(matches.length===1){
+    // Only one known issue type registered for this equipment — no need to make them
+    // tap it, go straight to the same place a single confident text-search match would.
+    selectSubFromSearch(matches[0].catId,matches[0].sub,matches[0].catLabel,matches[0].pri);
+    nf('✅ Device matched',device.id+' · '+matches[0].sub,'ok');
+  } else {
+    // Multiple possible issues for this equipment — reuse the EXACT same multi-match
+    // list the typed/voice search already shows (renderSuggestList), rather than a new
+    // custom picker. Tapping any entry calls selectSubFromSearch exactly as it always did.
+    revealNormalFlow(false);
+    const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='none';
+    highlightCat(device.catId,device.equipmentName);
+    const si=document.getElementById('subSearch');if(si)si.value=device.equipmentName;
+    renderSuggestList(matches,matches.length);
+    nf('🏷 '+device.id+' matched','Pick the issue you\'re seeing on this '+device.equipmentName,'ok');
+  }
+}
+
+function renderDeviceChip(device){
+  const chip=document.getElementById('deviceInfoChip');
+  if(!chip||!device)return;
+  const lOut=document.getElementById('lOut');
+  const chosenOutlet=lOut?lOut.value:'';
+  const mismatch=device.outlet&&chosenOutlet&&device.outlet!==chosenOutlet;
+  chip.style.display='block';
+  chip.innerHTML='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+    +'<span style="background:var(--ac);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px">🏷 '+device.id+'</span>'
+    +(device.model?'<span style="font-size:10px;color:var(--t2)">'+device.model+'</span>':'')
+    +(device.outlet?'<span style="font-size:10px;color:var(--t3)">· '+device.outlet+'</span>':'')
+    +'</div>'
+    +(mismatch?'<div style="margin-top:5px;font-size:10px;color:var(--wr);font-weight:600">⚠️ Registered at '+device.outlet+' — you selected '+chosenOutlet+'. Please confirm the outlet above.</div>':'');
 }
 // PHASE 6: Purchase Order helpers
 // Save one chat message to the Ticket_Chat tab (fire-and-forget from the caller's point of
@@ -756,6 +995,7 @@ function ticketToSheetRow(t){
     Flag_Reason:t.flagReason||'',
     Checklist_Answers:(t.probes||[]).join('|'),
     Where:t.where||'',
+    Device_ID:t.deviceId||'',
     Created_At:nowIso,
     Updated_At:nowIso
   };
@@ -838,6 +1078,7 @@ function sheetRowToTicket(r){
     action:String(r.Action||'').trim(),
     flagReason:String(r.Flag_Reason||'').trim(),
     where:String(r.Where||'').trim(),
+    deviceId:String(r.Device_ID||'').trim(),
     payment:String(r.Payment_Proof_URL||'').trim()?{
       status:'paid',
       proofUrl:String(r.Payment_Proof_URL||'').trim(),
@@ -1096,7 +1337,7 @@ function logout(){role='';phone='';userName='';userIni='';userOutlet='';selected
   if(typeof stopFixedNotificationPolling==='function')stopFixedNotificationPolling();
   if(typeof hideNotifBell==='function')hideNotifBell();
   document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
-async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
+async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet(),loadDevicesFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
 function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home',tickets:'Tickets',detail:'Details'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0}
 	function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('show')}
@@ -1670,6 +1911,7 @@ function revealNormalFlow(focusInput){
   const tips=document.getElementById('tipsBanner');if(tips)tips.style.display='block';
   const content=document.getElementById('formModeContent');if(content)content.style.display='block';
   const composer=document.getElementById('searchBoxWrap');if(composer)composer.style.display='block';
+  const scanWrap=document.getElementById('scanDeviceWrap');if(scanWrap)scanWrap.style.display='block';
   if(typeof syncDescMicBtn==='function')syncDescMicBtn();
   // Only pop the keyboard when they actually asked to type — not after a successful
   // voice result, where a keyboard appearing on top of their result would be unwelcome.
@@ -1719,6 +1961,7 @@ function updateAutoDesc(){
   let fresh;
   if(typedProblem){fresh=typedProblem;}
   else{let parts=[s];if(selWH)parts.push(selWH);if(selWhere)parts.push(selWhere);fresh=parts.join(' - ');}
+  if(window.scannedDevice)fresh='[Device: '+window.scannedDevice.id+'] '+fresh;
   if(tD.value.trim()===''||tD.value===autoDesc){tD.value=fresh;autoDesc=fresh;}
   else if(autoDesc&&tD.value.indexOf(autoDesc)===0){
     tD.value=fresh+tD.value.slice(autoDesc.length);autoDesc=fresh;
@@ -3036,7 +3279,32 @@ function showSuggestAlts(){
   }).join('');
 }
 
-function selectSubFromSearch(catId,sub,catLabel,pri){
+function selectSubFromSearch(catId,sub,catLabel,pri,skipMandatoryScanCheck){
+  // Gate BEFORE anything else runs: if this issue's equipment is in the mandatory-scan
+  // list and this call didn't arrive via a validated scan (candidateSubs already covering
+  // this exact sub — true for every call handleDeviceScan makes), stop here and send the
+  // requester to the scanner instead. This one function is where typed search, voice
+  // "did you mean", the alternates list, AND the category-browse grid all end up (every
+  // selection path funnels through here), so gating it here covers all four at once.
+  const alreadyScannedForThis=window.scannedDevice&&window.scannedDevice.candidateSubs&&window.scannedDevice.candidateSubs.includes(sub);
+  if(!skipMandatoryScanCheck&&!alreadyScannedForThis&&MANDATORY_SCAN_EQUIPMENT.has(equipmentSegmentOf(sub))){
+    pendingMandatoryScan={catId,sub,catLabel,pri};
+    const equipName=sub.split(' - ')[1]||'this equipment';
+    const msg=document.getElementById('scanRequiredMsg');
+    if(msg)msg.textContent='This is a tracked device type — please scan the barcode on the '+equipName+' before raising this ticket.';
+    openM('scanRequiredM');
+    return;
+  }
+  // A device tag should only survive onto one of the issue types actually registered for
+  // THAT equipment (candidateSubs, set by handleDeviceScan — e.g. any of the 5 Microwave
+  // issue rows) — never onto something unrelated the requester browsed to instead (e.g.
+  // scans the oven, then picks "🔄 Change" and searches for a totally different problem).
+  // This is the one place every selection path funnels through, so clearing it here
+  // (rather than in each caller) keeps Device_ID trustworthy everywhere.
+  if(window.scannedDevice&&(!window.scannedDevice.candidateSubs||!window.scannedDevice.candidateSubs.includes(sub))){
+    window.scannedDevice=null;
+    const dic=document.getElementById('deviceInfoChip');if(dic){dic.style.display='none';dic.innerHTML='';}
+  }
   const typedQ=document.getElementById('subSearch')?document.getElementById('subSearch').value:'';
   typedProblem=isKnownSubName(typedQ)?'':typedQ.trim();
   subSearchSelected={cat:catId,sub};
@@ -3070,9 +3338,15 @@ function selectSubFromSearch(catId,sub,catLabel,pri){
   selItem=detectItem(typedQ)||sub;showItemField();
   applyAutoTags(typedQ+' '+sub);
   updateAutoDesc();
+  // Render (or re-render) the device chip here rather than at each call site — covers
+  // the single-issue auto-select AND whichever of the multi-issue list got tapped, with
+  // one code path instead of two.
+  if(window.scannedDevice)renderDeviceChip(window.scannedDevice);
 }
 
 function clearSubSelection(){
+  window.scannedDevice=null;
+  const dic=document.getElementById('deviceInfoChip');if(dic){dic.style.display='none';dic.innerHTML='';}
   if(typeof clearCatHighlight==='function'){clearCatHighlight();closeCatTile();}
   const gwc=document.getElementById('catGridWrap');if(gwc)gwc.style.display='block';
   const tds=document.getElementById('ticketDetailsSection');if(tds)tds.style.display='none';
@@ -4041,7 +4315,7 @@ async function raiseTicket(){
   document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
   document.querySelectorAll('#probeL select').forEach(s=>{if(s.value)probes.push((s.parentElement?.firstElementChild?.textContent||'Q')+': '+s.value)});
   const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
-  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:''};
+  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:'',deviceId:window.scannedDevice?window.scannedDevice.id:''};
   if(flagOn)t.hist.push({s:'raised',t:ts(),n:'🚩 Flagged URGENT by requester: '+flagWhy});
   if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
   const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
@@ -5657,7 +5931,8 @@ let usersLoaded=true;
   // raise-ticket form (the 4 tag dropdowns, outlet search).
   Promise.all([
     loadTagOptionsFromSheet(),
-    loadOutletsFromSheet()
+    loadOutletsFromSheet(),
+    loadDevicesFromSheet()
   ]).then(()=>{
     fillBootDropdowns();
     updateDemoBanner();
