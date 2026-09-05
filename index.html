@@ -601,7 +601,22 @@ function attemptCameraStart(){
       // the previous one-size-fits-all "Camera unavailable (Permission denied)" text.
       const errName=err&&err.name?err.name:'';
       if(errName==='NotAllowedError'||errName==='PermissionDeniedError'){
-        if(status)status.innerHTML='Camera access is blocked for this site. Tap the 🔒 (or ⓘ) icon next to your browser\'s address bar → Site settings → Camera → Allow — then tap Try Again below.';
+        // A NotAllowedError can come from three different places, and the browser
+        // deliberately does not tell JS which one (privacy reasons) — the site's own
+        // per-page Chrome permission is only ONE of them, so if that's already been
+        // checked and looks fine, the other two real causes are: (a) the page is loaded
+        // inside another page's frame, which can silently block camera access no matter
+        // what the browser's own site setting says — this one IS detectable; or (b) the
+        // operating system itself is blocking the browser app from using the camera at
+        // all (Windows Settings > Privacy > Camera, or macOS System Settings > Privacy &
+        // Security > Camera) — separate from any in-browser/site setting.
+        let framed=false;
+        try{framed=window.self!==window.top;}catch(e){framed=true;}
+        if(framed){
+          if(status)status.innerHTML='This page appears to be opened inside another page or app frame — that can silently block the camera even when your browser\'s own camera setting is fine and no site is blocked. Open this page directly in its own browser tab, then tap Try Again below.';
+        }else{
+          if(status)status.innerHTML='Camera access is blocked. If your browser\'s site permission for this page already shows "Allow" (🔒/ⓘ icon → Site settings → Camera), also check your device\'s OS-level camera privacy setting — Windows: Settings → Privacy &amp; security → Camera; Mac: System Settings → Privacy &amp; Security → Camera — and make sure this browser is allowed there. Then tap Try Again below.';
+        }
         showScanTryAgain();
       }else if(errName==='NotFoundError'||errName==='DevicesNotFoundError'||errName==='OverconstrainedError'){
         if(status)status.textContent='No usable camera found on this device — enter the code manually below.';
