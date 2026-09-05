@@ -583,24 +583,43 @@ function attemptCameraStart(){
     experimentalFeatures:{useBarCodeDetectorIfSupported:true}
     });
     html5QrScanner.start(
-      // Requesting a higher native camera resolution (ideal 1080p, min 480p so it still
-      // works on older/weaker cameras) is the main fix: the default browser preset is
-      // often as low as 640x480, which doesn't have enough pixels on a physically small
-      // barcode to decode reliably, no matter how good the decoder is. 'focusMode:
-      // continuous' is best-effort — supported browsers refocus as the phone moves
-      // closer to the label; unsupported ones just ignore it (no error).
-      {facingMode:'environment',width:{min:640,ideal:1920,max:1920},height:{min:480,ideal:1080,max:1080},advanced:[{focusMode:'continuous'}]},
-      {fps:10,qrbox:{width:230,height:230}},
+      // THE ACTUAL BUG (confirmed against html5-qrcode's own source): this first
+      // argument — cameraIdOrConfig — is validated internally and MUST have exactly
+      // ONE key when passed as an object (e.g. just {facingMode:'environment'} or just
+      // {deviceId:...}); anything else throws "'cameraIdOrConfig' object should have
+      // exactly 1 key..." synchronously, every time, on every device — which is
+      // exactly the error that was hiding behind the generic "permission denied"
+      // fallback text until that fallback was fixed to show the real error string.
+      // The extra resolution/focus constraints belong in the SECOND argument's
+      // 'videoConstraints' field instead (documented, and confirmed in source: when
+      // present, it's used directly for getUserMedia, bypassing cameraIdOrConfig).
+      {facingMode:'environment'},
+      {fps:10,qrbox:{width:230,height:230},
+        // Requesting a higher native camera resolution (ideal 1080p, min 480p so it
+        // still works on older/weaker cameras) is the actual small-barcode fix: the
+        // default browser preset is often as low as 640x480, not enough pixels on a
+        // physically small barcode to decode reliably. 'focusMode: continuous' is
+        // best-effort — supported browsers refocus as the phone moves closer to the
+        // label; unsupported ones just ignore it (no error).
+        videoConstraints:{facingMode:'environment',width:{min:640,ideal:1920,max:1920},height:{min:480,ideal:1080,max:1080},advanced:[{focusMode:'continuous'}]}
+      },
       (decodedText)=>{handleDeviceScan(decodedText);},
       ()=>{/* per-frame decode miss while aiming — expected, ignore */}
     ).then(()=>{setupCameraZoomControl();}).catch(err=>{
       console.error('[FixEngine] Camera scan failed to start:',err);
       html5QrScanner=null;
-      // getUserMedia rejects with a standard DOMException — its .name tells us WHY,
-      // so a permission denial gets a clear, actionable message + Try Again instead of
-      // the previous one-size-fits-all "Camera unavailable (Permission denied)" text.
-      const errName=err&&err.name?err.name:'';
-      if(errName==='NotAllowedError'||errName==='PermissionDeniedError'){
+      // IMPORTANT (root cause of the previous fix not actually showing up): html5-qrcode's
+      // start() does NOT reject with the original DOMException it gets from getUserMedia —
+      // it wraps every failure into a plain STRING like "Error getting userMedia, error =
+      // NotAllowedError: Permission denied" (confirmed against the library's own source,
+      // Html5QrcodeStrings.errorGettingUserMedia). A string has no .name property, so the
+      // previous err.name checks below silently never matched anything and always fell
+      // through to the generic message — that mismatch, not the browser/OS/site permission
+      // itself, is why the more specific messages never appeared. Matching the error TEXT
+      // (which still contains the original DOMException's name via its toString()) instead
+      // of a nonexistent .name property is the actual fix.
+      const errText=String(err||'')+' '+(err&&err.name?err.name:'')+' '+(err&&err.message?err.message:'');
+      if(/NotAllowedError|PermissionDeniedError|Permission denied/i.test(errText)){
         // A NotAllowedError can come from three different places, and the browser
         // deliberately does not tell JS which one (privacy reasons) — the site's own
         // per-page Chrome permission is only ONE of them, so if that's already been
@@ -618,13 +637,17 @@ function attemptCameraStart(){
           if(status)status.innerHTML='Camera access is blocked. If your browser\'s site permission for this page already shows "Allow" (🔒/ⓘ icon → Site settings → Camera), also check your device\'s OS-level camera privacy setting — Windows: Settings → Privacy &amp; security → Camera; Mac: System Settings → Privacy &amp; Security → Camera — and make sure this browser is allowed there. Then tap Try Again below.';
         }
         showScanTryAgain();
-      }else if(errName==='NotFoundError'||errName==='DevicesNotFoundError'||errName==='OverconstrainedError'){
+      }else if(/NotFoundError|DevicesNotFoundError|OverconstrainedError|No camera found/i.test(errText)){
         if(status)status.textContent='No usable camera found on this device — enter the code manually below.';
-      }else if(errName==='NotReadableError'||errName==='TrackStartError'){
+      }else if(/NotReadableError|TrackStartError/i.test(errText)){
         if(status)status.textContent='Camera is in use by another app — close it, then tap Try Again below.';
         showScanTryAgain();
       }else{
-        if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:'permission denied')+') — enter the code manually below.';
+        // Surface the real underlying text here (rather than a hardcoded generic phrase)
+        // so if something unrecognized shows up, it's actually visible for diagnosis
+        // instead of being masked every time — this is the exact string that was hidden
+        // behind the old fallback "permission denied" text in the earlier screenshot.
+        if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:String(err||'unknown error'))+') — enter the code manually below.';
         showScanTryAgain();
       }
     });
