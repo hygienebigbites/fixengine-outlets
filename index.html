@@ -383,6 +383,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <div class="modal-bg" id="scanM" onclick="if(event.target===this)closeScanModal()"><div class="modal"><div class="modal-hd"><h3>📷 Scan Device Barcode</h3><button class="modal-x" onclick="closeScanModal()">✕</button></div><div class="modal-bd">
   <div id="scanReaderRegion" style="width:100%;max-width:340px;margin:0 auto;border-radius:var(--r);overflow:hidden;background:#000;min-height:240px"></div>
   <div id="scanStatusMsg" style="text-align:center;font-size:11.5px;color:var(--t2);margin-top:10px">Point the camera at the barcode or QR sticker on the equipment.</div>
+  <button type="button" id="scanTryAgainBtn" onclick="retryCameraScan()" style="display:none;width:100%;margin-top:10px;background:var(--acg);border:1.5px solid var(--ac);border-radius:14px;padding:11px;font-size:13px;font-weight:800;color:var(--ac2);cursor:pointer;font-family:inherit">🔄 Try Again</button>
   <div id="scanZoomWrap" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:0 2px"><span style="font-size:14px;line-height:1">🔍</span><input type="range" id="scanZoomSlider" style="flex:1;accent-color:var(--ac)" min="1" max="1" step="1" value="1"><span style="font-size:9.5px;color:var(--t3);font-weight:700;white-space:nowrap">ZOOM</span></div>
   <div style="display:flex;align-items:center;gap:8px;margin:14px 0"><div style="flex:1;height:1px;background:var(--bdr)"></div><span style="font-size:9.5px;color:var(--t3);font-weight:700">OR ENTER CODE MANUALLY</span><div style="flex:1;height:1px;background:var(--bdr)"></div></div>
   <div style="display:flex;gap:6px">
@@ -542,12 +543,23 @@ async function loadDevicesFromSheet(){
 function openScanModal(){
   scanResultHandled=false;
   const mi=document.getElementById('manualDeviceCode');if(mi)mi.value='';
+  hideScanTryAgain();
   const status=document.getElementById('scanStatusMsg');if(status)status.textContent='Point the camera at the barcode or QR sticker on the equipment.';
   const zw=document.getElementById('scanZoomWrap');if(zw)zw.style.display='none'; // re-shown after start() if this camera supports zoom
   openM('scanM');
   if(html5QrScanner)return; // camera already running from a prior open — don't re-init
-  if(location.protocol==='file:'){
-    if(status)status.textContent='Camera scanning needs HTTPS — enter the code manually below.';
+  attemptCameraStart();
+}
+
+// Pulled out of openScanModal() so the "Try Again" button (shown after a permission
+// denial) can re-run exactly this same start attempt without re-opening the modal.
+function attemptCameraStart(){
+  const status=document.getElementById('scanStatusMsg');
+  // getUserMedia is only available in a secure context (HTTPS, or http://localhost) —
+  // checking this directly (rather than only the old file:// check) also catches a
+  // plain-HTTP deployment, which previously surfaced as a confusing generic error.
+  if(!window.isSecureContext){
+    if(status)status.textContent='Camera scanning needs a secure connection (HTTPS) — enter the code manually below.';
     return;
   }
   if(typeof Html5Qrcode==='undefined'){
@@ -584,13 +596,35 @@ function openScanModal(){
     ).then(()=>{setupCameraZoomControl();}).catch(err=>{
       console.error('[FixEngine] Camera scan failed to start:',err);
       html5QrScanner=null;
-      if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:'permission denied')+') — enter the code manually below.';
+      // getUserMedia rejects with a standard DOMException — its .name tells us WHY,
+      // so a permission denial gets a clear, actionable message + Try Again instead of
+      // the previous one-size-fits-all "Camera unavailable (Permission denied)" text.
+      const errName=err&&err.name?err.name:'';
+      if(errName==='NotAllowedError'||errName==='PermissionDeniedError'){
+        if(status)status.innerHTML='Camera access is blocked for this site. Tap the 🔒 (or ⓘ) icon next to your browser\'s address bar → Site settings → Camera → Allow — then tap Try Again below.';
+        showScanTryAgain();
+      }else if(errName==='NotFoundError'||errName==='DevicesNotFoundError'||errName==='OverconstrainedError'){
+        if(status)status.textContent='No usable camera found on this device — enter the code manually below.';
+      }else if(errName==='NotReadableError'||errName==='TrackStartError'){
+        if(status)status.textContent='Camera is in use by another app — close it, then tap Try Again below.';
+        showScanTryAgain();
+      }else{
+        if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:'permission denied')+') — enter the code manually below.';
+        showScanTryAgain();
+      }
     });
   }catch(e){
     console.error('[FixEngine] Html5Qrcode init failed:',e);
     html5QrScanner=null;
     if(status)status.textContent='Scanner failed to start — enter the code manually below.';
   }
+}
+function showScanTryAgain(){const b=document.getElementById('scanTryAgainBtn');if(b)b.style.display='block';}
+function hideScanTryAgain(){const b=document.getElementById('scanTryAgainBtn');if(b)b.style.display='none';}
+function retryCameraScan(){
+  hideScanTryAgain();
+  const status=document.getElementById('scanStatusMsg');if(status)status.textContent='Point the camera at the barcode or QR sticker on the equipment.';
+  attemptCameraStart();
 }
 
 // Best-effort optical assist for small labels: if this camera/browser exposes hardware
