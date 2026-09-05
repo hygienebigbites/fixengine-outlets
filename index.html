@@ -383,6 +383,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 <div class="modal-bg" id="scanM" onclick="if(event.target===this)closeScanModal()"><div class="modal"><div class="modal-hd"><h3>📷 Scan Device Barcode</h3><button class="modal-x" onclick="closeScanModal()">✕</button></div><div class="modal-bd">
   <div id="scanReaderRegion" style="width:100%;max-width:340px;margin:0 auto;border-radius:var(--r);overflow:hidden;background:#000;min-height:240px"></div>
   <div id="scanStatusMsg" style="text-align:center;font-size:11.5px;color:var(--t2);margin-top:10px">Point the camera at the barcode or QR sticker on the equipment.</div>
+  <div id="scanZoomWrap" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:0 2px"><span style="font-size:14px;line-height:1">🔍</span><input type="range" id="scanZoomSlider" style="flex:1;accent-color:var(--ac)" min="1" max="1" step="1" value="1"><span style="font-size:9.5px;color:var(--t3);font-weight:700;white-space:nowrap">ZOOM</span></div>
   <div style="display:flex;align-items:center;gap:8px;margin:14px 0"><div style="flex:1;height:1px;background:var(--bdr)"></div><span style="font-size:9.5px;color:var(--t3);font-weight:700">OR ENTER CODE MANUALLY</span><div style="flex:1;height:1px;background:var(--bdr)"></div></div>
   <div style="display:flex;gap:6px">
     <input class="fc" id="manualDeviceCode" placeholder="e.g. OVEN-HSR01-01" style="flex:1;text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupScannedCodeManual();}">
@@ -542,6 +543,7 @@ function openScanModal(){
   scanResultHandled=false;
   const mi=document.getElementById('manualDeviceCode');if(mi)mi.value='';
   const status=document.getElementById('scanStatusMsg');if(status)status.textContent='Point the camera at the barcode or QR sticker on the equipment.';
+  const zw=document.getElementById('scanZoomWrap');if(zw)zw.style.display='none'; // re-shown after start() if this camera supports zoom
   openM('scanM');
   if(html5QrScanner)return; // camera already running from a prior open — don't re-init
   if(location.protocol==='file:'){
@@ -561,13 +563,25 @@ function openScanModal(){
       Html5QrcodeSupportedFormats.EAN_8,
       Html5QrcodeSupportedFormats.UPC_A,
       Html5QrcodeSupportedFormats.UPC_E
-    ]});
+    ],
+    // Small printed 1D labels decode far more reliably through the browser's native
+    // BarcodeDetector (hardware-accelerated) than the JS fallback decoder — this is
+    // html5-qrcode's own default from v2.3.4 on, pinned explicitly so it can't silently
+    // regress. No effect on decoded value/format — same codes, same output either way.
+    experimentalFeatures:{useBarCodeDetectorIfSupported:true}
+    });
     html5QrScanner.start(
-      {facingMode:'environment'},
+      // Requesting a higher native camera resolution (ideal 1080p, min 480p so it still
+      // works on older/weaker cameras) is the main fix: the default browser preset is
+      // often as low as 640x480, which doesn't have enough pixels on a physically small
+      // barcode to decode reliably, no matter how good the decoder is. 'focusMode:
+      // continuous' is best-effort — supported browsers refocus as the phone moves
+      // closer to the label; unsupported ones just ignore it (no error).
+      {facingMode:'environment',width:{min:640,ideal:1920,max:1920},height:{min:480,ideal:1080,max:1080},advanced:[{focusMode:'continuous'}]},
       {fps:10,qrbox:{width:230,height:230}},
       (decodedText)=>{handleDeviceScan(decodedText);},
       ()=>{/* per-frame decode miss while aiming — expected, ignore */}
-    ).catch(err=>{
+    ).then(()=>{setupCameraZoomControl();}).catch(err=>{
       console.error('[FixEngine] Camera scan failed to start:',err);
       html5QrScanner=null;
       if(status)status.textContent='Camera unavailable ('+(err&&err.message?err.message:'permission denied')+') — enter the code manually below.';
@@ -576,6 +590,34 @@ function openScanModal(){
     console.error('[FixEngine] Html5Qrcode init failed:',e);
     html5QrScanner=null;
     if(status)status.textContent='Scanner failed to start — enter the code manually below.';
+  }
+}
+
+// Best-effort optical assist for small labels: if this camera/browser exposes hardware
+// zoom (Android Chrome mostly — not supported on iOS Safari), reveal a slider so the
+// user can zoom in on a tiny barcode instead of having to physically get the phone
+// close enough that the camera can no longer focus. Starts pre-zoomed a bit so the
+// common case (small label, normal handheld distance) needs no extra taps. Wrapped so
+// any failure here can never break the actual scan flow — manual code entry still works
+// regardless of zoom support.
+function setupCameraZoomControl(){
+  try{
+    const wrap=document.getElementById('scanZoomWrap');
+    const slider=document.getElementById('scanZoomSlider');
+    if(!wrap||!slider||!html5QrScanner||typeof html5QrScanner.getRunningTrackCameraCapabilities!=='function')return;
+    const caps=html5QrScanner.getRunningTrackCameraCapabilities();
+    const zoomCap=caps&&typeof caps.zoomFeature==='function'?caps.zoomFeature():null;
+    if(!zoomCap||!zoomCap.isSupported())return;
+    const min=zoomCap.min(),max=zoomCap.max(),step=zoomCap.step()||1;
+    if(!(max>min))return;
+    slider.min=min;slider.max=max;slider.step=step;
+    const startZoom=Math.min(max,Math.max(min,min+(max-min)*0.35));
+    slider.value=startZoom;
+    zoomCap.apply(startZoom).catch(()=>{});
+    slider.oninput=function(){zoomCap.apply(Number(slider.value)).catch(()=>{});};
+    wrap.style.display='flex';
+  }catch(e){
+    console.warn('[FixEngine] Camera zoom control unavailable:',e);
   }
 }
 function closeScanModal(){closeM('scanM');}
