@@ -7,6 +7,10 @@
 <meta name="theme-color" content="#F7F7FA">
 <title>Fix Engine — Cloud Kitchen R&M</title>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+<!-- Fallback OCR for barcodes too small/worn to decode reliably: reads the printed
+     device code text under the barcode instead. Loaded deferred; its ~4MB language
+     model is only fetched the first time OCR is actually used, not on page load. -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;700&display=swap');
 :root{--bg:#F7F7FA;--c1:#FFFFFF;--c2:#F2F3F7;--c3:#E9EBF2;--bdr:#E3E5EC;--t:#14142B;--t2:#525A6B;--t3:#656C7C;--ac:#695ACC;--ac2:#6552E0;--acg:rgba(124,106,240,.14);--ok:#0B7C56;--okb:rgba(11,124,86,.10);--wr:#A35905;--wrb:rgba(163,89,5,.10);--er:#D02020;--erb:rgba(208,32,32,.09);--inf:#0B796F;--infb:rgba(11,121,111,.10);--or:#BF480A;--orb:rgba(191,72,10,.10);--pk:#CA246E;--r:10px;--rs:7px;--f:'DM Sans',system-ui,-apple-system,sans-serif;--m:'JetBrains Mono',monospace;--sb:env(safe-area-inset-bottom,0px)}
@@ -385,6 +389,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div id="scanStatusMsg" style="text-align:center;font-size:11.5px;color:var(--t2);margin-top:10px">Point the camera at the barcode or QR sticker on the equipment.</div>
   <button type="button" id="scanTryAgainBtn" onclick="retryCameraScan()" style="display:none;width:100%;margin-top:10px;background:var(--acg);border:1.5px solid var(--ac);border-radius:14px;padding:11px;font-size:13px;font-weight:800;color:var(--ac2);cursor:pointer;font-family:inherit">🔄 Try Again</button>
   <div id="scanZoomWrap" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:0 2px"><span style="font-size:14px;line-height:1">🔍</span><input type="range" id="scanZoomSlider" style="flex:1;accent-color:var(--ac)" min="1" max="1" step="1" value="1"><span style="font-size:9.5px;color:var(--t3);font-weight:700;white-space:nowrap">ZOOM</span></div>
+  <button type="button" id="scanOcrBtn" onclick="tryReadLabelWithOcr()" style="display:none;width:100%;margin-top:10px;background:#fff;border:1.5px dashed var(--bdr);border-radius:14px;padding:10px;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;font-family:inherit">📄 Can't scan the barcode? Try reading the label text</button>
   <div style="display:flex;align-items:center;gap:8px;margin:14px 0"><div style="flex:1;height:1px;background:var(--bdr)"></div><span style="font-size:9.5px;color:var(--t3);font-weight:700">OR ENTER CODE MANUALLY</span><div style="flex:1;height:1px;background:var(--bdr)"></div></div>
   <div style="display:flex;gap:6px">
     <input class="fc" id="manualDeviceCode" placeholder="e.g. OVEN-HSR01-01" style="flex:1;text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupScannedCodeManual();}">
@@ -546,6 +551,7 @@ function openScanModal(){
   hideScanTryAgain();
   const status=document.getElementById('scanStatusMsg');if(status)status.textContent='Point the camera at the barcode or QR sticker on the equipment.';
   const zw=document.getElementById('scanZoomWrap');if(zw)zw.style.display='none'; // re-shown after start() if this camera supports zoom
+  const ob=document.getElementById('scanOcrBtn');if(ob){ob.style.display='none';ob.disabled=false;ob.textContent="📄 Can't scan the barcode? Try reading the label text";}
   openM('scanM');
   if(html5QrScanner)return; // camera already running from a prior open — don't re-init
   attemptCameraStart();
@@ -605,7 +611,12 @@ function attemptCameraStart(){
       },
       (decodedText)=>{handleDeviceScan(decodedText);},
       ()=>{/* per-frame decode miss while aiming — expected, ignore */}
-    ).then(()=>{setupCameraZoomControl();}).catch(err=>{
+    ).then(()=>{
+      setupCameraZoomControl();
+      // OCR fallback doesn't depend on any special camera capability (unlike zoom) —
+      // just a live video frame to capture — so show it whenever the camera is running.
+      const ob=document.getElementById('scanOcrBtn');if(ob)ob.style.display='block';
+    }).catch(err=>{
       console.error('[FixEngine] Camera scan failed to start:',err);
       html5QrScanner=null;
       // IMPORTANT (root cause of the previous fix not actually showing up): html5-qrcode's
@@ -692,6 +703,109 @@ function setupCameraZoomControl(){
     console.warn('[FixEngine] Camera zoom control unavailable:',e);
   }
 }
+
+// OCR fallback for barcodes too small/dense/worn to decode reliably: reads the printed
+// human-readable device code under the barcode instead (e.g. "MW-ANR01BLR22-003"), then
+// fuzzy-matches it against the known Devices list rather than trusting raw OCR output —
+// real-world thermal/dot-matrix print commonly misreads a character or two (O/0, I/1,
+// S/5), and fuzzy-matching against a closed set of known real codes is far more reliable
+// than expecting perfect character-level OCR. This never auto-submits a match — it only
+// pre-fills the existing manual-entry box so the requester can visually confirm against
+// the physical label before tapping the existing "Look Up" button, reusing that flow
+// exactly as-is rather than adding a second, parallel confirmation path.
+let ocrWorker=null;
+let ocrBusy=false;
+
+async function getOcrWorker(){
+  if(ocrWorker)return ocrWorker;
+  if(typeof Tesseract==='undefined')return null;
+  ocrWorker=await Tesseract.createWorker('eng');
+  // Device codes are only uppercase letters, digits, and dashes — restricting Tesseract
+  // to this character set measurably improves accuracy over unrestricted recognition.
+  await ocrWorker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-'});
+  return ocrWorker;
+}
+
+function captureCurrentVideoFrame(){
+  const region=document.getElementById('scanReaderRegion');
+  const video=region?region.querySelector('video'):null;
+  if(!video||!video.videoWidth)return null;
+  const canvas=document.createElement('canvas');
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+  return canvas;
+}
+
+// Plain Levenshtein edit distance — used to find the closest known device code to
+// whatever text OCR actually read, forgiving a handful of misread characters without
+// needing a fragile hardcoded substitution table for every possible OCR confusion.
+function levenshteinDistance(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i;
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+function bestDeviceMatchForOcrText(rawText){
+  const cleaned=String(rawText||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim();
+  if(!cleaned)return null;
+  let bestCode=null,bestDist=Infinity;
+  Object.keys(DEVICES).forEach(code=>{
+    const d=levenshteinDistance(cleaned,code);
+    if(d<bestDist){bestDist=d;bestCode=code;}
+  });
+  if(!bestCode)return null;
+  // Roughly one forgiven mismatch per 6 characters — generous enough for real OCR noise
+  // on a small/worn label, tight enough not to confidently match a wrong, similar device.
+  const threshold=Math.max(1,Math.round(bestCode.length/6));
+  return bestDist<=threshold?{code:bestCode,cleaned:cleaned,distance:bestDist}:null;
+}
+
+async function tryReadLabelWithOcr(){
+  if(ocrBusy)return;
+  const status=document.getElementById('scanStatusMsg');
+  const btn=document.getElementById('scanOcrBtn');
+  const canvas=captureCurrentVideoFrame();
+  if(!canvas){
+    nf('Camera not ready','Point the camera at the label first, then try again','warn');
+    return;
+  }
+  ocrBusy=true;
+  if(btn){btn.disabled=true;btn.textContent='⏳ Reading label…';}
+  if(status)status.textContent='Reading the printed text on the label — this can take a few seconds…';
+  try{
+    const worker=await getOcrWorker();
+    if(!worker){
+      nf('Unavailable','Label-reading isn\'t available right now — enter the code manually below','warn');
+      return;
+    }
+    const result=await worker.recognize(canvas);
+    const rawText=(result&&result.data&&result.data.text)?result.data.text:'';
+    const match=bestDeviceMatchForOcrText(rawText);
+    if(match){
+      const mi=document.getElementById('manualDeviceCode');
+      if(mi)mi.value=match.code;
+      nf('🔎 Label read',(match.distance===0?'Matched: ':'Best match: ')+match.code+' — check it against the label, then tap Look Up','ok');
+      if(status)status.textContent='Matched from the label text below — check it against the physical label, then tap Look Up.';
+    }else{
+      if(status)status.textContent="Couldn't confidently match the label text — try a closer, clearer photo, or enter the code manually below.";
+    }
+  }catch(e){
+    console.error('[FixEngine] OCR read failed:',e);
+    if(status)status.textContent="Couldn't read the label — enter the code manually below.";
+  }finally{
+    ocrBusy=false;
+    if(btn){btn.disabled=false;btn.textContent="📄 Can't scan the barcode? Try reading the label text";}
+  }
+}
+
 function closeScanModal(){closeM('scanM');}
 // Stops the camera on EVERY path the modal can close through (✕ button, backdrop tap,
 // Escape key) rather than duplicating a stop() call at each call site — those all just
