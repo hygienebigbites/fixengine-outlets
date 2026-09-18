@@ -4614,7 +4614,15 @@ async function raiseTicket(){
     // reached the server and only its response was lost, the automatic
     // retry inside apiCreateTicket() would already have caught that; a
     // fresh manual retry after that only submits a genuinely new attempt.
-    fail('⚠ Could not reach the server',(result.error==='timeout'?'Network timeout. ':'')+'Tap Raise Ticket to retry.');
+    // Shows the REAL error text (not a generic "couldn't reach server"
+    // guess) — a network-level failure (fetch itself throwing, or a
+    // timeout) looks different from the server responding fine but
+    // REJECTING the request (e.g. 'Unknown action' if the deployed Apps
+    // Script version is stale), and conflating the two just hides the
+    // actual cause, same lesson as the camera-scanner debugging earlier
+    // in this project.
+    const reason=result.error==='timeout'?'Network timeout — check your connection.':(result.error||'Unknown error');
+    fail('⚠ Ticket not saved: '+reason,'Tap Raise Ticket to retry.');
     return;
   }
 
