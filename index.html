@@ -460,7 +460,12 @@ function requesterStatusLabel(status){
 }
 
 // ===== PHASE 3: Google Sheets API connection =====
-const API_URL='https://script.google.com/macros/s/AKfycbyEzjgUsWL0Q_p2Pe4-pOqprxxiT3JjhXbIWWXCjCUOESGwzT8a-Ehp4SVU7C57vmu-/exec';// Reads a tab from the sheet, returns array of row-objects. Returns null on failure.
+const API_URL='https://script.google.com/macros/s/AKfycbyWe93Q3aNuP8SZgzKUTZJ6sphL-nNjnJag5zVp7u_LmF5HF-A-9hwdxKfYpszOXPI/exec';// Reads a tab from the sheet, returns array of row-objects. Returns null on failure.
+// FIXED 2026-09-18: was pointed at deployment AKfycbyEzjgUsWL0Q_p2Pe4-pOqprxxiT3JjhXbIWWXCjCUOESGwzT8a-Ehp4SVU7C57vmu-,
+// a DIFFERENT deployment than the one actually receiving code updates ("duicate -2", Deployment ID
+// AKfycbyWe93Q3aNuP8SZgzKUTZJ6sphL-nNjnJag5zVp7u_LmF5HF-A-9hwdxKfYpszOXPI) — so every fetch was hitting stale
+// backend code with no createTicket action, hence "Unknown action". If you redeploy again, always re-check
+// Deploy > Manage deployments and confirm THIS exact URL is the one that got the new version.
 async function apiRead(tab){
   try{
     const res=await fetch(API_URL+'?action=read&tab='+encodeURIComponent(tab));
