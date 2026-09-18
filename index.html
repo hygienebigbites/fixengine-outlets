@@ -466,6 +466,12 @@ const API_URL='https://script.google.com/macros/s/AKfycbyWe93Q3aNuP8SZgzKUTZJ6sp
 // AKfycbyWe93Q3aNuP8SZgzKUTZJ6sphL-nNjnJag5zVp7u_LmF5HF-A-9hwdxKfYpszOXPI) — so every fetch was hitting stale
 // backend code with no createTicket action, hence "Unknown action". If you redeploy again, always re-check
 // Deploy > Manage deployments and confirm THIS exact URL is the one that got the new version.
+// FIXED 2026-09-18: GDRIVE_FOLDER_ID was referenced by uploadToGDrive() (below) but never
+// declared anywhere in this file — every photo upload threw "ReferenceError: GDRIVE_FOLDER_ID
+// is not defined" inside its own try/catch, silently failing before any network request was
+// even sent, which is why Photo_URLs was always empty. This was a pre-existing bug, not
+// something introduced by the ticket-duplication fix. Confirmed via live console inspection.
+const GDRIVE_FOLDER_ID='1Mgh8dJgxYO3jmEhNGtmmpOvkGM-iUqi6';
 async function apiRead(tab){
   try{
     const res=await fetch(API_URL+'?action=read&tab='+encodeURIComponent(tab));
@@ -4599,14 +4605,18 @@ async function raiseTicket(){
   if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
   const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
 
-  // Photos now upload in PARALLEL (previously one-at-a-time in a for-loop) —
-  // under weak signal this was already a bigger delay than ticket-ID
-  // assignment ever was, so it's fixed in the same pass.
-  let imgUrls=[];
+  // REVERTED 2026-09-18: parallel photo upload (Promise.all) caused uploaded
+  // photos to go missing — sending all of them to Apps Script at the same
+  // instant can exceed its per-script simultaneous-execution limit, silently
+  // dropping one or more uploads. Back to one-at-a-time, same as the
+  // original, proven-safe behavior. The ticket-ID fix above is unaffected.
+  const imgUrls=[];
   if(tImgFiles.length){
     nf('Uploading…','Saving photos to Drive','ok');
-    const results=await Promise.all(tImgFiles.map(f=>uploadToGDrive(f,'ticket_'+idempotencyKey.slice(0,8))));
-    imgUrls=results.filter(Boolean);
+    for(const f of tImgFiles){
+      const url=await uploadToGDrive(f,'ticket_'+idempotencyKey.slice(0,8));
+      if(url)imgUrls.push(url);
+    }
   }
   t.photoUrls=imgUrls;
 
