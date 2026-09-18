@@ -504,6 +504,42 @@ async function apiUpdate(tab,keyCol,keyValue,changes){
   }catch(e){return false;}
 }
 
+// ROOT-CAUSE FIX (2026-09-18) — replaces client-side Ticket_ID generation.
+// The server now assigns the real Ticket_ID atomically (LockService) and
+// de-dupes by idempotencyKey, so a network retry of the SAME submission
+// can never create a second ticket. See raiseTicket() below for usage.
+function generateIdempotencyKey(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return 'idem-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+async function apiCreateTicketOnce(row,idempotencyKey,outletPrefix,timeoutMs){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+  try{
+    const res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'createTicket',row:row,idempotencyKey:idempotencyKey,outletPrefix:outletPrefix}),
+      signal:ctrl.signal
+    });
+    const json=await res.json();
+    if(json&&json.ok)return {ok:true,ticketId:json.ticketId,reused:!!json.reused};
+    return {ok:false,error:(json&&json.error)||'Server rejected the request'};
+  }catch(e){
+    return {ok:false,error:e.name==='AbortError'?'timeout':String(e)};
+  }finally{
+    clearTimeout(timer);
+  }
+}
+async function apiCreateTicket(row,idempotencyKey,outletPrefix){
+  let r=await apiCreateTicketOnce(row,idempotencyKey,outletPrefix,12000);
+  if(r.ok)return r;
+  // ONE automatic retry, SAME key — safe even if the first attempt actually
+  // reached the server and only its response was lost: the server just
+  // hands back the existing ticket instead of creating a second one.
+  return apiCreateTicketOnce(row,idempotencyKey,outletPrefix,12000);
+}
+
 // ===== DEVICE BARCODE SCANNING =====
 // A "Devices" tab in the same sheet maps a physical barcode/QR sticker on one specific
 // piece of equipment (e.g. one particular micro oven at one outlet) to the Category /
@@ -4515,7 +4551,7 @@ function renderPhotoList(){
 }
 async function raiseTicket(){
   const btn=document.getElementById('raiseBtn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Raising Ticket...';}
+  if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='⏳ Raising Ticket...';}
   const fail=(a,b)=>{nf(a,b,'warn');if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}};
   const ph=document.getElementById('lPh').value.replace(/\D/g,'').slice(-10);
   const nm=document.getElementById('lNm').value.trim();
@@ -4538,46 +4574,67 @@ async function raiseTicket(){
   userOutlet=o;selectedOutlets=[o];
   if(typeof startFixedNotificationPolling==='function')startFixedNotificationPolling();
   document.getElementById('uN').textContent=userName;document.getElementById('uR').textContent='requester · '+phone;document.getElementById('uAv').textContent=userIni;
-  tCnt++;const id=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'-0'+tCnt;let u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');if(flagOn)u='critical';const sla=SLAH[u]||CATS[c]?.sla||24;
+
+  // ROOT-CAUSE FIX (2026-09-18): Ticket_ID is no longer computed here from
+  // the client-side tCnt counter (that was the source of the duplicate-ID
+  // bug — two sessions racing to the same stale counter value). The server
+  // now assigns the real ID atomically. idempotencyKey makes a retry of
+  // THIS submission (network drop, slow response) safe from ever creating
+  // a second ticket — see apiCreateTicket()/createTicket() (Code.gs).
+  const idempotencyKey=generateIdempotencyKey();
+  const outletPrefix=o.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase();
+
+  let u=UMAP[s]||(CATS[c]?CATS[c].pri:'medium');if(flagOn)u='critical';const sla=SLAH[u]||CATS[c]?.sla||24;
   const probes=[];
   document.querySelectorAll('#probeL input:checked').forEach(x=>probes.push(x.nextElementSibling?.textContent));
   document.querySelectorAll('#probeL select').forEach(s=>{if(s.value)probes.push((s.parentElement?.firstElementChild?.textContent||'Q')+': '+s.value)});
   const deadline=new Date(Date.now()+(sla*3600000)).toISOString();
-  const t={id,issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:'',deviceId:window.scannedDevice?window.scannedDevice.id:''};
+  const t={id:'',issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:'',deviceId:window.scannedDevice?window.scannedDevice.id:''};
   if(flagOn)t.hist.push({s:'raised',t:ts(),n:'🚩 Flagged URGENT by requester: '+flagWhy});
   if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
   const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
-  // Upload ticket photos to Google Drive
-  const imgUrls=[];
+
+  // Photos now upload in PARALLEL (previously one-at-a-time in a for-loop) —
+  // under weak signal this was already a bigger delay than ticket-ID
+  // assignment ever was, so it's fixed in the same pass.
+  let imgUrls=[];
   if(tImgFiles.length){
     nf('Uploading…','Saving photos to Drive','ok');
-    for(const f of tImgFiles){
-      const url=await uploadToGDrive(f,'ticket_'+id);
-      if(url)imgUrls.push(url);
-    }
+    const results=await Promise.all(tImgFiles.map(f=>uploadToGDrive(f,'ticket_'+idempotencyKey.slice(0,8))));
+    imgUrls=results.filter(Boolean);
   }
   t.photoUrls=imgUrls;
+
+  const row=ticketToSheetRow(t); // row.Ticket_ID is just a placeholder here — the server always assigns the real one
+  const result=await apiCreateTicket(row,idempotencyKey,outletPrefix);
+
+  if(!result.ok){
+    // Nothing is lost — form fields and attached photos stay exactly as
+    // entered. Tapping Raise Ticket again is safe: if this attempt actually
+    // reached the server and only its response was lost, the automatic
+    // retry inside apiCreateTicket() would already have caught that; a
+    // fresh manual retry after that only submits a genuinely new attempt.
+    fail('⚠ Could not reach the server',(result.error==='timeout'?'Network timeout. ':'')+'Tap Raise Ticket to retry.');
+    return;
+  }
+
+  const id=result.ticketId;
+  t.id=id;t.synced=true;
   TKS.unshift(t);['tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';tImgFiles=[];renderPhotoList();clearSubSelection();selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';const fc1=document.getElementById('flagChk');if(fc1)fc1.checked=false;onFlagToggle();applyTicketTypeRules();
   buildNav();R();
-  // PHASE 5: write-through — save the new ticket to the sheet, then log its history
-  nf('Saving…','Sending ticket to the sheet','ok');
-  apiAppend('Tickets',ticketToSheetRow(t)).then(ok=>{
-    if(ok){
-      t.synced=true;nf('✅ '+id+' raised',(PRILABELS[u]||u)+' · SLA '+sla+'h — saved to sheet','ok');
-      // log the events that happened at raise time
-      writeHistory(id,'raised','Raised by '+userName,userName);
-      if(t.att){const an=gA(t.att);writeHistory(id,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
-    } else {
-      t.synced=false;nf('⚠ Not saved',id+' is local only — sheet write failed','warn');
-    }
-  });
-  setTimeout(()=>{
-    const btn=document.getElementById('raiseBtn');
-    if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
-    hideRaiseForm();
-    openTicketDetail(id);
-    if(!fbShown){fbShown=true;setTimeout(()=>showFeedbackModal(id),1200);}
-  },800)}
+  nf(result.reused?'✅ '+id+' (already saved)':'✅ '+id+' raised',(PRILABELS[u]||u)+' · SLA '+sla+'h','ok');
+  if(!result.reused){
+    // log the events that happened at raise time — skipped on a "reused"
+    // response since that means this exact ticket was already logged by
+    // the earlier attempt that actually succeeded.
+    writeHistory(id,'raised','Raised by '+userName,userName);
+    if(t.att){const an=gA(t.att);writeHistory(id,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
+  }
+  if(btn){btn.disabled=false;btn.textContent='🎫 Raise Ticket';}
+  hideRaiseForm();
+  openTicketDetail(id);
+  if(!fbShown){fbShown=true;setTimeout(()=>showFeedbackModal(id),1200);}
+}
 
 function generateWhatsAppLink(phone,msg){let p=phone.replace(/^\+?/,'');if(!p.startsWith('91'))p='91'+p;return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg)}
 function shareOTPViaWhatsApp(id){const t=TKS.find(x=>x.id===id);if(!t||!t.otp)return;const msg=`🔐 OTP to close ticket ${t.id}: ${t.otp}`;const link=generateWhatsAppLink(t.by,msg);window.open(link,'_blank')}
