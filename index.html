@@ -414,22 +414,22 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 </div></div></div>
 
 <!-- P2 (27 Oct 2026): requester password step — shown after the identity screen's Continue -->
-<div class="modal-bg" id="authM" style="align-items:center"><div class="modal" style="border-radius:var(--r);max-width:400px;width:92%"><div class="modal-hd"><h3 id="authTitle" style="font-size:16px">🔐 Password</h3><button class="modal-x" onclick="authCancel()">✕</button></div>
+<div class="modal-bg" id="authM" style="align-items:center"><div class="modal" style="border-radius:var(--r);max-width:400px;width:92%"><div class="modal-hd"><h3 id="authTitle" style="font-size:16px">🔐 Password</h3><button class="modal-x" onclick="window.authCancel()">✕</button></div>
 <div class="modal-bd">
   <div id="authChecking" style="display:none;text-align:center;padding:18px 0;color:var(--t2);font-size:14px">⏳ Checking your number…</div>
   <div id="authBody">
-    <div style="font-size:13px;color:var(--t2);margin-bottom:4px">📱 <b id="authMobileTxt" style="color:var(--t)"></b> · <span onclick="authCancel()" style="color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700">Change</span></div>
+    <div style="font-size:13px;color:var(--t2);margin-bottom:4px">📱 <b id="authMobileTxt" style="color:var(--t)"></b> · <span onclick="window.authCancel()" style="color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700">Change</span></div>
     <div id="authIntro" style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.45"></div>
-    <form onsubmit="event.preventDefault();authSubmit();" autocomplete="on">
+    <form onsubmit="event.preventDefault();window.authSubmit();" autocomplete="on">
       <input type="text" id="authUserHint" name="username" autocomplete="username" style="display:none" readonly>
-      <div class="fg"><label>Password *</label><div style="position:relative"><input class="fc" id="authPw1" type="password" maxlength="64" style="padding-right:44px"><button type="button" id="authEye" onclick="authToggleEye()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px">👁</button></div></div>
+      <div class="fg"><label>Password *</label><div style="position:relative"><input class="fc" id="authPw1" type="password" maxlength="64" style="padding-right:44px"><button type="button" id="authEye" onclick="window.authToggleEye()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px">👁</button></div></div>
       <div class="fg" id="authPw2Wrap"><label>Confirm password *</label><input class="fc" id="authPw2" type="password" maxlength="64" autocomplete="new-password" placeholder="Type the same password again"></div>
       <div id="authRule" style="font-size:11.5px;color:var(--t3);margin:-4px 0 10px">At least 6 characters. Don't share it with anyone.</div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);margin:4px 0 12px;cursor:pointer"><input type="checkbox" id="authRemember" checked style="width:18px;height:18px;accent-color:var(--ac)"> Remember this device for 30 days</label>
       <div id="authErr" style="font-size:12.5px;color:var(--er);font-weight:700;min-height:16px;margin-bottom:8px"></div>
-      <button type="submit" class="btn-big purple" id="authSubmit">Login →</button>
+      <button type="submit" class="btn-big purple" id="authSubmitBtn">Login →</button>
     </form>
-    <div id="authForgot" style="text-align:center;margin-top:12px"><span onclick="authShowForgot()" style="font-size:12px;color:var(--ac2);text-decoration:underline;cursor:pointer">Forgot password?</span></div>
+    <div id="authForgot" style="text-align:center;margin-top:12px"><span onclick="window.authShowForgot()" style="font-size:12px;color:var(--ac2);text-decoration:underline;cursor:pointer">Forgot password?</span></div>
     <div id="authForgotMsg" style="display:none;margin-top:8px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);font-size:12.5px;color:var(--t2);line-height:1.45">Ask your <b>R&amp;M Head</b> to reset your password. After that, come back here and you will be asked to create a new one.</div>
   </div>
 </div></div></div>
@@ -6255,13 +6255,13 @@ function authOpenModal(mode,wasReset){
   document.getElementById('authForgotMsg').style.display='none';
   pw1.setAttribute('autocomplete',create?'new-password':'current-password');
   pw1.placeholder=create?'New password (min 6 characters)':'Password';
-  document.getElementById('authSubmit').textContent=create?'Create & Continue →':'Login →';
+  document.getElementById('authSubmitBtn').textContent=create?'Create & Continue →':'Login →';
   authSetBusy(false);
   openM('authM');
   setTimeout(()=>{try{pw1.focus();}catch(e){}},250);
 }
 function authSetBusy(b){
-  const btn=document.getElementById('authSubmit');if(!btn)return;
+  const btn=document.getElementById('authSubmitBtn');if(!btn)return;
   btn.disabled=b;
   if(b)btn.textContent='⏳ Please wait…';
   else btn.textContent=_authMode==='create'?'Create & Continue →':'Login →';
@@ -6276,7 +6276,7 @@ function authShowForgot(){document.getElementById('authForgotMsg').style.display
 function authCancel(){closeM('authM');_authPending=null;}
 
 async function authSubmit(){
-  const btn=document.getElementById('authSubmit');if(btn&&btn.disabled)return;   // no double taps
+  const btn=document.getElementById('authSubmitBtn');if(btn&&btn.disabled)return;   // no double taps
   const p=_authPending;if(!p){closeM('authM');return;}
   const pw1=document.getElementById('authPw1').value,pw2=document.getElementById('authPw2').value;
   const remember=!!document.getElementById('authRemember').checked;
