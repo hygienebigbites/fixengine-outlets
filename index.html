@@ -413,6 +413,27 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn-big green" onclick="confirmResolved()">✅ Yes, Resolved</button><button class="btn-big red" onclick="confirmNotResolved()">❌ Not Resolved</button></div>
 </div></div></div>
 
+<!-- P2 (27 Oct 2026): requester password step — shown after the identity screen's Continue -->
+<div class="modal-bg" id="authM" style="align-items:center"><div class="modal" style="border-radius:var(--r);max-width:400px;width:92%"><div class="modal-hd"><h3 id="authTitle" style="font-size:16px">🔐 Password</h3><button class="modal-x" onclick="authCancel()">✕</button></div>
+<div class="modal-bd">
+  <div id="authChecking" style="display:none;text-align:center;padding:18px 0;color:var(--t2);font-size:14px">⏳ Checking your number…</div>
+  <div id="authBody">
+    <div style="font-size:13px;color:var(--t2);margin-bottom:4px">📱 <b id="authMobileTxt" style="color:var(--t)"></b> · <span onclick="authCancel()" style="color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700">Change</span></div>
+    <div id="authIntro" style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.45"></div>
+    <form onsubmit="event.preventDefault();authSubmit();" autocomplete="on">
+      <input type="text" id="authUserHint" name="username" autocomplete="username" style="display:none" readonly>
+      <div class="fg"><label>Password *</label><div style="position:relative"><input class="fc" id="authPw1" type="password" maxlength="64" style="padding-right:44px"><button type="button" id="authEye" onclick="authToggleEye()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px">👁</button></div></div>
+      <div class="fg" id="authPw2Wrap"><label>Confirm password *</label><input class="fc" id="authPw2" type="password" maxlength="64" autocomplete="new-password" placeholder="Type the same password again"></div>
+      <div id="authRule" style="font-size:11.5px;color:var(--t3);margin:-4px 0 10px">At least 6 characters. Don't share it with anyone.</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);margin:4px 0 12px;cursor:pointer"><input type="checkbox" id="authRemember" checked style="width:18px;height:18px;accent-color:var(--ac)"> Remember this device for 30 days</label>
+      <div id="authErr" style="font-size:12.5px;color:var(--er);font-weight:700;min-height:16px;margin-bottom:8px"></div>
+      <button type="submit" class="btn-big purple" id="authSubmit">Login →</button>
+    </form>
+    <div id="authForgot" style="text-align:center;margin-top:12px"><span onclick="authShowForgot()" style="font-size:12px;color:var(--ac2);text-decoration:underline;cursor:pointer">Forgot password?</span></div>
+    <div id="authForgotMsg" style="display:none;margin-top:8px;padding:10px 12px;background:var(--c2);border:1px solid var(--bdr);border-radius:var(--rs);font-size:12.5px;color:var(--t2);line-height:1.45">Ask your <b>R&amp;M Head</b> to reset your password. After that, come back here and you will be asked to create a new one.</div>
+  </div>
+</div></div></div>
+
 <script>
 let OL=['ANR01.BLR22','BLD01.BLR25','BOM01.BLR04','BSK01.BLR19','BTM01.BLR03','CK-Corp Office','CMP01.CHN10','CRN01.BLR17','HSR01.BLR02','IND01.BLR01','KOR01.BLR12','MGP01.CHN01','SKM01.CHN03','VDP01.CHN02','WFD01.BLR06','WFD02.BLR13','YLK01.BLR15'];
 let OUTPHONES={'HSR01.BLR02':'9988776601','KOR01.BLR12':'9988776602','WFD01.BLR06':'9988776603','MGP01.CHN01':'9988776604'};
@@ -530,7 +551,7 @@ async function apiCreateTicketOnce(row,idempotencyKey,outletPrefix,timeoutMs){
     const res=await fetch(API_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'createTicket',row:row,idempotencyKey:idempotencyKey,outletPrefix:outletPrefix}),
+      body:JSON.stringify({action:'createTicket',row:row,idempotencyKey:idempotencyKey,outletPrefix:outletPrefix,sessionToken:authToken()}),   // P2: server reads who raised it from the login
       signal:ctrl.signal
     });
     const json=await res.json();
@@ -4574,6 +4595,7 @@ async function raiseTicket(){
   if(!o){fail('Select outlet','Search and select your outlet');return}
   if(!c||!s){fail('Select the problem','Search or browse the problem type');return}
   if(!d){fail('Missing description','Please describe the issue');return}
+  if(!(await authEnsureForRaise())){fail('🔐 Please log in first','Tap Continue, enter your password, then tap Raise Ticket again');return}   // P2
   const iiR=document.getElementById('itemSel');if(iiR&&iiR.value)selItem=iiR.value;
   const acR=document.getElementById('actionSel');if(acR&&acR.value)selAction=acR.value;
   const flagOn=!!document.getElementById('flagChk')?.checked;
@@ -6120,6 +6142,199 @@ function renderTicketsSummary(mine){
   row.innerHTML=chip(total,'Total','var(--t)',null)+chip(closed,'Closed','var(--ok)','closed')+chip(pending,'Pending','var(--ac2)','pending')
     +chip(pendingOutOfSLA,'Out of SLA','var(--er)','outOfSla')+chip(avgText,'Avg SLA Closure',avgColor)+chip(readyToClose,'Ready to Close','var(--pk)','readyToClose');
 }
+// ===== P2 (27 Oct 2026): REQUESTER PASSWORD LOGIN =====
+// ON/OFF SWITCH — set to false to instantly return to the old no-password behaviour
+// (no rollback needed). Everything below does nothing when this is false.
+const AUTH_ENABLED=true;
+const AUTH_SESSION_KEY='fixEngineSession_v1';   // {token,mobile,expiresAt} — never the password
+let _authContinueOk=false;     // set true only after the server accepts the password
+let _authMode='';              // 'create' | 'login'
+let _authPending=null;         // {ph,nm,ou} waiting for the password step
+window.authReadyPromise=null;  // resolves once a returning user's saved login has been checked
+
+async function apiAuth(action,payload){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(Object.assign({action},payload||{})),signal:ctrl.signal});
+    return await res.json();
+  }catch(e){
+    return {ok:false,code:'NETWORK',error:e.name==='AbortError'?'Server is taking too long. Check your internet and try again.':'Could not reach the server. Check your internet and try again.'};
+  }finally{clearTimeout(timer);}
+}
+function authGetSession(){
+  for(const store of [localStorage,sessionStorage]){
+    try{
+      const raw=store.getItem(AUTH_SESSION_KEY);if(!raw)continue;
+      const s=JSON.parse(raw);
+      if(s&&s.token&&s.mobile){
+        if(s.expiresAt&&new Date(s.expiresAt).getTime()<Date.now()){store.removeItem(AUTH_SESSION_KEY);continue;}
+        return s;
+      }
+    }catch(e){}
+  }
+  return null;
+}
+function authSaveSession(r,remember){
+  authClearSession();
+  const s=JSON.stringify({token:r.token,mobile:r.user.mobile,expiresAt:r.expiresAt});
+  try{(remember?localStorage:sessionStorage).setItem(AUTH_SESSION_KEY,s);}catch(e){}
+}
+function authClearSession(){
+  try{localStorage.removeItem(AUTH_SESSION_KEY);}catch(e){}
+  try{sessionStorage.removeItem(AUTH_SESSION_KEY);}catch(e){}
+}
+function authToken(){
+  if(!AUTH_ENABLED)return '';
+  const s=authGetSession();return s?s.token:'';
+}
+// Server is the source of truth for name/outlet once logged in — mirror it into the
+// existing identity fields + globals, exactly where the app already reads them from.
+function authApplyUser(u){
+  if(!u)return;
+  const nmEl=document.getElementById('lNm'),ouEl=document.getElementById('lOut'),osEl=document.getElementById('lOutSearch');
+  if(u.name&&nmEl)nmEl.value=u.name;
+  if(u.outlet&&ouEl){ouEl.value=u.outlet;if(osEl)osEl.value=u.outlet;}
+  userName=document.getElementById('lNm').value.trim();
+  userOutlet=document.getElementById('lOut').value;
+  userIni=(userName.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||phone.slice(-2);
+  selectedOutlets=userOutlet?[userOutlet]:[];
+  saveIdentityLocal();updateIdentitySummary();
+}
+
+// Called by continueFromIdentity() after its own checks pass.
+async function authBeginFromIdentity(ph,nm,ou){
+  const mobile=ph.slice(-10);
+  const sess=authGetSession();
+  if(sess&&sess.mobile===mobile){
+    // Already logged in on this phone as this number — only a name/outlet edit (Profile / Change).
+    const r=await apiAuth('reqUpdateProfile',{token:sess.token,name:nm,outlet:ou});
+    if(r.ok){_authContinueOk=true;continueFromIdentity();return;}
+    if(r.code==='NETWORK'){nf('⚠ Could not save changes',r.error,'warn');return;}
+    if(r.code!=='NOT_LOGGED_IN'){nf('⚠ '+(r.error||'Could not save changes'),'','warn');return;}
+    authClearSession();   // expired/reset — fall through to password step
+  }else if(sess){
+    // A different number than the one logged in on this phone — end the old login first.
+    apiAuth('reqLogout',{token:sess.token});authClearSession();
+  }
+  _authPending={ph:mobile,nm,ou};
+  authOpenModal('checking');
+  const st=await apiAuth('reqAuthStatus',{mobile});
+  if(!st.ok){authShowErr(st.error||'Something went wrong. Please try again.');authSetBusy(false);return;}
+  if(st.status==='disabled'){authOpenModal('login');authShowErr('This account is disabled. Contact your R&M Head.');return;}
+  authOpenModal(st.status==='active'?'login':'create',st.status==='reset');
+}
+
+function authOpenModal(mode,wasReset){
+  const p=_authPending||{ph:''};
+  const m=document.getElementById('authM');if(!m)return;
+  document.getElementById('authUserHint').value=p.ph;
+  document.getElementById('authMobileTxt').textContent=p.ph.replace(/(\d{5})(\d{5})/,'$1 $2');
+  document.getElementById('authErr').textContent='';
+  const pw1=document.getElementById('authPw1'),pw2=document.getElementById('authPw2');
+  pw1.value='';pw2.value='';pw1.type='password';pw2.type='password';
+  document.getElementById('authEye').textContent='👁';
+  if(mode==='checking'){
+    document.getElementById('authTitle').textContent='🔐 Checking…';
+    document.getElementById('authBody').style.display='none';
+    document.getElementById('authChecking').style.display='block';
+    openM('authM');return;
+  }
+  _authMode=mode;
+  document.getElementById('authChecking').style.display='none';
+  document.getElementById('authBody').style.display='block';
+  const create=mode==='create';
+  document.getElementById('authTitle').textContent=create?'🔐 Create your password':'🔐 Enter your password';
+  document.getElementById('authIntro').textContent=create
+    ?(wasReset?'Your password was reset. Create a new one to continue.':'First time here — create a password for this number. You will use it to log in next time.')
+    :'Welcome back! Enter your password to continue.';
+  document.getElementById('authPw2Wrap').style.display=create?'block':'none';
+  document.getElementById('authRule').style.display=create?'block':'none';
+  document.getElementById('authForgot').style.display=create?'none':'block';
+  document.getElementById('authForgotMsg').style.display='none';
+  pw1.setAttribute('autocomplete',create?'new-password':'current-password');
+  pw1.placeholder=create?'New password (min 6 characters)':'Password';
+  document.getElementById('authSubmit').textContent=create?'Create & Continue →':'Login →';
+  authSetBusy(false);
+  openM('authM');
+  setTimeout(()=>{try{pw1.focus();}catch(e){}},250);
+}
+function authSetBusy(b){
+  const btn=document.getElementById('authSubmit');if(!btn)return;
+  btn.disabled=b;
+  if(b)btn.textContent='⏳ Please wait…';
+  else btn.textContent=_authMode==='create'?'Create & Continue →':'Login →';
+}
+function authShowErr(msg){const e=document.getElementById('authErr');if(e)e.textContent=msg||'';}
+function authToggleEye(){
+  const show=document.getElementById('authPw1').type==='password';
+  ['authPw1','authPw2'].forEach(id=>{const el=document.getElementById(id);if(el)el.type=show?'text':'password';});
+  document.getElementById('authEye').textContent=show?'🙈':'👁';
+}
+function authShowForgot(){document.getElementById('authForgotMsg').style.display='block';}
+function authCancel(){closeM('authM');_authPending=null;}
+
+async function authSubmit(){
+  const btn=document.getElementById('authSubmit');if(btn&&btn.disabled)return;   // no double taps
+  const p=_authPending;if(!p){closeM('authM');return;}
+  const pw1=document.getElementById('authPw1').value,pw2=document.getElementById('authPw2').value;
+  const remember=!!document.getElementById('authRemember').checked;
+  authShowErr('');
+  if(_authMode==='create'){
+    if(pw1.length<6){authShowErr('Password must be at least 6 characters.');return;}
+    if(pw1!==pw2){authShowErr('The two passwords do not match. Please type them again.');return;}
+  }else if(!pw1){authShowErr('Please enter your password.');return;}
+  authSetBusy(true);
+  const r=_authMode==='create'
+    ?await apiAuth('reqSetPassword',{mobile:p.ph,name:p.nm,outlet:p.ou,password:pw1,remember})
+    :await apiAuth('reqLogin',{mobile:p.ph,password:pw1,remember});
+  if(!r.ok){
+    authSetBusy(false);
+    if(r.code==='ALREADY_SET'){authOpenModal('login');authShowErr('A password already exists for this number. Please log in.');return;}
+    if(r.code==='RESET'||r.code==='NO_ACCOUNT'){authOpenModal('create',r.code==='RESET');return;}
+    authShowErr(r.error||'Something went wrong. Please try again.');
+    return;
+  }
+  authSaveSession(r,remember);
+  closeM('authM');
+  _authPending=null;
+  if(_authMode==='login')authApplyUser(r.user);   // bring back the name/outlet saved with this number
+  _authContinueOk=true;
+  continueFromIdentity();
+  nf(_authMode==='create'?'✅ Password created':'✅ Logged in',remember?'This device will stay logged in for 30 days':'You will need to log in again next time','ok');
+}
+
+// Returning user: the app opens immediately as before, and the saved login is checked
+// in the background. Raise Ticket waits for this check (see raiseTicket()).
+function authBootCheck(){
+  const sess=authGetSession();
+  const ph=(document.getElementById('lPh').value||'').replace(/\D/g,'').slice(-10);
+  if(!sess||sess.mobile!==ph){
+    authClearSession();
+    showIdentityScreen();          // details stay filled in — one tap on Continue, then password
+    window.authReadyPromise=Promise.resolve(false);
+    return;
+  }
+  window.authReadyPromise=apiAuth('reqValidate',{token:sess.token}).then(r=>{
+    if(r.ok&&r.valid){authApplyUser(r.user);return true;}
+    if(r.ok&&!r.valid){
+      authClearSession();
+      showIdentityScreen();
+      nf('🔐 Please log in again','Your login expired or your password was reset','warn');
+      return false;
+    }
+    return true;                   // network hiccup: don't lock people out; server still checks the token on every ticket
+  });
+}
+// Used by raiseTicket(): true = OK to raise.
+async function authEnsureForRaise(){
+  if(!AUTH_ENABLED)return true;
+  if(window.authReadyPromise){try{await window.authReadyPromise;}catch(e){}}
+  if(authGetSession())return true;
+  showIdentityScreen();
+  return false;
+}
 const IDENTITY_KEY='fixEngineIdentity_v1';
 function updateIdentitySummary(){
   const el=document.getElementById('identitySummaryText');
@@ -6163,6 +6378,9 @@ function continueFromIdentity(){
   if(ph.length<10){nf('Enter a valid 10-digit mobile number','','warn');return;}
   if(!nm){nf('Please enter your name','','warn');return;}
   if(!ou){nf('Please select your outlet','','warn');return;}
+  // P2: password step (create or enter) before going in. Skipped when AUTH_ENABLED=false.
+  if(AUTH_ENABLED&&!_authContinueOk){authBeginFromIdentity(ph,nm,ou);return;}
+  _authContinueOk=false;
   saveIdentityLocal();
   const scr=document.getElementById('identityScreen');
   if(scr)scr.style.display='none';
@@ -6217,6 +6435,7 @@ setTimeout(()=>{
     userIni=(userName.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2))||phone.slice(-2);
     selectedOutlets=userOutlet?[userOutlet]:[];
     if(typeof startFixedNotificationPolling==='function')startFixedNotificationPolling();
+    if(AUTH_ENABLED)authBootCheck();   // P2: check the saved login in the background
   }
   checkChatUnlock();startHeroTips();renderTicketTypeIcons();
 },50);
