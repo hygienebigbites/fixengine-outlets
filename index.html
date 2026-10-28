@@ -434,6 +434,24 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
   </div>
 </div></div></div>
 
+<!-- P3 (27 Oct 2026): change password + log out confirm -->
+<div class="modal-bg" id="cpwM" style="align-items:center"><div class="modal" style="border-radius:var(--r);max-width:400px;width:92%"><div class="modal-hd"><h3 style="font-size:16px">🔑 Change Password</h3><button class="modal-x" onclick="closeM('cpwM')">✕</button></div>
+<div class="modal-bd">
+  <form onsubmit="event.preventDefault();window.authChangePwSubmit();" autocomplete="on">
+    <div class="fg"><label>Current password *</label><div style="position:relative"><input class="fc" id="cpwCur" type="password" maxlength="64" autocomplete="current-password" style="padding-right:44px"><button type="button" id="cpwEye" onclick="window.authCpwToggleEye()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px">👁</button></div></div>
+    <div class="fg"><label>New password *</label><input class="fc" id="cpwNew" type="password" maxlength="64" autocomplete="new-password" placeholder="At least 6 characters"></div>
+    <div class="fg"><label>Confirm new password *</label><input class="fc" id="cpwNew2" type="password" maxlength="64" autocomplete="new-password" placeholder="Type the new password again"></div>
+    <div style="font-size:11.5px;color:var(--t3);margin:-4px 0 10px">After changing, any other phone logged in with your number will be logged out.</div>
+    <div id="cpwErr" style="font-size:12.5px;color:var(--er);font-weight:700;min-height:16px;margin-bottom:8px"></div>
+    <button type="submit" class="btn-big purple" id="cpwSubmitBtn">Change Password</button>
+  </form>
+</div></div></div>
+<div class="modal-bg" id="logoutM" style="align-items:center"><div class="modal" style="border-radius:var(--r);max-width:360px;width:92%"><div class="modal-hd"><h3 style="font-size:16px">🚪 Log out</h3><button class="modal-x" onclick="closeM('logoutM')">✕</button></div>
+<div class="modal-bd">
+  <p style="font-size:14px;color:var(--t2);line-height:1.5;margin-bottom:14px">Log out of Fix Engine on this phone? You will need your password to log in again.</p>
+  <div style="display:flex;gap:8px"><button type="button" class="btn-big" onclick="closeM('logoutM')" style="background:var(--c2);color:var(--t);border:1px solid var(--bdr)">Cancel</button><button type="button" class="btn-big red" id="logoutConfirmBtn" onclick="window.authDoLogout()">Log out</button></div>
+</div></div></div>
+
 <script>
 let OL=['ANR01.BLR22','BLD01.BLR25','BOM01.BLR04','BSK01.BLR19','BTM01.BLR03','CK-Corp Office','CMP01.CHN10','CRN01.BLR17','HSR01.BLR02','IND01.BLR01','KOR01.BLR12','MGP01.CHN01','SKM01.CHN03','VDP01.CHN02','WFD01.BLR06','WFD02.BLR13','YLK01.BLR15'];
 let OUTPHONES={'HSR01.BLR02':'9988776601','KOR01.BLR12':'9988776602','WFD01.BLR06':'9988776603','MGP01.CHN01':'9988776604'};
@@ -5911,6 +5929,8 @@ function sideMenuGo(dest){
   else if(dest==='profile')showIdentityScreen();
   else if(dest==='help')showQuickHelp();
   else if(dest==='reports')showReports();
+  else if(dest==='changepw')authOpenChangePw();   // P3
+  else if(dest==='logout')openM('logoutM');       // P3
 }
 function switchFooterTab(tab){
   if(tab==='profile'){showIdentityScreen();return;}
@@ -6335,6 +6355,59 @@ async function authEnsureForRaise(){
   showIdentityScreen();
   return false;
 }
+// ===== P3 (27 Oct 2026): CHANGE PASSWORD + LOG OUT (side menu) =====
+// Side-menu items are hidden unless AUTH_ENABLED (they live after this script, so shown on load).
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!AUTH_ENABLED)return;
+  ['rsmChangePw','rsmLogout'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='flex';});
+});
+function authOpenChangePw(){
+  if(!authGetSession()){showIdentityScreen();nf('🔐 Please log in first','','warn');return;}
+  ['cpwCur','cpwNew','cpwNew2'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';e.type='password';}});
+  document.getElementById('cpwEye').textContent='👁';
+  document.getElementById('cpwErr').textContent='';
+  const b=document.getElementById('cpwSubmitBtn');b.disabled=false;b.textContent='Change Password';
+  openM('cpwM');
+  setTimeout(()=>{try{document.getElementById('cpwCur').focus();}catch(e){}},250);
+}
+function authCpwToggleEye(){
+  const show=document.getElementById('cpwCur').type==='password';
+  ['cpwCur','cpwNew','cpwNew2'].forEach(id=>{const e=document.getElementById(id);if(e)e.type=show?'text':'password';});
+  document.getElementById('cpwEye').textContent=show?'🙈':'👁';
+}
+async function authChangePwSubmit(){
+  const btn=document.getElementById('cpwSubmitBtn');if(btn.disabled)return;   // no double taps
+  const err=document.getElementById('cpwErr');err.textContent='';
+  const cur=document.getElementById('cpwCur').value,nw=document.getElementById('cpwNew').value,nw2=document.getElementById('cpwNew2').value;
+  if(!cur){err.textContent='Please enter your current password.';return;}
+  if(nw.length<6){err.textContent='New password must be at least 6 characters.';return;}
+  if(nw!==nw2){err.textContent='The two new passwords do not match.';return;}
+  if(nw===cur){err.textContent='New password must be different from the current one.';return;}
+  const sess=authGetSession();
+  if(!sess){closeM('cpwM');showIdentityScreen();nf('🔐 Please log in again','','warn');return;}
+  let wasRemembered=false;try{wasRemembered=!!localStorage.getItem(AUTH_SESSION_KEY);}catch(e){}
+  btn.disabled=true;btn.textContent='⏳ Please wait…';
+  const r=await apiAuth('reqChangePassword',{token:sess.token,currentPassword:cur,newPassword:nw});
+  btn.disabled=false;btn.textContent='Change Password';
+  if(!r.ok){
+    if(r.code==='NOT_LOGGED_IN'){authClearSession();closeM('cpwM');showIdentityScreen();nf('🔐 Please log in again','Your login expired','warn');return;}
+    err.textContent=r.error||'Something went wrong. Please try again.';
+    return;
+  }
+  authSaveSession(r,wasRemembered);   // the server issued a fresh login for THIS phone
+  closeM('cpwM');
+  nf('✅ Password changed','Any other phone using this number has been logged out','ok');
+}
+function authDoLogout(){
+  const sess=authGetSession();
+  if(sess)apiAuth('reqLogout',{token:sess.token});   // tell the server; no need to wait
+  authClearSession();
+  closeM('logoutM');
+  if(typeof stopFixedNotificationPolling==='function')stopFixedNotificationPolling();
+  if(typeof hideNotifBell==='function')hideNotifBell();
+  showIdentityScreen();   // details stay filled in; the password is needed to come back in
+  nf('👋 Logged out','Enter your password to log in again','ok');
+}
 const IDENTITY_KEY='fixEngineIdentity_v1';
 function updateIdentitySummary(){
   const el=document.getElementById('identitySummaryText');
@@ -6501,6 +6574,8 @@ let usersLoaded=true;
   <div class="rsm-item" onclick="sideMenuGo('help')"><span class="rsm-icon">❓</span>Quick Help</div>
   <div class="rsm-item" onclick="sideMenuGo('reports')"><span class="rsm-icon">📊</span>Report</div>
   <div class="rsm-item" onclick="sideMenuGo('profile')"><span class="rsm-icon">👤</span>Profile</div>
+  <div class="rsm-item" id="rsmChangePw" style="display:none" onclick="sideMenuGo('changepw')"><span class="rsm-icon">🔑</span>Change Password</div>
+  <div class="rsm-item" id="rsmLogout" style="display:none;color:var(--er)" onclick="sideMenuGo('logout')"><span class="rsm-icon">🚪</span>Log out</div>
 </div>
 <div id="fullChatOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:220;flex-direction:column">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-top,0px)) 14px;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--c1)">
