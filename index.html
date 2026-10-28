@@ -378,7 +378,7 @@ textarea.fc{resize:vertical;min-height:50px}.fr{display:grid;grid-template-colum
 </div>
 
 <!-- MODALS -->
-<div class="modal-bg" id="reopenM"><div class="modal"><div class="modal-hd"><h3>🔄 Re-open</h3><button class="modal-x" onclick="closeM('reopenM')">✕</button></div><div class="modal-bd"><div class="fg"><label>Reason *</label><select class="fc" id="reR"><option value="">Select</option><option>Issue not resolved</option><option>Issue recurred within 24hrs</option><option>Wrong diagnosis</option><option>Additional issue found</option><option>Parts quality issue</option><option>Work incomplete</option></select></div><div class="fg"><label>Details</label><textarea class="fc" id="reN" rows="2"></textarea></div></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('reopenM')">Cancel</button><button class="btn btn-er" onclick="doReopen()">Re-open</button></div></div></div>
+<div class="modal-bg" id="reopenM"><div class="modal"><div class="modal-hd"><h3>🔄 Re-open</h3><button class="modal-x" onclick="closeM('reopenM')">✕</button></div><div class="modal-bd"><div class="fg"><label>Reason *</label><select class="fc" id="reR"><option value="">Select</option><option>Issue not resolved</option><option>Issue recurred within 24hrs</option><option>Wrong diagnosis</option><option>Additional issue found</option><option>Parts quality issue</option><option>Work incomplete</option></select></div><div class="fg"><label>Details</label><textarea class="fc" id="reN" rows="2"></textarea></div></div><div class="modal-ft"><button class="btn btn-o" onclick="closeM('reopenM')">Cancel</button><button class="btn btn-er" id="reopenSubmitBtn" onclick="doReopen()">Re-open</button></div></div></div>
 
 <div class="modal-bg" id="purchM"><div class="modal"><div class="modal-hd"><h3>🛒 Purchases</h3><button class="modal-x" onclick="closeM('purchM')">✕</button></div><div class="modal-bd" id="purchMBody"></div></div></div>
 
@@ -4748,7 +4748,59 @@ function confirmNotResolved(){const t=TKS.find(x=>x.id===curTkt);if(!t)return;t.
   t.otpRevealed=false;
   setSt(curTkt,'in-progress','❌ Requester says NOT resolved — back to In Progress');
   setTimeout(()=>viewT(curTkt),300);nf('Not resolved','Ticket returned to In Progress','warn')}
-async function doReopen(){const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}const t=TKS.find(x=>x.id===curTkt);if(t){t.status='raised';t.otpRevealed=false;t.issueRes=null;t.confirmStatus=null;t.reopened=true;t.hist.push({s:'raised',t:ts(),n:'🔄 Re-opened: '+r});if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'Re-assigned → '+a.name})}}closeM('reopenM');R();viewT(curTkt)}
+async function doReopen(){
+  // P8 (28 Oct 2026): Re-open now raises a NEW linked "(RO)" ticket. The old in-place version only
+  // changed the ticket in the browser and was never saved to the sheet.
+  const r=document.getElementById('reR').value;if(!r){nf('Reason required','','warn');return}
+  const btn=document.getElementById('reopenSubmitBtn');if(btn&&btn.disabled)return;   // no double taps
+  const old=TKS.find(x=>x.id===curTkt);if(!old)return;
+  if(old.status!=='closed'){nf('Only closed tickets can be re-opened','','warn');return}
+  const already=roChildOf(old);
+  if(already){closeM('reopenM');nf('Already re-opened','This ticket was re-opened as '+already,'warn');if(TKS.find(x=>x.id===already))roOpen(already);return}
+  if(!(await authEnsureForRaise())){closeM('reopenM');nf('🔐 Please log in first','Then re-open the ticket again','warn');return}
+  const det=(document.getElementById('reN').value||'').trim();
+  const setBusy=b=>{if(btn){btn.disabled=b;btn.textContent=b?'⏳ Re-opening…':'Re-open';}};
+  setBusy(true);
+  const n=roNumber(old)+1;
+  const pri=old.pri||'medium';const sla=SLAH[pri]||(CATS[(old.cat||'').toLowerCase()]?.sla)||12;
+  const deadline=new Date(Date.now()+sla*3600000).toISOString();
+  const desc='(RO'+(n>1?n:'')+') - Re-opened from '+old.id+' · '+r+(det?' · '+det:'')+' | Original: '+roOriginalDesc(old);
+  const t={id:'',issue:old.sub||old.issue,cat:old.cat,sub:old.sub,out:old.out,pri,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,
+    hist:[{s:'reopened',t:ts(),n:'🔄 Re-opened from '+old.id+' · '+r}],desc,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],
+    probes:(old.probes||[]).slice(),locVisit:true,confirmStatus:null,reopened:true,whatHappened:old.whatHappened||'',where:old.where||'',item:old.item||'',action:old.action||'',flagReason:old.flagReason||'',deviceId:old.deviceId||'',photoUrls:(old.photoUrls||[]).slice()};
+  if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
+  const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
+  const outletPrefix=(old.out||'').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase();
+  const result=await apiCreateTicket(ticketToSheetRow(t),'reopen-'+old.id,outletPrefix);   // same key = same new ticket on retry / second phone
+  if(!result.ok){
+    if(a)a.load=Math.max(0,a.load-1);
+    setBusy(false);
+    nf('⚠ Not re-opened: '+(result.error==='timeout'?'Network timeout — check your connection.':(result.error||'Unknown error')),'Tap Re-open to try again','warn');
+    return;
+  }
+  const newId=result.ticketId;
+  t.id=newId;t.synced=true;
+  if(!TKS.find(x=>x.id===newId))TKS.unshift(t);
+  const fixedBy=(gA(old.att)||{}).name||'the attender';
+  const closedAt=(old.hist||[]).slice().reverse().find(h=>h.s==='closed');
+  const chatNew='🔄 Re-opened from '+old.id+': '+(old.sub||old.issue||'')+', fixed by '+fixedBy+(closedAt?' on '+closedAt.t:'')+'. Reason: '+r+(det?' — '+det:'');
+  const chatOld='🔄 Re-opened as '+newId+' — please continue there.';
+  old.hist.push({s:'closed',t:ts(),n:'🔄 Re-opened as '+newId+' · '+r});
+  if(!old.chat)old.chat=[];old.chat.push({by:userName,role,msg:chatOld,time:ts()});
+  t.chat.push({by:userName,role,msg:chatNew,time:ts()});
+  if(!result.reused){   // a "reused" reply means an earlier tap already logged all of this
+    writeHistory(newId,'reopened','🔄 Re-opened from '+old.id+' · '+r,userName);
+    if(t.att){const an=gA(t.att);writeHistory(newId,'assigned','Auto-assigned to '+(an?an.name:t.att),'System');}
+    writeHistory(old.id,'closed','🔄 Re-opened as '+newId+' · '+r,userName);
+    writeChat(newId,chatNew,false);
+    writeChat(old.id,chatOld,false);
+  }
+  setBusy(false);
+  closeM('reopenM');document.getElementById('reR').value='';document.getElementById('reN').value='';
+  R();
+  roOpen(newId);
+  nf('✅ Re-opened as '+newId,'Same problem, new ticket — linked to '+old.id,'ok');
+}
 
 
 
@@ -5076,7 +5128,7 @@ let workMetaH='';
       rateH=`<div class="card"><div class="card-h"><h3>⭐ Rate Attender</h3></div><div class="stars" style="margin-bottom:6px"><span class="star" onclick="rate(1)">★</span><span class="star" onclick="rate(2)">★</span><span class="star" onclick="rate(3)">★</span><span class="star" onclick="rate(4)">★</span><span class="star" onclick="rate(5)">★</span></div><textarea class="fc" id="rateFb" rows="2" placeholder="Feedback..."></textarea><button class="btn btn-s btn-p btn-full" onclick="submitRating('${t.id}')" style="margin-top:4px">Submit</button></div>`;
     }
   }
-  let reH='';if(isR&&t.status==='closed'){reH=`<button class="btn btn-s btn-er btn-full" onclick="curTkt='${t.id}';openM('reopenM')" style="margin-top:4px">🔄 Re-open</button>`}
+  let reH='';if(isR&&t.status==='closed'){const roC=roChildOf(t);reH=roC?`<button class="btn btn-s btn-o btn-full" onclick="roOpen('${roC}')" style="margin-top:4px">🔄 Re-opened as ${roC} →</button>`:`<button class="btn btn-s btn-er btn-full" onclick="curTkt='${t.id}';openM('reopenM')" style="margin-top:4px">🔄 Re-open</button>`}   // P8
 
   // Attender card
   let attH='';if(a){attH=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3 style="font-size:11px;font-weight:600">🔧 Attender</h3><div style="display:flex;gap:3px"><a href="tel:+91${a.phone}" class="btn btn-s btn-o" style="text-decoration:none;font-size:9px">📞</a></div></div><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:30px;height:30px;font-size:10px">${a.ini}</div><div><div style="font-weight:600;font-size:11px">${a.name}</div><div style="font-size:9px;color:var(--t3)">${(a.skills||[]).join(', ')} · ⭐${a.rating}</div></div></div></div>`}
@@ -5091,7 +5143,7 @@ let workMetaH='';
 
   let prg='<div class="prog" style="margin-top:4px">';for(let i=0;i<SF.length;i++)prg+=`<div class="dot ${i<si?'dn':i===si?'nw':''}"></div>`;prg+='</div>';
   pg.innerHTML=`<div class="fin"><button class="btn btn-s btn-o" onclick="closeTicketDetail()" style="margin-bottom:8px">← Back</button>
-    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${requesterStatusLabel(t.status)}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate'+(t.escalationCount?' - '+t.escalationCount:'')+'</button></div>':''}</div>
+    <div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span class="tid" style="font-size:11px">${t.id}</span><span class="badge ${SBC[t.status]}">${requesterStatusLabel(t.status)}</span><span class="pri ${pc}">● ${t.pri}</span><span class="sla ${sc}">⏱${t.sla||'—'}</span>${t.reopened?'<span class="badge reopen">🔄</span>':''}${roTag(t)}${t.vendor?'<span class="badge vendor">🤝 Vendor</span>':''}</div><h2 style="font-size:14px;margin-top:4px;font-weight:700">${t.issue}</h2>${roHeaderLinks(t)}<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px"><span class="mt-tag">🏪${t.out}</span><span class="mt-tag">📂${t.cat}</span>${t.item?`<span class="mt-tag">🔩${t.item}</span>`:''}${t.whatHappened?`<span class="mt-tag">⚡${t.whatHappened}</span>`:''}${t.action?`<span class="mt-tag">🛠${t.action}</span>`:''}${t.flagReason?`<span class="mt-tag" style="color:var(--er)">🚩${t.flagReason}</span>`:''}${t.where?`<span class="mt-tag">📍${t.where}</span>`:''}<span class="mt-tag">📝${ct}</span><span class="mt-tag">👤${cn}</span>${tot>0?`<span class="mt-tag" style="color:var(--ac2)">💰₹${tot.toLocaleString('en-IN')}</span>`:''}</div>${t.desc?`<div style="margin-top:4px;padding:5px 8px;background:var(--c2);border-radius:var(--rs);font-size:10px;color:var(--t2)">${t.desc}</div>`:''}${prg}${isR&&t.status!=='closed'?'<div style="margin-top:4px"><button class="esc-btn" onclick="escalate(\''+t.id+'\')">⚠ Escalate'+(t.escalationCount?' - '+t.escalationCount:'')+'</button></div>':''}</div>
     <div class="g32"><div>${stH}${photosH}${probesH}${workMetaH}${mgrFbH}${payProofH}${venH}${puH}${irH}${lpH}</div><div>${attH}${contactH}${otpH}${otpEH}${rateH}${reH}${chatH}</div></div></div>`;go('detail')}
 
 function toggleLog(id){logOpen[id]=!logOpen[id];viewT(id)}
@@ -6094,7 +6146,7 @@ function renderMyBookings(){
     }
     return `<div onclick="openTicketDetail('${t.id}')" style="background:var(--c1);border:1px solid var(--bdr);border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.05);cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="font-weight:800;font-size:13px;color:var(--t)">${t.id||''}</div>
+        <div style="font-weight:800;font-size:13px;color:var(--t)">${t.id||''}${roTag(t)}</div>
         <div style="font-size:11px;font-weight:700;color:var(--ac2)">${label}</div>
       </div>
       <div style="font-size:12.5px;color:var(--t2);margin-top:4px">${t.sub||t.issue||''}</div>
@@ -6407,6 +6459,47 @@ function authDoLogout(){
   if(typeof hideNotifBell==='function')hideNotifBell();
   showIdentityScreen();   // details stay filled in; the password is needed to come back in
   nf('👋 Logged out','Enter your password to log in again','ok');
+}
+// ===== P8 (28 Oct 2026): RE-OPEN = NEW LINKED "(RO)" TICKET =====
+// A closed ticket is never re-opened in place any more: Re-open raises a NEW ticket through the
+// exact same server path as Raise Ticket (apiCreateTicket -> createTicket: new ID, fresh SLA,
+// normal auto-assignment, Raised_By from the login). The old ticket stays Closed (its closure,
+// SLA result and rating are kept). The link between the two lives in plain text that both apps
+// already show: the new ticket's Description starts "(RO) - Re-opened from <old id>", and both
+// tickets get a history line + a chat message. No new sheet column, no new ticket status.
+SL['reopened']='Re-opened';SBC['reopened']='reopen';   // label for the new ticket's first log entry
+const RO_ID_RE='[A-Za-z]{2,5}-\\d+';
+function roParentOf(t){
+  const m=String((t&&t.desc)||'').match(new RegExp('^\\(RO\\d*\\) - Re-opened from ('+RO_ID_RE+')'));
+  return m?m[1]:'';
+}
+function roChildOf(t){
+  if(!t)return '';
+  for(const h of (t.hist||[])){const m=String(h.n||'').match(new RegExp('Re-opened as ('+RO_ID_RE+')'));if(m)return m[1];}
+  const c=TKS.find(x=>x.id!==t.id&&roParentOf(x)===t.id);   // history not loaded yet
+  return c?c.id:'';
+}
+function roNumber(t){            // 0 = original, 1 = first re-open, 2 = second …
+  let n=0,cur=t,guard=0;
+  while(cur&&guard++<20){const p=roParentOf(cur);if(!p)break;n++;cur=TKS.find(x=>x.id===p)||null;if(!cur)break;}
+  return n;
+}
+function roTag(t){
+  const n=roNumber(t);if(!n)return '';
+  return ' <span class="badge reopen" title="Re-opened ticket">(RO'+(n>1?n:'')+')</span>';
+}
+function roHeaderLinks(t){
+  const p=roParentOf(t);let h='';
+  if(p)h+=`<div style="margin-top:4px;font-size:11px;color:var(--t2)">🔄 Re-opened ${roNumber(t)>1?'('+roNumber(t)+'× in total) ':''}· <span onclick="roOpen('${p}')" style="color:var(--ac2);text-decoration:underline;cursor:pointer;font-weight:700">View previous ticket ${p}</span></div>`;
+  return h;
+}
+function roOpen(id){
+  if(!TKS.find(x=>x.id===id)){nf('Ticket '+id+' not loaded yet','Pull down to refresh, then try again','warn');return;}
+  if(typeof openTicketDetail==='function')openTicketDetail(id);else viewT(id);
+}
+function roOriginalDesc(t){
+  const d=String(t.desc||'');const i=d.lastIndexOf('| Original: ');
+  return i>=0?d.slice(i+12):d;
 }
 const IDENTITY_KEY='fixEngineIdentity_v1';
 function updateIdentitySummary(){
