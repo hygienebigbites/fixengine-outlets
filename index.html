@@ -6677,9 +6677,10 @@ let usersLoaded=true;
     window.attendersLoadPromise,
     loadTicketsFromSheet()
   ]).then(async ()=>{
+    // 5 Nov 2026: show tickets as soon as they're in — history/chat keep loading in the background.
+    if(document.getElementById('app').style.display!=='none'){try{syncTCnt();R();}catch(e){}}
     await loadPurchaseOrdersFromSheet();
-    await loadTicketHistoryFromSheet();
-    await loadTicketChatFromSheet();
+    await Promise.all([loadTicketHistoryFromSheet(),loadTicketChatFromSheet()]);   // independent -> load side by side
     syncTCnt();
     if(document.getElementById('app').style.display!=='none'){R();}
   });
