@@ -1405,8 +1405,17 @@ function sheetRowToTicket(r){
   };
 }
 // PHASE 5C: load all tickets from the sheet, replacing the in-memory list
+// 5 Nov 2026: 'loading' until the first Tickets read finishes, then 'ok' or 'fail'. Lets empty
+// lists show "Loading…" or error FE-DATA-01 instead of a misleading "no tickets/jobs" message.
+var ticketsLoadState='loading';
 async function loadTicketsFromSheet(){
   const rows=await apiRead('Tickets');
+  const _prevState=ticketsLoadState;
+  ticketsLoadState=rows?'ok':'fail';
+  if(_prevState!==ticketsLoadState){ // state changed -> redraw My Tickets if it's on screen
+    const _bk=document.getElementById('myBookingsPage');
+    if(_bk&&_bk.style.display!=='none'&&typeof renderMyBookings==='function'){try{setTimeout(renderMyBookings,0)}catch(e){}}
+  }
   if(!rows)return false;
   const fresh=rows.filter(r=>String(r.Ticket_ID||'').trim()).map(sheetRowToTicket);
   TKS=fresh;
@@ -1651,7 +1660,7 @@ function logout(){role='';phone='';userName='';userIni='';userOutlet='';selected
   if(typeof stopFixedNotificationPolling==='function')stopFixedNotificationPolling();
   if(typeof hideNotifBell==='function')hideNotifBell();
   document.getElementById('app').style.display='none';document.getElementById('loginP').style.display='flex'}
-async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet(),loadDevicesFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
+async function doRefresh(){const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');btn.disabled=true;try{const _res=await Promise.all([loadTicketsFromSheet(),loadTicketHistoryFromSheet(),loadAttendersFromSheet(),loadOutletsFromSheet(),loadCategoriesFromSheet(),loadPriorityRulesFromSheet(),loadPurchaseOrdersFromSheet(),loadSubMetaFromSheet(),loadKeywordsFromSheet(),loadTagOptionsFromSheet(),loadFeedbackQuestionsFromSheet(),loadDevicesFromSheet()]);await loadTicketChatFromSheet();ensureGeneralCategory();updateDemoBanner();buildCatGrid();R();if(curTkt&&document.getElementById('pg-detail').classList.contains('on'))viewT(curTkt);btn.classList.remove('spinning');if(_res[0]===false){btn.innerHTML='❌';nf('FE-DATA-01 · Refresh incomplete','Tickets could not be loaded (server slow). Wait a minute and tap 🔄 again.','warn');setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}else{btn.innerHTML='✓';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},1500)}}catch(e){console.error('Refresh failed:',e);btn.classList.remove('spinning');btn.innerHTML='❌';setTimeout(()=>{btn.innerHTML='🔄';btn.disabled=false},2000)}}
 function buildNav(){const n=NAV[role]||[];document.getElementById('sbN').innerHTML='<div class="sb-sec">Menu</div>'+n.map(x=>`<div class="ni" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</div>`).join('');document.getElementById('mnI').innerHTML=n.map(x=>`<button class="mi" data-p="${x.id}" onclick="go('${x.id}')"><span class="ic">${x.ic}</span>${x.l}</button>`).join('')}
 function go(p){if(p==='raise-ticket'){showRaiseForm();return;}document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');document.querySelectorAll('.ni,.mi').forEach(x=>x.classList.toggle('on',x.dataset.p===p));document.getElementById('pgT').textContent={dashboard:'Home',tickets:'Tickets',detail:'Details'}[p]||'';closeSB();document.getElementById('cA').scrollTop=0}
 	function openSB(){document.getElementById('sb').classList.add('open');document.getElementById('sov').classList.add('show')}
@@ -4145,6 +4154,13 @@ let notifPollTimer=null;   // the ONE interval handle for this feature -- start 
 // notifSeenChatIds, TKS) -- a known source of "notification fired but the UI didn't
 // update" symptoms. Plain boolean is enough since this poller is single-threaded JS.
 let chatPollBusy=false;
+let lastVerKey=''; // 5 Nov 2026: last seen Tickets|Ticket_Chat change-stamp
+let pollTickCount=0; // every 10th check does a full read anyway (safety net, ~5 min)
+async function apiVersions(){
+  const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),15000);
+  try{const r=await fetch(API_URL+'?action=versions',{signal:ctrl.signal});const j=await r.json();clearTimeout(to);return (j&&j.ok&&j.v)?j.v:null;}
+  catch(e){clearTimeout(to);return null;}
+}
 let notifSeenChatIds=null; // Set of Chat_IDs already accounted for -- stays null (chat-checking
                             // paused) until seedChatNotifBaseline() below finishes reading the
                             // FULL existing chat history, so old messages never notify on login
@@ -4169,6 +4185,7 @@ function startFixedNotificationPolling(){
   seedChatNotifBaseline(); // same idea, for chat messages -- see its own comment
   showNotifBell();
   notifPollTimer=setInterval(()=>{if(document.visibilityState==='visible')checkForFixedTickets();},30000);
+  if(!window.__feVisHook){window.__feVisHook=true;document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&notifPollTimer)checkForFixedTickets();});}
 }
 
 // Reads every existing Chat_ID once so the very next poll tick can tell "message that was
@@ -4200,6 +4217,12 @@ async function checkForFixedTickets(){
   if(chatPollBusy)return; // a previous tick is still awaiting the backend -- skip this one rather than run two at once
   chatPollBusy=true;
   try{
+  // 5 Nov 2026: cheap change-check first — skip the heavy download when nothing changed.
+  // If the check fails or the server doesn't support it, fall through to the old full read.
+  const ver=await apiVersions();
+  const verKey=ver?(String(ver.Tickets||'')+'|'+String(ver.Ticket_Chat||'')):'';
+  pollTickCount++;
+  if(verKey&&verKey===lastVerKey&&pollTickCount%10!==0)return;
   let rows;
   try{rows=await apiRead('Tickets');}catch(e){return;}
   if(!rows)return;
@@ -4262,8 +4285,10 @@ async function checkForFixedTickets(){
       });
     }catch(e){chatRows=null;}
   }
+  if(verKey&&(notifSeenChatIds===null||chatRows))lastVerKey=verKey;
 
-  if(!newlyFixed.length&&!newMsgs.length&&!changedStatusIds.length)return;
+  // 5 Nov 2026: also rebuild when the earlier ticket load failed, so the screen self-heals.
+  if(!newlyFixed.length&&!newMsgs.length&&!changedStatusIds.length&&ticketsLoadState==='ok')return;
   if(newlyFixed.length)addFixedNotifications(newlyFixed);
   if(newMsgs.length)addChatNotifications(newMsgs);
   // Something real changed -- now (and only now) refresh the on-screen list/detail so they
@@ -4286,6 +4311,7 @@ async function checkForFixedTickets(){
   try{
     const fresh=rows.filter(r=>String(r.Ticket_ID||'').trim()).map(sheetRowToTicket);
     TKS=fresh;
+    ticketsLoadState='ok';
     if(typeof ATTS!=='undefined')ATTS.forEach(a=>{a.load=TKS.filter(t=>t.att===a.id&&t.status!=='closed').length});
     if(chatRows){
       TKS.forEach(t=>t.chat=[]);
@@ -6113,6 +6139,14 @@ function renderMyBookings(){
   else if(mbStatusCardFilter==='outOfSla')mine=mine.filter(t=>t.status!=='closed'&&t.sla&&t.sla.startsWith('-'));
   else if(mbStatusCardFilter==='readyToClose')mine=mine.filter(t=>t.status==='awaiting-resolution');
 
+  if(!mine.length&&ticketsLoadState==='loading'){
+    wrap.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">⏳</div>Loading your tickets…</div>';
+    return;
+  }
+  if(!mine.length&&ticketsLoadState==='fail'){
+    wrap.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--er)"><div style="font-size:32px;margin-bottom:8px">⚠️</div>FE-DATA-01 · Tickets could not be loaded (server slow).<br>This does NOT mean you have no tickets — tap 🔄 Refresh in a minute.</div>';
+    return;
+  }
   if(!mine.length){
     wrap.innerHTML='<div style="text-align:center;padding:40px 16px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">📭</div>No tickets match — try Reset filters, or raise one from Home</div>';
     return;
