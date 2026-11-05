@@ -4168,7 +4168,7 @@ function startFixedNotificationPolling(){
   seed.then(list=>{(list||[]).forEach(t=>{if(t&&t.id)notifPrevStatus[t.id]=t.status;});}).catch(()=>{});
   seedChatNotifBaseline(); // same idea, for chat messages -- see its own comment
   showNotifBell();
-  notifPollTimer=setInterval(checkForFixedTickets,4000);
+  notifPollTimer=setInterval(()=>{if(document.visibilityState==='visible')checkForFixedTickets();},30000);
 }
 
 // Reads every existing Chat_ID once so the very next poll tick can tell "message that was
