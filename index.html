@@ -5619,10 +5619,14 @@ function getClosedSlaDurationMin(t){
 
 function computeReportMetrics(tickets){
   const total=tickets.length;
-  const closed=tickets.filter(t=>t.status==='closed');
-  const pending=tickets.filter(t=>t.status!=='closed');
+  // 17 Nov 2026: Rejected counts as Closed (Ansar's decision) — it was being counted as
+  // Pending / Out of SLA. Rejected tickets are not judged on SLA (counted as undetermined),
+  // and Avg SLA still uses genuinely closed tickets only.
+  const closed=tickets.filter(t=>t.status==='closed'||t.status==='rejected');
+  const pending=tickets.filter(t=>t.status!=='closed'&&t.status!=='rejected');
   let closedWithinSLA=0,closedOutOfSLA=0,closedUnknown=0;
   closed.forEach(t=>{
+    if(t.status==='rejected'){closedUnknown++;return;}
     const r=isClosedWithinSLA(t);
     if(r===true)closedWithinSLA++;
     else if(r===false)closedOutOfSLA++;
@@ -5638,7 +5642,7 @@ function computeReportMetrics(tickets){
   // an unknown-timestamp ticket shouldn't silently count as a compliance failure.
   const slaBase=closedWithinSLA+closedOutOfSLA;
   const slaPct=slaBase?Math.round((closedWithinSLA/slaBase)*100):0;
-  const avgMin=avgClosureVsSLA(closed);
+  const avgMin=avgClosureVsSLA(closed.filter(t=>t.status==='closed'));
   return {total,closedTotal:closed.length,closedWithinSLA,closedOutOfSLA,closedUnknown,
     closurePct,slaPct,pendingTotal:pending.length,pendingWithinSLA,pendingOutOfSLA,avgMin};
 }
