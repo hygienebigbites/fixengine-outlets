@@ -497,6 +497,15 @@ function requesterStatusLabel(status){
   if(status==='awaiting-resolution')return 'Ready to Close';
   return SL[status]||status||'Open';
 }
+// 17 Nov 2026: the ONLY 3 status groups shown in the My Tickets + Report status filters.
+// Open = still being worked; Closed = closed or rejected; Closed-Awaiting for resolution =
+// attender has asked to close, outlet has not confirmed yet.
+const STATUS_GROUP_LABEL={open:'Open',closed:'Closed',awaiting:'Closed-Awaiting for resolution'};
+function statusGroup(s){
+  if(s==='closed'||s==='rejected')return 'closed';
+  if(s==='awaiting-resolution'||s==='requester-confirm'||s==='ready-closure')return 'awaiting';
+  return 'open';
+}
 
 // ===== PHASE 3: Google Sheets API connection =====
 const API_URL='https://script.google.com/macros/s/AKfycbyWe93Q3aNuP8SZgzKUTZJ6sphL-nNjnJag5zVp7u_LmF5HF-A-9hwdxKfYpszOXPI/exec';// Reads a tab from the sheet, returns array of row-objects. Returns null on failure.
@@ -573,7 +582,7 @@ async function apiCreateTicketOnce(row,idempotencyKey,outletPrefix,timeoutMs){
       signal:ctrl.signal
     });
     const json=await res.json();
-    if(json&&json.ok)return {ok:true,ticketId:json.ticketId,reused:!!json.reused};
+    if(json&&json.ok)return {ok:true,ticketId:json.ticketId,reused:!!json.reused,assignedTo:json.assignedTo||''};
     return {ok:false,error:(json&&json.error)||'Server rejected the request'};
   }catch(e){
     return {ok:false,error:e.name==='AbortError'?'timeout':String(e)};
@@ -4669,7 +4678,12 @@ async function raiseTicket(){
   const t={id:'',issue:s,cat:c.charAt(0).toUpperCase()+c.slice(1),sub:s,out:o,pri:u,sla:'+'+String(sla).padStart(2,'0')+':00',slaDeadline:deadline,status:'raised',att:null,hist:[{s:'raised',t:ts(),n:'By '+userName+(probes.length?' · '+probes.length+' probes flagged':'')}],desc:d,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],probes,locVisit:true,confirmStatus:null,reopened:false,whatHappened:selWH,where:selWhere,item:selItem,action:selAction,flagReason:flagOn?flagWhy:'',deviceId:window.scannedDevice?window.scannedDevice.id:''};
   if(flagOn)t.hist.push({s:'raised',t:ts(),n:'🚩 Flagged URGENT by requester: '+flagWhy});
   if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
-  const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
+  // 17 Nov 2026 FIX: if the attender list hadn't loaded (slow server), autoA() found nobody and the
+  // ticket was saved as 'raised' with no attender — nobody ever saw it. Retry the load once here;
+  // the server (createTicket) also assigns as a final safety net, see below.
+  let a=autoA(t);
+  if(!a){try{await loadAttendersFromSheet();}catch(e){}a=autoA(t);}
+  if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
 
   // REVERTED 2026-09-18: parallel photo upload (Promise.all) caused uploaded
   // photos to go missing — sending all of them to Apps Script at the same
@@ -4709,6 +4723,10 @@ async function raiseTicket(){
 
   const id=result.ticketId;
   t.id=id;t.synced=true;
+  if(!t.att&&result.assignedTo){   // server-side safety-net assignment (17 Nov 2026)
+    const sa=gA(result.assignedTo);t.att=result.assignedTo;t.status='assigned';if(sa)sa.load++;
+    t.hist.push({s:'assigned',t:ts(),n:'→ '+(sa?sa.name:result.assignedTo)});
+  }
   TKS.unshift(t);['tC','tD'].forEach(x=>document.getElementById(x).value='');document.getElementById('tS').innerHTML='<option value="">—</option>';document.getElementById('probeW').style.display='none';document.getElementById('tImg').value='';tImgFiles=[];renderPhotoList();clearSubSelection();selWH='';selWhere='';selAction='';renderTagChips();autoDesc='';typedProblem='';selItem='';const fc1=document.getElementById('flagChk');if(fc1)fc1.checked=false;onFlagToggle();applyTicketTypeRules();
   buildNav();R();
   nf(result.reused?'✅ '+id+' (already saved)':'✅ '+id+' raised',(PRILABELS[u]||u)+' · SLA '+sla+'h','ok');
@@ -4795,7 +4813,12 @@ async function doReopen(){
     hist:[{s:'reopened',t:ts(),n:'🔄 Re-opened from '+old.id+' · '+r}],desc,otp:Math.floor(100000+Math.random()*900000),costs:[],by:phone,otpRevealed:false,issueRes:null,chat:[],puTask:null,vendor:null,slaExt:[],
     probes:(old.probes||[]).slice(),locVisit:true,confirmStatus:null,reopened:true,whatHappened:old.whatHappened||'',where:old.where||'',item:old.item||'',action:old.action||'',flagReason:old.flagReason||'',deviceId:old.deviceId||'',photoUrls:(old.photoUrls||[]).slice()};
   if(window.attendersLoadPromise){try{await window.attendersLoadPromise;}catch(e){}}
-  const a=autoA(t);if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
+  // 17 Nov 2026 FIX: if the attender list hadn't loaded (slow server), autoA() found nobody and the
+  // ticket was saved as 'raised' with no attender — nobody ever saw it. Retry the load once here;
+  // the server (createTicket) also assigns as a final safety net, see below.
+  let a=autoA(t);
+  if(!a){try{await loadAttendersFromSheet();}catch(e){}a=autoA(t);}
+  if(a){t.att=a.id;a.load++;t.status='assigned';t.hist.push({s:'assigned',t:ts(),n:'→ '+a.name})}
   const outletPrefix=(old.out||'').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase();
   const result=await apiCreateTicket(ticketToSheetRow(t),'reopen-'+old.id,outletPrefix);   // same key = same new ticket on retry / second phone
   if(!result.ok){
@@ -4806,6 +4829,10 @@ async function doReopen(){
   }
   const newId=result.ticketId;
   t.id=newId;t.synced=true;
+  if(!t.att&&result.assignedTo){   // server-side safety-net assignment (17 Nov 2026)
+    const sa=gA(result.assignedTo);t.att=result.assignedTo;t.status='assigned';if(sa)sa.load++;
+    t.hist.push({s:'assigned',t:ts(),n:'→ '+(sa?sa.name:result.assignedTo)});
+  }
   if(!TKS.find(x=>x.id===newId))TKS.unshift(t);
   const fixedBy=(gA(old.att)||{}).name||'the attender';
   const closedAt=(old.hist||[]).slice().reverse().find(h=>h.s==='closed');
@@ -5524,7 +5551,7 @@ function closeSideMenu(){
   document.getElementById('reqSideMenuOverlay').classList.remove('show');
 }
 // ===== REPORTS =====
-let reportFilters={outlets:[],categories:[],priorities:[],attenders:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+let reportFilters={outlets:[],categories:[],priorities:[],attenders:[],statuses:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
 
 function getWeekRange(offsetWeeks,refDate){
   // Monday-to-Sunday, as specified — not the Sun-Sat convention some locales default to.
@@ -5647,6 +5674,7 @@ function applyReportFilters(all){
     // an attender ID is looked up on a ticket -- combines with every other filter above
     // via the same AND logic (Outlet + Attender + Status etc. all narrow together).
     if(reportFilters.attenders.length&&!reportFilters.attenders.includes(t.att||''))return false;
+    if(reportFilters.statuses&&reportFilters.statuses.length&&!reportFilters.statuses.includes(statusGroup(t.status)))return false;
     if(dateRange){
       const created=getTicketCreatedDate(t);
       if(!created||created<dateRange.start||created>dateRange.end)return false;
@@ -5844,7 +5872,7 @@ function renderReports(){
 }
 
 function toggleReportPanel(kind){
-  ['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel'].forEach(id=>{
+  ['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel','reportStPanel'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&id!=='report'+kind+'Panel')el.style.display='none';
   });
@@ -5862,8 +5890,8 @@ function toggleReportPanel(kind){
 // explicitly ignores clicks on the panels themselves and on their own toggle buttons so
 // it never fights toggleReportPanel()'s own open/close logic or double-closes/reopens.
 document.addEventListener('click',function(e){
-  const panelIds=['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel'];
-  const btnIds=['reportOtBtn','reportCatBtn','reportPriBtn','reportAttBtn'];
+  const panelIds=['reportOtPanel','reportCatPanel','reportPriPanel','reportAttPanel','reportStPanel'];
+  const btnIds=['reportOtBtn','reportCatBtn','reportPriBtn','reportAttBtn','reportStBtn'];
   const anyOpen=panelIds.some(id=>{const p=document.getElementById(id);return p&&p.style.display==='block';});
   if(!anyOpen)return;
   if(!e.target||!e.target.closest)return;
@@ -5916,6 +5944,18 @@ function buildReportAttPanel(){
       <span>${label}</span></label>`;
   }).join('');
 }
+// 17 Nov 2026: Status filter — same checkbox pattern as the panels above, 3 groups only.
+function buildReportStPanel(){
+  const list=document.getElementById('reportStList');
+  if(!list)return;
+  if(!reportFilters.statuses)reportFilters.statuses=[];
+  list.innerHTML=['open','closed','awaiting'].map(v=>{
+    const checked=reportFilters.statuses.includes(v)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bdr)">
+      <input type="checkbox" value="${v}" ${checked} onchange="onReportFilterCheck('statuses',this)" style="width:14px;height:14px;accent-color:var(--ac);flex-shrink:0">
+      <span>${STATUS_GROUP_LABEL[v]}</span></label>`;
+  }).join('');
+}
 function onReportFilterCheck(kind,el){
   if(el.checked){if(!reportFilters[kind].includes(el.value))reportFilters[kind].push(el.value);}
   else reportFilters[kind]=reportFilters[kind].filter(v=>v!==el.value);
@@ -5934,6 +5974,7 @@ function updateReportFilterButtons(){
   setBtn('reportCatBtn',reportFilters.categories,'All Categories \u25be');
   setBtn('reportPriBtn',reportFilters.priorities,'All Priorities \u25be');
   setBtn('reportAttBtn',reportFilters.attenders,'All Attenders \u25be');
+  setBtn('reportStBtn',(reportFilters.statuses||[]).map(v=>STATUS_GROUP_LABEL[v]||v),'All Status \u25be');
 }
 function onReportSearchInput(){
   reportFilters.search=document.getElementById('reportSearch').value;
@@ -5958,12 +5999,13 @@ function onReportCustomDateChange(){
   if(reportFilters.dateStart&&reportFilters.dateEnd)renderReports();
 }
 function resetReportFilters(){
-  reportFilters={outlets:[],categories:[],priorities:[],attenders:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
+  reportFilters={outlets:[],categories:[],priorities:[],attenders:[],statuses:[],dateMode:'all',dateStart:'',dateEnd:'',search:''};
   const searchEl=document.getElementById('reportSearch');if(searchEl)searchEl.value='';
   const startEl=document.getElementById('reportDateStart');if(startEl)startEl.value='';
   const endEl=document.getElementById('reportDateEnd');if(endEl)endEl.value='';
   const customRow=document.getElementById('reportCustomDateRow');if(customRow)customRow.style.display='none';
   setReportDateMode('all');
+  buildReportStPanel();
   updateReportFilterButtons();
   renderReports();
 }
@@ -5972,7 +6014,7 @@ function showReports(){
   document.getElementById('myBookingsPage').style.display='none';
   const qh=document.getElementById('quickHelpPage');if(qh)qh.style.display='none';
   document.getElementById('reportsPage').style.display='block';
-  buildReportOtPanel();buildReportCatPanel();buildReportPriPanel();buildReportAttPanel();
+  buildReportOtPanel();buildReportCatPanel();buildReportPriPanel();buildReportAttPanel();buildReportStPanel();
   updateReportFilterButtons();
   renderReports();
 }
@@ -5986,6 +6028,49 @@ function closeReports(){
 // unaffected either way): only reloads what the report actually reads (tickets, their
 // history, and attenders for the filter labels), then re-renders in place. No full page
 // reload, no unrelated data (categories/outlets/purchase orders/etc. untouched).
+// 17 Nov 2026: Report → ⬇ Download. Exports exactly the tickets the current report filters
+// show (same applyReportFilters), one row per ticket, with ALL chat messages for that
+// ticket in a single "Chat" column. CSV with UTF-8 BOM so Excel/Google Sheets open it with
+// emojis and Indian-language text intact. OTP chat messages are left out on purpose.
+async function downloadReportTickets(){
+  const btn=document.getElementById('reportDownloadBtn');
+  const orig=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Preparing…';}
+  try{
+    try{await loadTicketChatFromSheet();}catch(e){}   // latest messages; if it fails, already-loaded chat is used
+    const rows=applyReportFilters((typeof TKS!=='undefined')?TKS:[]);
+    if(!rows.length){nf('Nothing to download','No tickets match the current filters','warn');return;}
+    const catLabel=cid=>(CATS[cid]&&CATS[cid].label)?CATS[cid].label:(cid||'');
+    const fmtD=d=>d?d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    const esc=v=>{const s=String(v===undefined||v===null?'':v);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+    const head=['Ticket ID','Created','Outlet','Category','Sub Category','Priority','Status Group','Current Status','Attender','Requester','Requester Mobile','Description','SLA Deadline','Closed On','Chat Messages'];
+    const lines=[head.map(esc).join(',')];
+    rows.forEach(t=>{
+      const att=t.att?gA(t.att):null;
+      const raisedNote=((t.hist||[]).find(h=>h.s==='raised')||{}).n||'';
+      const nm=(raisedNote.match(/^By (.+?)(?:\s*\u00b7|$)/)||[])[1]||'';
+      const closedE=(t.hist||[]).find(h=>h.s==='closed');
+      const closedD=closedE?parseAnyTimestamp(closedE.iso||closedE.t):null;
+      const dl=t.slaDeadline?new Date(t.slaDeadline):null;
+      const chat=(t.chat||[]).filter(c=>!c.isOtp&&c.msg).map(c=>(c.time?'['+c.time+'] ':'')+(c.by||c.role||'')+(c.role?' ('+c.role+')':'')+': '+c.msg).join('\n');
+      lines.push([t.id,fmtD(getTicketCreatedDate(t)),t.out,catLabel(t.cat),t.sub||t.issue||'',t.pri,
+        STATUS_GROUP_LABEL[statusGroup(t.status)],SL[t.status]||t.status||'',att?att.name:(t.att||'Unassigned'),nm,t.by||'',t.desc||'',
+        (dl&&!isNaN(dl.getTime()))?fmtD(dl):'',fmtD(closedD),chat].map(esc).join(','));
+    });
+    const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='FixEngine_Tickets_'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+    nf('⬇ Downloaded',rows.length+' tickets with chat','ok');
+  }catch(e){
+    console.error('[FixEngine] downloadReportTickets failed:',e);
+    nf('Download failed','Please try again','warn');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=orig||'⬇ Download';}
+  }
+}
 async function refreshReportsData(){
   const btn=document.getElementById('reportRefreshBtn');
   const orig=btn?btn.textContent:'';
@@ -6117,13 +6202,7 @@ function renderMyBookings(){
   // category/outlet), just scoped to the requester's own tickets instead of all tickets.
   const fs=document.getElementById('mbFSt')?.value,fp=document.getElementById('mbFPr')?.value;
   const fc=document.getElementById('mbFCt')?.value;
-  if(fs==='pending')mine=mine.filter(t=>['raised','assigned','accepted'].includes(t.status));
-  else if(fs==='open')mine=mine.filter(t=>!['closed','rejected'].includes(t.status));
-  else if(fs==='closed')mine=mine.filter(t=>t.status==='closed');
-  else if(fs==='breach')mine=mine.filter(t=>t.sla?.startsWith('-'));
-  else if(fs==='hold')mine=mine.filter(t=>t.status==='on-hold');
-  else if(fs==='rejected')mine=mine.filter(t=>t.status==='rejected');
-  else if(fs==='readyToClose')mine=mine.filter(t=>t.status==='awaiting-resolution');
+  if(fs)mine=mine.filter(t=>statusGroup(t.status)===fs);   // 17 Nov 2026: Open / Closed / Closed-Awaiting only
   if(fp)mine=mine.filter(t=>t.pri===fp);
   if(fc)mine=mine.filter(t=>(t.cat||'').toLowerCase()===fc.toLowerCase());
   if(mbSelectedOutlets&&mbSelectedOutlets.length)mine=mine.filter(t=>mbSelectedOutlets.includes(t.out));
@@ -6726,7 +6805,10 @@ let usersLoaded=true;
 <div id="reportsPage" style="display:none;position:fixed;inset:0;bottom:60px;background:var(--bg);z-index:150;overflow-y:auto;padding:20px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <button type="button" onclick="closeReports()" style="background:none;border:none;color:var(--t3);font-size:12px;text-decoration:underline;cursor:pointer">← Back</button>
+    <div style="display:flex;gap:6px">
+    <button type="button" id="reportDownloadBtn" onclick="downloadReportTickets()" title="Download the filtered tickets with chat messages (opens in Excel)" style="background:none;border:1px solid var(--bdr);border-radius:8px;color:var(--t2);font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 10px">⬇ Download</button>
     <button type="button" id="reportRefreshBtn" onclick="refreshReportsData()" title="Refresh report data" style="background:none;border:1px solid var(--bdr);border-radius:8px;color:var(--t2);font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 10px">🔄 Refresh</button>
+    </div>
   </div>
   <h2 style="margin-bottom:14px;font-size:19px">📊 Report</h2>
   <input type="text" id="reportSearch" class="fc" placeholder="🔍 Search date, attender, requester, category, outlet..." oninput="onReportSearchInput()" style="width:100%;margin-bottom:8px;box-sizing:border-box;font-size:13px">
@@ -6758,6 +6840,10 @@ let usersLoaded=true;
     <div style="position:relative;flex:1;min-width:100px">
       <button type="button" id="reportAttBtn" onclick="toggleReportPanel('Att')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Attenders ▾</button>
       <div id="reportAttPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportAttList"></div></div>
+    </div>
+    <div style="position:relative;flex:1;min-width:100px">
+      <button type="button" id="reportStBtn" onclick="toggleReportPanel('St')" class="fc" style="width:100%;text-align:left;cursor:pointer;font-size:11.5px">All Status ▾</button>
+      <div id="reportStPanel" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--c1);border:1px solid var(--bdr);border-radius:var(--rs);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15)"><div id="reportStList"></div></div>
     </div>
   </div>
   <button type="button" onclick="resetReportFilters()" style="background:none;border:none;color:var(--ac2);font-size:11px;text-decoration:underline;cursor:pointer;margin-bottom:14px">↺ Reset filters</button>
@@ -6796,7 +6882,7 @@ let usersLoaded=true;
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><button type="button" class="req-hamburger" onclick="openSideMenu()">☰</button><h2 style="margin-bottom:0">📋 My Tickets</h2><div style="width:38px"></div></div>
   <div id="ticketsSummaryRow" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-    <select class="fc" id="mbFSt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Status</option><option value="pending">⏳ Pending</option><option value="open">🟢 Open</option><option value="readyToClose">🔔 Ready to Close</option><option value="closed">⚫ Closed</option><option value="breach">⚠ Breached</option><option value="hold">⏸ On Hold</option><option value="rejected">✕ Rejected</option></select>
+    <select class="fc" id="mbFSt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Status</option><option value="open">🟢 Open</option><option value="closed">⚫ Closed</option><option value="awaiting">🔔 Closed-Awaiting for resolution</option></select>
     <select class="fc" id="mbFPr" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Priority</option><option value="critical">🔴 Critical</option><option value="high">🟠 High</option><option value="medium">🟡 Medium</option><option value="low">🟢 Low</option></select>
     <select class="fc" id="mbFCt" onchange="renderMyBookings()" style="font-size:11px"><option value="">All Categories</option></select>
     <div style="position:relative">
